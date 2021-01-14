@@ -1,0 +1,121 @@
+---
+title: "MID/CMB, Radcliffe, Kilteasheen, Iberian medieval calculus MALT table format clean-up"
+author: "Irina Velsko"
+date: "`r format(Sys.time(), '%b %d, %Y')`"
+output:
+    github_document:
+        fig_width: 8
+        fig_height: 6
+        toc: true
+---
+
+```{r load_libraries, echo = F, message = F}
+library(knitr)
+library(data.table)
+library(janitor)
+library(tidyverse)
+
+```
+
+```{r setup}
+knitr::opts_knit$set(root.dir = normalizePath(".."))
+```
+
+This creates an RData object that has the cleaned up taxonomy tables for species
+and genus, where the species/genera that were identified as contaminants with
+decontam in `Cameroon_taxonomy_decontam.Rmd` are removed. All the column headers
+are cleaned up. 
+
+Read in the full species and genus tables.
+```{r load_data}
+# MALT tables
+mid_raw <- fread("./05-results.backup/MID_malt_bactarchhomo2018_comparison-species.txt")
+radcliffe_raw <- fread("./05-results.backup/Radcliffe_pfuT_comparison-species.txt")
+kilteasheen_raw <- fread("./05-results.backup/Kilteasheen_comparison-species.txt")
+iberian_raw <- fread("./05-results.backup/iberian_medieval_malt_species_raw.tsv")
+
+# contaminants
+mid_contaminants <- fread("./05-results.backup/contaminant_species_mid.tsv", sep = "\t")
+iber_contaminants <- fread("./05-results.backup/contaminant_species_iber.tsv", sep = "\t")
+
+```
+
+```{r clean_tables}
+# remove contaminant species from MID/CMD
+mid_species_decontam <- mid_raw %>%
+  rename(Species = `#Datasets`) %>%
+  anti_join(., mid_contaminants)
+
+# remove contaminant species from Iberian medieval samples
+iberian_species_decontam <- iberian_raw %>%
+  rename(Species = `#Datasets`) %>%
+  anti_join(., iber_contaminants)
+
+# remove contaminant species from both MID/CMD and Iberian from Kilteasheen
+# because I don't know what else to do
+kilteasheen_species_decontam <- kilteasheen_raw %>%
+  rename(Species = `#Datasets`) %>%
+  anti_join(., mid_contaminants) %>%
+  anti_join(., iber_contaminants)
+
+# remove contaminant species from both MID/CMD and Iberian from Radcliffe
+# because I don't know what else to do
+radcliffe_species_decontam <- radcliffe_raw %>%
+  rename(Species = `#Datasets`) %>%
+  anti_join(., mid_contaminants) %>%
+  anti_join(., iber_contaminants)
+
+```
+
+```{r join_raw_tables}
+
+all_species_raw <- mid_raw %>%
+  full_join(., radcliffe_raw) %>%
+  full_join(., kilteasheen_raw) %>%
+  full_join(., iberian_raw)
+
+
+# clean the file names
+all_species_raw <- rename(all_species_raw, Species = `#Datasets`)
+colnames(all_species_raw) <- gsub(".unmapped","", colnames(all_species_raw))
+colnames(all_species_raw) <- gsub("MeganServer::","", colnames(all_species_raw))
+
+
+```
+
+
+```{r join_decontam_tables}
+all_species_decontam <- mid_species_decontam %>%
+  full_join(., radcliffe_species_decontam) %>%
+  full_join(., kilteasheen_species_decontam) %>%
+  full_join(., iberian_species_decontam)
+
+
+# clean the file names
+colnames(all_species_decontam) <- gsub(".unmapped","", colnames(all_species_decontam))
+colnames(all_species_decontam) <- gsub("MeganServer::","", colnames(all_species_decontam))
+
+# remove human and unassigned reads, convert NA to 0, and remove the 8 MID samples with no metadata
+all_species_decontam <- all_species_decontam %>% 
+  filter(!str_detect(Species, "Homo sapiens|Not assigned")) %>%
+  replace(is.na(.), 0) %>%
+  # these samples have no metadata
+  select(-c("MID025.A0101","MID033.A0101","MID052.A0101","MID056.A0101","MID065.A0101","MID068.A0101","MID076.A0101","MID078.A0101")) %>%
+  # remove Radcliffe soil and dentin
+  select(-c("CSS","CSD")) %>%
+  # remove any taxa that are not present in the remaining samples
+  adorn_totals(where = "col") %>%
+  filter(Total > 0) %>%
+  select(-Total) %>%
+  arrange(Species)
+
+
+```
+
+
+```{r save_data}
+save(all_species_raw,
+     all_species_decontam,
+     file = "./05-results.backup/Taxonomy_tables.RData")
+
+```
