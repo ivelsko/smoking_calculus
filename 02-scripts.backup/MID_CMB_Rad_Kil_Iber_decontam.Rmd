@@ -1,0 +1,573 @@
+---
+title: "Cameroon hunter-gatherer calculus/plaque MALT decontam"
+author: "Irina Velsko"
+date: "`r format(Sys.time(), '%b %d, %Y')`"
+output:
+    github_document:
+        fig_width: 8
+        fig_height: 6
+        toc: true
+---
+
+```{r load_libraries, echo = F, message = F}
+library(knitr)
+library(decontam)
+library(data.table)
+library(janitor)
+library(tidyverse)
+opts_chunk$set(echo=F, warning=F, message=F, dpi=150)
+```
+
+Set the working directory of the notebook to the parent directory of the 
+notebook itself.  
+
+```{r setup}
+knitr::opts_knit$set(root.dir = normalizePath(".."))
+```
+
+```{r load_data}
+mid_raw <- fread("./05-results.backup/MID_malt_bactarchhomo2018_comparison-species.txt")
+radcliffe_raw <- fread("./05-results.backup/Radcliffe_pfuT_comparison-species.txt")
+kilteasheen_raw <- fread("./05-results.backup/Kilteasheen_comparison-species.txt")
+iberian_raw <- fread("./05-results.backup/iberian_medieval_malt_species_raw.tsv")
+
+
+all_raw <- mid_raw %>%
+  full_join(., radcliffe_raw) %>%
+  full_join(., kilteasheen_raw) %>%
+  full_join(., iberian_raw)
+
+
+# clean the file names
+all_raw <- rename(all_raw, Species = `#Datasets`)
+colnames(all_raw) <- gsub(".unmapped","", colnames(all_raw))
+colnames(all_raw) <- gsub("MeganServer::","", colnames(all_raw))
+
+# remove human and unassigned reads, convert NA to 0, and remove the 8 MID samples with no metadata
+all_raw <- all_raw %>% 
+  filter(!str_detect(Species, "Homo sapiens|Not assigned")) %>%
+  replace(is.na(.), 0) %>%
+  # these samples have no metadata
+  select(-c("MID025.A0101","MID033.A0101","MID052.A0101","MID056.A0101","MID065.A0101","MID068.A0101","MID076.A0101","MID078.A0101")) %>%
+  # remove Radcliffe soil and dentin
+  select(-c("CSS","CSD")) %>%
+  # remove any taxa that are not present in the remaining samples
+  adorn_totals(where = "col") %>%
+  filter(Total > 0) %>%
+  select(-Total) %>%
+  arrange(Species)
+
+```
+
+```{r}
+metadata <- fread("00-documentation.backup/MID_analysis_metadata.tsv") %>%
+  select(Site, Library_ID, Sample_or_Control) %>%
+  full_join(., fread("./00-documentation.backup/radcliffe_pfuT_metadata.tsv") %>%
+            select(Site, Library_ID, Sample_or_Control)) %>%
+  full_join(., fread("./00-documentation.backup/kilteasheen_metadata.tsv") %>%
+            select(Site, Library_ID, Sample_or_Control)) %>%
+  full_join(., fread("./00-documentation.backup/iberian_medieval_metadata.tsv") %>%
+            select(Site, Library_ID, Sample_or_Control))
+
+#set the columns of interest to factors
+metadata <- metadata %>%
+  as_tibble() %>%
+  mutate(Site = fct_relevel(Site, "MID","CMB","Radcliffe","Kilteasheen","ELR",
+                                "IVE","Extraction_blank","Library_blank"),
+         Sample_or_Control = fct_relevel(Sample_or_Control, "Sample", "Control"))
+
+```
+
+
+```{r pca_plotting_functions}
+# plotting PCA with colored dots
+plot_pca <- function(df, pc1, pc2, metadata_group) {
+    metadata_group_colors <- get(paste(metadata_group, "_colors", sep = ""))
+    metadata_group_shapes <- get(paste(metadata_group, "_shapes", sep = ""))
+
+    exp_var <- paste0(round(df$explained_variance * 100, 2), "%")
+    df_X <- df$variates$X %>%
+              as.data.frame() %>%
+              rownames_to_column("Library_ID") %>%
+              inner_join(metadata %>%
+                           select(Library_ID, Site, Sample_or_Control), by = "Library_ID")
+    
+    metadata_group = df_X[[metadata_group]]
+    
+                       if (pc1 == 'PC1') {
+                           pc1 <- df_X$PC1
+                           exp_var_pc1 <- exp_var[1]
+                           xaxis <- c("PC1")
+                       }  else if (pc1 == 'PC2') {
+                           pc1 <- df_X$PC2
+                           exp_var_pc1 <- exp_var[2]
+                           xaxis <- c("PC2")
+                       } else if (pc1 == 'PC3') {
+                           pc1 <- df_X$PC3
+                           exp_var_pc1 <- exp_var[3]
+                           xaxis <- c("PC3")
+                       }
+
+                       if (pc2 == 'PC1') {
+                           pc2 <- df_X$PC1
+                           exp_var_pc2 <- exp_var[1]
+                           yaxis <- c("PC1")
+                       }  else if (pc2 == 'PC2') {
+                           pc2 <- df_X$PC2
+                           exp_var_pc2 <- exp_var[2]
+                           yaxis <- c("PC2")
+                       } else if (pc2 == 'PC3') {
+                           pc2 <- df_X$PC3
+                           exp_var_pc2 <- exp_var[3]
+                           yaxis <- c("PC3")
+                       }
+
+    pca_plot <- ggplot(df_X, aes(pc1, pc2, colour = metadata_group, shape = metadata_group)) +
+                        geom_point(size = 4) +
+                        scale_colour_manual(values = metadata_group_colors) +
+                        scale_shape_manual(values = metadata_group_shapes) +
+                        # stat_ellipse() +
+                        xlab(paste(xaxis, " - ", exp_var_pc1)) +
+                        ylab(paste(yaxis, " - ", exp_var_pc2)) +
+                        theme_minimal(base_size = 10) +
+                        theme(legend.position = "top") +
+                        theme(legend.title = element_blank())
+
+    return(pca_plot)
+}
+
+# this function plots the PCA with the sample names instead of points
+plot_pca_names <- function(df, pc1, pc2, metadata_group) {
+    metadata_group_colors <- get(paste(metadata_group, "_colors", sep = ""))
+
+    exp_var <- paste0(round(df$explained_variance * 100, 2), "%")
+    df_X <- df$variates$X %>%
+              as.data.frame() %>%
+              rownames_to_column("Library_ID") %>%
+              inner_join(metadata %>%
+                           select(Library_ID, Site, Sample_or_Control), by = "Library_ID")
+    
+    metadata_group = df_X[[metadata_group]]
+    
+                       if (pc1 == 'PC1') {
+                           pc1 <- df_X$PC1
+                           exp_var_pc1 <- exp_var[1]
+                           xaxis <- c("PC1")
+                       }  else if (pc1 == 'PC2') {
+                           pc1 <- df_X$PC2
+                           exp_var_pc1 <- exp_var[2]
+                           xaxis <- c("PC2")
+                       } else if (pc1 == 'PC3') {
+                           pc1 <- df_X$PC3
+                           exp_var_pc1 <- exp_var[3]
+                           xaxis <- c("PC3")
+                       }
+
+                       if (pc2 == 'PC1') {
+                           pc2 <- df_X$PC1
+                           exp_var_pc2 <- exp_var[1]
+                           yaxis <- c("PC1")
+                       }  else if (pc2 == 'PC2') {
+                           pc2 <- df_X$PC2
+                           exp_var_pc2 <- exp_var[2]
+                           yaxis <- c("PC2")
+                       } else if (pc2 == 'PC3') {
+                           pc2 <- df_X$PC3
+                           exp_var_pc2 <- exp_var[3]
+                           yaxis <- c("PC3")
+                       }
+
+    pca_plot_names <- ggplot(df_X, aes(pc1, pc2, colour = metadata_group)) +
+                        geom_text(aes(label = Library_ID), size = 2) +
+                        scale_colour_manual(values = metadata_group_colors) +
+                        # stat_ellipse() +
+                        xlab(paste(xaxis, " - ", exp_var_pc1)) +
+                        ylab(paste(yaxis, " - ", exp_var_pc2)) +
+                        theme_minimal(base_size = 10) +
+                        theme(legend.position = "top") +
+                        theme(legend.title = element_blank())
+
+    return(pca_plot_names)
+}
+
+```
+
+
+Before running decontam, let's plot the samples in a PCA to see if there are any that are clearly not good-quality
+```{r raw_plot}
+
+malt_species_raw <- all_raw %>%
+  gather("Library_ID","Counts",2:ncol(.)) %>%
+  mutate(Counts = Counts + 1) %>%
+  spread(Species,Counts) %>%
+  column_to_rownames("Library_ID")
+
+# prepare to run a PCA
+# check the number of components to retain by tuning the PCA
+tune.malt_species_pca <- mixOmics::tune.pca(malt_species_raw, logratio = 'CLR')
+tune.malt_species_pca
+
+# perform a PCA to see how the data cluster
+malt_species.pca <- mixOmics::pca(malt_species_raw, ncomp = 3, logratio = 'CLR')
+plot(malt_species.pca)
+
+# define some colors
+Sample_or_Control_colors = c("Blue", "Magenta")
+Sample_or_Control_shapes = c(19,8)
+
+plot_pca(malt_species.pca, "PC1", "PC2", "Sample_or_Control")
+plot_pca_names(malt_species.pca,  "PC1", "PC2", "Sample_or_Control")
+
+```
+
+```{r outliers}
+# these are the 3 blanks that "passed" the cuperdec cut-off
+# and we can see they plot with samples in the PCA above
+outliers <- c("EXB059.A2501","LIB058.A0103","LIB058.A0106","CSS","CSD")
+poor_samples <- fread("./05-results.backup/cuperdec_poor_samples.tsv") %>%
+  pull(Sample)
+
+```
+
+# Decontamination with Decontam
+We want to know if there are any species that can be removed b/c they appear to
+be contaminants. Use the package decontam to determine which species may be
+contaminants. Prepare the matrix for decontam.
+
+
+## All together
+```{r decontam_data_prep}
+# list out the samples that have all 0 or NA values to remove from the input matrix
+# NA_filter_list <- metadata %>% filter((is.na(SumLibraryConcentration_copies_ul) | SumLibraryConcentration_copies_ul <= 0)) %>% select(Library_ID)
+
+# remove NA value samples from the input data frame
+malt_species.dataframe <- all_raw %>%
+  filter(!str_detect(Species, "Not assigned|Homo sapiens")) %>%
+  select(-one_of(outliers)) %>%
+  select(-one_of(poor_samples)) %>%
+  gather("Library_ID","Counts", 2:ncol(.)) %>%
+  spread(Species,Counts) 
+# %>%
+#   anti_join(., NA_filter_list)
+
+# make a matrix for decontam
+malt_species.matrix <- data.matrix(malt_species.dataframe[2:ncol(malt_species.dataframe)])
+rownames(malt_species.matrix) <- malt_species.dataframe$Library_ID
+
+# make a metadata dataframe with the same NA-containing samples removed
+metadata.decontam <- metadata %>%
+  filter(!str_detect(Library_ID, poor_samples %>% str_c(collapse = "|"))) %>%
+  # anti_join(., NA_filter_list, by = "Library_ID") %>%
+  filter(!str_detect(Library_ID, outliers %>% str_c(collapse = "|"))) %>%
+  filter(Library_ID != "LIB058.A0101") %>% # this sample is not in the metadata
+  arrange(Library_ID) %>%
+  distinct()
+
+# metadata.decontam %>% select(Library_ID) %>%
+#   anti_join(., malt_species.dataframe %>% select(Library_ID))
+
+```
+
+Try the prevalence method to compare. 
+```{r decontam_prevalence}
+# Assign sample-type status to identify control samples
+metadata.decontam$is.control <- metadata.decontam$Sample_or_Control=="Control"
+
+#Try changing the probability threshold cut-off to see how many more or less are ID'd as contaminants
+contam.prev.species <- isContaminant(malt_species.matrix, method="prevalence", 
+                                 neg=metadata.decontam$is.control, 
+                                 threshold = 0.8)
+
+# Check number of contaminants
+table(contam.prev.species$contaminant)
+
+# List of contaminants
+cont_prev_species_list <- contam.prev.species[which(contam.prev.species$contaminant=="TRUE"), ]
+
+# Look at the histogram - does the probability threshold need to be changed?
+ggplot(contam.prev.species, aes(x=p)) +
+  geom_histogram(bins=100) +
+  scale_y_log10() +
+  ggtitle('Prevalence - Species')
+
+
+```
+
+## MID, CMB
+```{r decontam_data_prep}
+# list out the samples that have all 0 or NA values to remove from the input matrix
+# NA_filter_list <- metadata %>% filter((is.na(SumLibraryConcentration_copies_ul) | SumLibraryConcentration_copies_ul <= 0)) %>% select(Library_ID)
+
+# remove NA value samples from the input data frame
+malt_species_mid.dataframe <- mid_raw %>%
+  rename(Species = `#Datasets`) %>%
+  filter(!str_detect(Species, "Not assigned|Homo sapiens")) %>%
+  select(-one_of(outliers)) %>%
+  select(-one_of(poor_samples)) %>%
+  gather("Library_ID","Counts", 2:ncol(.)) %>%
+  spread(Species,Counts) 
+# %>%
+#   anti_join(., NA_filter_list)
+
+# make a matrix for decontam
+malt_species_mid.matrix <- data.matrix(malt_species_mid.dataframe[2:ncol(malt_species_mid.dataframe)])
+rownames(malt_species_mid.matrix) <- malt_species_mid.dataframe$Library_ID
+
+# make a metadata dataframe with the same NA-containing samples removed
+metadata_mid.decontam <- metadata %>%
+  filter(!str_detect(Library_ID, poor_samples %>% str_c(collapse = "|"))) %>%
+  # anti_join(., NA_filter_list, by = "Library_ID") %>%
+  filter(!str_detect(Library_ID, outliers %>% str_c(collapse = "|"))) %>%
+  filter(str_detect(Library_ID, "MID|CMB|EXB059|LIB058")) %>%
+  filter(Library_ID != "LIB058.A0101") %>% # this sample is not in the metadata
+  arrange(Library_ID) %>%
+  distinct()
+
+# metadata.decontam %>% select(Library_ID) %>%
+#   anti_join(., malt_species.dataframe %>% select(Library_ID))
+
+```
+
+```{r decontam_prevalence}
+# Assign sample-type status to identify control samples
+metadata_mid.decontam$is.control <- metadata_mid.decontam$Sample_or_Control=="Control"
+
+#Try changing the probability threshold cut-off to see how many more or less are ID'd as contaminants
+contam_mid.prev.species <- isContaminant(malt_species_mid.matrix, method="prevalence", 
+                                 neg=metadata_mid.decontam$is.control, 
+                                 threshold = 0.8)
+
+# Check number of contaminants
+table(contam_mid.prev.species$contaminant)
+
+# List of contaminants
+cont_prev_species_list_mid <- contam_mid.prev.species[which(contam_mid.prev.species$contaminant=="TRUE"), ]
+
+# Look at the histogram - does the probability threshold need to be changed?
+ggplot(contam_mid.prev.species, aes(x=p)) +
+  geom_histogram(bins=100) +
+  scale_y_log10() +
+  ggtitle('Prevalence - Species')
+
+
+```
+
+## Radcliffe
+```{r decontam_data_prep}
+# list out the samples that have all 0 or NA values to remove from the input matrix
+# NA_filter_list <- metadata %>% filter((is.na(SumLibraryConcentration_copies_ul) | SumLibraryConcentration_copies_ul <= 0)) %>% select(Library_ID)
+
+# remove NA value samples from the input data frame
+malt_species_rad.dataframe <- radcliffe_raw %>%
+  rename(Species = `#Datasets`) %>%
+  filter(!str_detect(Species, "Not assigned|Homo sapiens")) %>%
+  select(-one_of(outliers)) %>%
+  select(-one_of(poor_samples)) %>%
+  gather("Library_ID","Counts", 2:ncol(.)) %>%
+  spread(Species,Counts) 
+# %>%
+#   anti_join(., NA_filter_list)
+
+# make a matrix for decontam
+malt_species_rad.matrix <- data.matrix(malt_species_rad.dataframe[2:ncol(malt_species_rad.dataframe)])
+rownames(malt_species_rad.matrix) <- malt_species_rad.dataframe$Library_ID
+
+# make a metadata dataframe with the same NA-containing samples removed
+metadata_rad.decontam <- metadata %>%
+  filter(!str_detect(Library_ID, poor_samples %>% str_c(collapse = "|"))) %>%
+  # anti_join(., NA_filter_list, by = "Library_ID") %>%
+  filter(!str_detect(Library_ID, outliers %>% str_c(collapse = "|"))) %>%
+  filter(str_detect(Library_ID, "CS")) %>%
+  arrange(Library_ID) %>%
+  distinct()
+
+# metadata.decontam %>% select(Library_ID) %>%
+#   anti_join(., malt_species.dataframe %>% select(Library_ID))
+
+```
+
+```{r decontam_prevalence}
+# Assign sample-type status to identify control samples
+metadata_rad.decontam$is.control <- metadata_rad.decontam$Sample_or_Control=="Control"
+
+#Try changing the probability threshold cut-off to see how many more or less are ID'd as contaminants
+contam_rad.prev.species <- isContaminant(malt_species_rad.matrix, method="prevalence", 
+                                 neg=metadata_rad.decontam$is.control, 
+                                 threshold = 0.8)
+
+# Check number of contaminants
+table(contam_rad.prev.species$contaminant)
+
+# List of contaminants
+cont_prev_species_list_rad <- contam_rad.prev.species[which(contam_rad.prev.species$contaminant=="TRUE"), ]
+
+# Look at the histogram - does the probability threshold need to be changed?
+ggplot(contam_rad.prev.species, aes(x=p)) +
+  geom_histogram(bins=100) +
+  scale_y_log10() +
+  ggtitle('Prevalence - Species')
+
+
+```
+
+## Iberian medieval
+```{r decontam_data_prep}
+# list out the samples that have all 0 or NA values to remove from the input matrix
+# NA_filter_list <- metadata %>% filter((is.na(SumLibraryConcentration_copies_ul) | SumLibraryConcentration_copies_ul <= 0)) %>% select(Library_ID)
+
+# remove NA value samples from the input data frame
+malt_species_iber.dataframe <- iberian_raw %>%
+  rename(Species = `#Datasets`) %>%
+  filter(!str_detect(Species, "Not assigned|Homo sapiens")) %>%
+  select(-one_of(outliers)) %>%
+  select(-one_of(poor_samples)) %>%
+  gather("Library_ID","Counts", 2:ncol(.)) %>%
+  spread(Species,Counts) 
+# %>%
+#   anti_join(., NA_filter_list)
+
+# make a matrix for decontam
+malt_species_iber.matrix <- data.matrix(malt_species_iber.dataframe[2:ncol(malt_species_iber.dataframe)])
+rownames(malt_species_iber.matrix) <- malt_species_iber.dataframe$Library_ID
+
+# make a metadata dataframe with the same NA-containing samples removed
+metadata_iber.decontam <- metadata %>%
+  filter(!str_detect(Library_ID, poor_samples %>% str_c(collapse = "|"))) %>%
+  # anti_join(., NA_filter_list, by = "Library_ID") %>%
+  filter(!str_detect(Library_ID, outliers %>% str_c(collapse = "|"))) %>%
+  filter(str_detect(Library_ID, "ELR|IVE|EXB015|LIB007")) %>%
+  arrange(Library_ID) %>%
+  distinct()
+
+# metadata.decontam %>% select(Library_ID) %>%
+#   anti_join(., malt_species.dataframe %>% select(Library_ID))
+
+```
+
+```{r decontam_prevalence}
+# Assign sample-type status to identify control samples
+metadata_iber.decontam$is.control <- metadata_iber.decontam$Sample_or_Control=="Control"
+
+#Try changing the probability threshold cut-off to see how many more or less are ID'd as contaminants
+contam_iber.prev.species <- isContaminant(malt_species_iber.matrix, method="prevalence", 
+                                 neg=metadata_iber.decontam$is.control, 
+                                 threshold = 0.8)
+
+# Check number of contaminants
+table(contam_iber.prev.species$contaminant)
+
+# List of contaminants
+cont_prev_species_list_iber <- contam_iber.prev.species[which(contam_iber.prev.species$contaminant=="TRUE"), ]
+
+# Look at the histogram - does the probability threshold need to be changed?
+ggplot(contam_iber.prev.species, aes(x=p)) +
+  geom_histogram(bins=100) +
+  scale_y_log10() +
+  ggtitle('Prevalence - Species')
+
+
+```
+
+## Kilteasheen
+?? No controls available
+
+```{r}
+# Overlapping contaminant species
+cont_prev_species_list_mid %>% rownames_to_column("Species") %>%
+  select(Species) %>% mutate(MID = "Yes") %>%
+  full_join(., cont_prev_species_list_rad %>% rownames_to_column("Species") %>%
+            select(Species) %>% mutate(Radcliffe = "Yes")) %>%
+  full_join(., cont_prev_species_list_iber %>% rownames_to_column("Species") %>%
+            select(Species) %>% mutate(Iberia = "Yes")) %>%
+  mutate(Shared = ifelse(MID == "Yes" & Radcliffe == "Yes" & Iberia == "Yes", "M-R-I", 
+                         ifelse(MID == Radcliffe & is.na(Iberia), "M-R",
+                                ifelse(MID == "Yes" & Iberia == "Yes" & is.na(Radcliffe), "M-I",
+                                       ifelse(Radcliffe == "Yes" & Iberia == "Yes" & is.na(MID), "R-I", "Single")))))
+
+```
+
+
+We'll use the prevalence method, because this doesn't include known oral taxa in the contaminant list (frequency method does), and it picks up a lot more than the combined method does (but is that important if we cut off the tail of low-abundance taxa (say <0.01% abundance) anyway?). But which cut-off to use? How does changing the cut-off affect the tail of low-abundance taxa?
+List out the pathways that are considered contaminants, to be removed from the table prior to all analyses. Then remove them from the table to make the decontaminated input table for analysis. *Note that the genus list includes Actinomyces, and this needs to be removed from the list b/c Actinomyces are a well known oral genus*
+```{r contaminants, eval = F}
+contaminants_species <- cont_prev_species_list %>% rownames_to_column("Species") %>% select(Species)
+malt_species.decontam <- malt_species %>%
+  anti_join(., contaminants_species)
+
+write.table(malt_species.decontam, file = "05-results.backup/malt_species.decontam.tsv", sep="\t", quote=F, row.names = F)
+write.table(malt_species, "05-results.backup/malt_species.tsv", sep="\t", quote=F, row.names = F)
+write.table(contaminants_species, "05-results.backup/malt_contaminants_species.tsv", sep="\t", quote=F, row.names = F)
+
+contaminants_genus <- cont_prev_genus_list %>% rownames_to_column("Species") %>% select(Species) %>% filter(Species != "Actinomyces")
+malt_genus.decontam <- malt_genus %>%
+  anti_join(., contaminants_genus)
+
+write.table(contaminants_genus, "05-results.backup/malt_contaminants_genus.tsv", sep="\t", quote=F, row.names = F)
+
+```
+
+## Not used
+
+Now we're ready to run Decontam. Start with the frequency method. 
+```{r decontam_frequency, eval = F}
+# Check for contamination by fequency
+contam.freq.species <- isContaminant(malt_species.matrix, method="frequency", 
+                                 conc=metadata.decontam$SumLibraryConcentration_copies_ul, 
+                                 threshold = 0.9)
+
+# Print the # of species identified as contaminants by frequency
+table(contam.freq.species$contaminant)
+
+cont_freq_species_list <- contam.freq.species[which(contam.freq.species$contaminant=="TRUE"), ]
+
+# Make a histogram to look at the distribution of the p-value (probability for classifying contaminants)
+
+ggplot(contam.freq.species, aes(x=p)) +
+  geom_histogram(bins=100) +
+  scale_y_log10() +
+  ggtitle('Frequency - Species')
+
+```
+
+Check the combined prevalence and frequency method to see how it differs from the individual methods. 
+```{r decontam_combined, eval=F}
+# Assign sample-type status to identify control samples (same as was done for prevalence)
+metadata.decontam$is.control <- metadata.decontam$Sample_or_Control=="Control"
+
+# Assign contaminant status
+contam.comb.species <- isContaminant(malt_species.matrix, method="combined", 
+                                 conc=metadata.decontam$SumLibraryConcentration_copies_ul, 
+                                 neg=metadata.decontam$is.control,
+                                 threshold = 0.9)
+
+## Check how many contaminants
+table(contam.comb.species$contaminant)
+
+## List of contaminants
+cont_comb_species_list <- contam.comb.species[which(contam.comb.species$contaminant=="TRUE"), ]
+
+# Graph it to look at the histogram and pick a suitable probability-values cut-off
+ggplot(contam.comb.species, aes(x=p)) +
+  geom_histogram(bins=100) +
+  scale_y_log10() +
+  geom_hline(yintercept=10, linetype="dashed", color = "red") +
+  geom_hline(yintercept=2, linetype="dashed", color = "red") +
+  ggtitle('Combined - Species')
+
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
