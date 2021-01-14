@@ -1,49 +1,49 @@
-Site	Individual_ID	Library_ID	Sample_or_Control	Extraction_protocol	Library_protocol	Study_accession	Sequencing_type	Age	Sex	Caries_present	Periodontal_disease_present
-Radcliffe	CS01	CS01	Sample	Oxford_calculus	Oxford_calculus	PRJEB30331	Paired-end	18-24 	F	Yes	Yes
-Radcliffe	CS02	CS02	Sample	Oxford_calculus	Oxford_calculus	PRJEB30331	Paired-end	25-34 	M	Yes	Yes
-Radcliffe	CS03	CS03	Sample	Oxford_calculus	Oxford_calculus	PRJEB30331	Paired-end	35-44 	F	Yes	Yes
-Radcliffe	CS04	CS04	Sample	Oxford_calculus	Oxford_calculus	PRJEB30331	Paired-end	18-24 	M	Yes	Yes
-Radcliffe	CS07	CS07	Sample	Oxford_calculus	Oxford_calculus	PRJEB30331	Paired-end	25-34 	M	Yes	Yes
-Radcliffe	CS08	CS08	Sample	Oxford_calculus	Oxford_calculus	PRJEB30331	Paired-end	25-34 	M	Yes	Yes
-Radcliffe	CS09	CS09	Sample	Oxford_calculus	Oxford_calculus	PRJEB30331	Paired-end	25-34 	M	Yes	Yes
-Radcliffe	CS10	CS10	Sample	Oxford_calculus	Oxford_calculus	PRJEB30331	Paired-end	25-34 	M	Yes	Yes
-Radcliffe	CS11	CS11	Sample	Oxford_calculus	Oxford_calculus	PRJEB30331	Paired-end	18-24 	M	Yes	No
-Radcliffe	CS12	CS12	Sample	Oxford_calculus	Oxford_calculus	PRJEB30331	Paired-end	35-44 	M	Yes	Yes
-Radcliffe	CS13	CS13	Sample	Oxford_calculus	Oxford_calculus	PRJEB30331	Paired-end	25-34 	M	Yes	Yes
-Radcliffe	CS14	CS14	Sample	Oxford_calculus	Oxford_calculus	PRJEB30331	Paired-end	25-34 	M	Yes	Yes
-Radcliffe	CS15	CS15	Sample	Oxford_calculus	Oxford_calculus	PRJEB30331	Paired-end	25-34 	F	Yes	Yes
-Radcliffe	CS16	CS16	Sample	Oxford_calculus	Oxford_calculus	PRJEB30331	Paired-end	25-34 	M	Yes	Yes
-Radcliffe	CS17	CS17	Sample	Oxford_calculus	Oxford_calculus	PRJEB30331	Paired-end	25-34 	F	Yes	Yes
-Radcliffe	CS18	CS18	Sample	Oxford_calculus	Oxford_calculus	PRJEB30331	Paired-end	35-44 	M	No	Yes
-Radcliffe	CS19	CS19	Sample	Oxford_calculus	Oxford_calculus	PRJEB30331	Paired-end	35-44 	M	Yes	Yes
-Radcliffe	CS20	CS20	Sample	Oxford_calculus	Oxford_calculus	PRJEB30331	Paired-end	35-44 	M	Yes	Yes
-Radcliffe	CS21	CS21	Sample	Oxford_calculus	Oxford_calculus	PRJEB30331	Paired-end	25-34 	M	No	No
-Radcliffe	CS22	CS22	Sample	Oxford_calculus	Oxford_calculus	PRJEB30331	Paired-end	25-34 	M	Yes	Yes
-Radcliffe	CS23	CS23	Sample	Oxford_calculus	Oxford_calculus	PRJEB30331	Paired-end	25-34 	F	Yes	Yes
-Radcliffe	CS24	CS24	Sample	Oxford_calculus	Oxford_calculus	PRJEB30331	Paired-end	35-44 	F	Yes	Yes
-Radcliffe	CS26	CS26	Sample	Oxford_calculus	Oxford_calculus	PRJEB30331	Paired-end	35-44 	M	Yes	Yes
-Radcliffe	CS27	CS27	Sample	Oxford_calculus	Oxford_calculus	PRJEB30331	Paired-end	25-34 	M	Yes	Yes
-Radcliffe	CS28	CS28	Sample	Oxford_calculus	Oxford_calculus	PRJEB30331	Paired-end	35-44 	F	Yes	Yes
-Radcliffe	CS29	CS29	Sample	Oxford_calculus	Oxford_calculus	PRJEB30331	Paired-end	25-34 	M	Yes	Yes
-Radcliffe	CS30	CS30	Sample	Oxford_calculus	Oxford_calculus	PRJEB30331	Paired-end	18-24 	F	Yes	No
-Radcliffe	CS31	CS31	Sample	Oxford_calculus	Oxford_calculus	PRJEB30331	Paired-end	35-44 	F	Yes	Yes
-Radcliffe	CS32	CS32	Sample	Oxford_calculus	Oxford_calculus	PRJEB30331	Paired-end	35-44 	M	Yes	Yes
-Radcliffe	CS33	CS33	Sample	Oxford_calculus	Oxford_calculus	PRJEB30331	Paired-end	35-44 	M	Yes	Yes
-Radcliffe	CS34	CS34	Sample	Oxford_calculus	Oxford_calculus	PRJEB30331	Paired-end	25-34 	F	No	Yes
-Radcliffe	CS35	CS35	Sample	Oxford_calculus	Oxford_calculus	PRJEB30331	Paired-end	25-34 	M	Yes	Yes
-Radcliffe	CS36	CS36	Sample	Oxford_calculus	Oxford_calculus	PRJEB30331	Paired-end	35-44 	F	Yes	Yes
-Radcliffe	CS37	CS37	Sample	Oxford_calculus	Oxford_calculus	PRJEB30331	Paired-end	35-44 	M	Yes	Yes
-Radcliffe	CS38	CS38	Sample	Oxford_calculus	Oxford_calculus	PRJEB30331	Paired-end	18-24 	M	Yes	Yes
-Radcliffe	CS39	CS39	Sample	Oxford_calculus	Oxford_calculus	PRJEB30331	Paired-end	35-44 	M	No	Yes
-Radcliffe	CS40	CS40	Sample	Oxford_calculus	Oxford_calculus	PRJEB30331	Paired-end	35-44 	M	No	No
-Radcliffe	CS42	CS42	Sample	Oxford_calculus	Oxford_calculus	PRJEB30331	Paired-end	18-24 	M	No	No
-Radcliffe	CS43	CS43	Sample	Oxford_calculus	Oxford_calculus	PRJEB30331	Paired-end	25-34 	M	Yes	Yes
-Radcliffe	CS44	CS44	Sample	Oxford_calculus	Oxford_calculus	PRJEB30331	Paired-end	35-44 	F	Yes	Yes
-Radcliffe	CS45	CS45	Sample	Oxford_calculus	Oxford_calculus	PRJEB30331	Paired-end	25-34 	M	No	Yes
-Radcliffe	CS46	CS46	Sample	Oxford_calculus	Oxford_calculus	PRJEB30331	Paired-end	35-44 	F	Yes	Yes
-Radcliffe	CS47	CS47	Sample	Oxford_calculus	Oxford_calculus	PRJEB30331	Paired-end	25-34 	M	Yes	Yes
-Radcliffe	CS48	CS48	Sample	Oxford_calculus	Oxford_calculus	PRJEB30331	Paired-end	35-44 	M	Yes	Yes
-Dentin	CSD	CSD	NA	Oxford_calculus	Oxford_calculus	PRJEB30331	Paired-end	NA	NA	NA	NA
-Library_blank	CSL	CSL	Control	Oxford_calculus	Oxford_calculus	PRJEB30331	Paired-end	NA	NA	NA	NA
-Extraction_blank	CSN	CSN	Control	Oxford_calculus	Oxford_calculus	PRJEB30331	Paired-end	NA	NA	NA	NA
-Soil	CSS	CSS	NA	Oxford_calculus	Oxford_calculus	PRJEB30331	Paired-end	NA	NA	NA	NA
+Site	Time_period	Region	Individual_ID	Library_ID	Sample_or_Control	Extraction_protocol	Library_protocol	Study_accession	Sequencing_type	Age	Sex	Caries_present	Periodontal_disease_present
+Radcliffe	Industrial	England	CS01	CS01	Sample	Oxford_calculus	Oxford_calculus	PRJEB30331	Paired-end	18-24 	F	Yes	Yes
+Radcliffe	Industrial	England	CS02	CS02	Sample	Oxford_calculus	Oxford_calculus	PRJEB30331	Paired-end	25-34 	M	Yes	Yes
+Radcliffe	Industrial	England	CS03	CS03	Sample	Oxford_calculus	Oxford_calculus	PRJEB30331	Paired-end	35-44 	F	Yes	Yes
+Radcliffe	Industrial	England	CS04	CS04	Sample	Oxford_calculus	Oxford_calculus	PRJEB30331	Paired-end	18-24 	M	Yes	Yes
+Radcliffe	Industrial	England	CS07	CS07	Sample	Oxford_calculus	Oxford_calculus	PRJEB30331	Paired-end	25-34 	M	Yes	Yes
+Radcliffe	Industrial	England	CS08	CS08	Sample	Oxford_calculus	Oxford_calculus	PRJEB30331	Paired-end	25-34 	M	Yes	Yes
+Radcliffe	Industrial	England	CS09	CS09	Sample	Oxford_calculus	Oxford_calculus	PRJEB30331	Paired-end	25-34 	M	Yes	Yes
+Radcliffe	Industrial	England	CS10	CS10	Sample	Oxford_calculus	Oxford_calculus	PRJEB30331	Paired-end	25-34 	M	Yes	Yes
+Radcliffe	Industrial	England	CS11	CS11	Sample	Oxford_calculus	Oxford_calculus	PRJEB30331	Paired-end	18-24 	M	Yes	No
+Radcliffe	Industrial	England	CS12	CS12	Sample	Oxford_calculus	Oxford_calculus	PRJEB30331	Paired-end	35-44 	M	Yes	Yes
+Radcliffe	Industrial	England	CS13	CS13	Sample	Oxford_calculus	Oxford_calculus	PRJEB30331	Paired-end	25-34 	M	Yes	Yes
+Radcliffe	Industrial	England	CS14	CS14	Sample	Oxford_calculus	Oxford_calculus	PRJEB30331	Paired-end	25-34 	M	Yes	Yes
+Radcliffe	Industrial	England	CS15	CS15	Sample	Oxford_calculus	Oxford_calculus	PRJEB30331	Paired-end	25-34 	F	Yes	Yes
+Radcliffe	Industrial	England	CS16	CS16	Sample	Oxford_calculus	Oxford_calculus	PRJEB30331	Paired-end	25-34 	M	Yes	Yes
+Radcliffe	Industrial	England	CS17	CS17	Sample	Oxford_calculus	Oxford_calculus	PRJEB30331	Paired-end	25-34 	F	Yes	Yes
+Radcliffe	Industrial	England	CS18	CS18	Sample	Oxford_calculus	Oxford_calculus	PRJEB30331	Paired-end	35-44 	M	No	Yes
+Radcliffe	Industrial	England	CS19	CS19	Sample	Oxford_calculus	Oxford_calculus	PRJEB30331	Paired-end	35-44 	M	Yes	Yes
+Radcliffe	Industrial	England	CS20	CS20	Sample	Oxford_calculus	Oxford_calculus	PRJEB30331	Paired-end	35-44 	M	Yes	Yes
+Radcliffe	Industrial	England	CS21	CS21	Sample	Oxford_calculus	Oxford_calculus	PRJEB30331	Paired-end	25-34 	M	No	No
+Radcliffe	Industrial	England	CS22	CS22	Sample	Oxford_calculus	Oxford_calculus	PRJEB30331	Paired-end	25-34 	M	Yes	Yes
+Radcliffe	Industrial	England	CS23	CS23	Sample	Oxford_calculus	Oxford_calculus	PRJEB30331	Paired-end	25-34 	F	Yes	Yes
+Radcliffe	Industrial	England	CS24	CS24	Sample	Oxford_calculus	Oxford_calculus	PRJEB30331	Paired-end	35-44 	F	Yes	Yes
+Radcliffe	Industrial	England	CS26	CS26	Sample	Oxford_calculus	Oxford_calculus	PRJEB30331	Paired-end	35-44 	M	Yes	Yes
+Radcliffe	Industrial	England	CS27	CS27	Sample	Oxford_calculus	Oxford_calculus	PRJEB30331	Paired-end	25-34 	M	Yes	Yes
+Radcliffe	Industrial	England	CS28	CS28	Sample	Oxford_calculus	Oxford_calculus	PRJEB30331	Paired-end	35-44 	F	Yes	Yes
+Radcliffe	Industrial	England	CS29	CS29	Sample	Oxford_calculus	Oxford_calculus	PRJEB30331	Paired-end	25-34 	M	Yes	Yes
+Radcliffe	Industrial	England	CS30	CS30	Sample	Oxford_calculus	Oxford_calculus	PRJEB30331	Paired-end	18-24 	F	Yes	No
+Radcliffe	Industrial	England	CS31	CS31	Sample	Oxford_calculus	Oxford_calculus	PRJEB30331	Paired-end	35-44 	F	Yes	Yes
+Radcliffe	Industrial	England	CS32	CS32	Sample	Oxford_calculus	Oxford_calculus	PRJEB30331	Paired-end	35-44 	M	Yes	Yes
+Radcliffe	Industrial	England	CS33	CS33	Sample	Oxford_calculus	Oxford_calculus	PRJEB30331	Paired-end	35-44 	M	Yes	Yes
+Radcliffe	Industrial	England	CS34	CS34	Sample	Oxford_calculus	Oxford_calculus	PRJEB30331	Paired-end	25-34 	F	No	Yes
+Radcliffe	Industrial	England	CS35	CS35	Sample	Oxford_calculus	Oxford_calculus	PRJEB30331	Paired-end	25-34 	M	Yes	Yes
+Radcliffe	Industrial	England	CS36	CS36	Sample	Oxford_calculus	Oxford_calculus	PRJEB30331	Paired-end	35-44 	F	Yes	Yes
+Radcliffe	Industrial	England	CS37	CS37	Sample	Oxford_calculus	Oxford_calculus	PRJEB30331	Paired-end	35-44 	M	Yes	Yes
+Radcliffe	Industrial	England	CS38	CS38	Sample	Oxford_calculus	Oxford_calculus	PRJEB30331	Paired-end	18-24 	M	Yes	Yes
+Radcliffe	Industrial	England	CS39	CS39	Sample	Oxford_calculus	Oxford_calculus	PRJEB30331	Paired-end	35-44 	M	No	Yes
+Radcliffe	Industrial	England	CS40	CS40	Sample	Oxford_calculus	Oxford_calculus	PRJEB30331	Paired-end	35-44 	M	No	No
+Radcliffe	Industrial	England	CS42	CS42	Sample	Oxford_calculus	Oxford_calculus	PRJEB30331	Paired-end	18-24 	M	No	No
+Radcliffe	Industrial	England	CS43	CS43	Sample	Oxford_calculus	Oxford_calculus	PRJEB30331	Paired-end	25-34 	M	Yes	Yes
+Radcliffe	Industrial	England	CS44	CS44	Sample	Oxford_calculus	Oxford_calculus	PRJEB30331	Paired-end	35-44 	F	Yes	Yes
+Radcliffe	Industrial	England	CS45	CS45	Sample	Oxford_calculus	Oxford_calculus	PRJEB30331	Paired-end	25-34 	M	No	Yes
+Radcliffe	Industrial	England	CS46	CS46	Sample	Oxford_calculus	Oxford_calculus	PRJEB30331	Paired-end	35-44 	F	Yes	Yes
+Radcliffe	Industrial	England	CS47	CS47	Sample	Oxford_calculus	Oxford_calculus	PRJEB30331	Paired-end	25-34 	M	Yes	Yes
+Radcliffe	Industrial	England	CS48	CS48	Sample	Oxford_calculus	Oxford_calculus	PRJEB30331	Paired-end	35-44 	M	Yes	Yes
+Dentin	Dentin	Dentin	CSD	CSD	NA	Oxford_calculus	Oxford_calculus	PRJEB30331	Paired-end	NA	NA	NA	NA
+Library_blank	Library_blank	Library_blank	CSL	CSL	Control	Oxford_calculus	Oxford_calculus	PRJEB30331	Paired-end	NA	NA	NA	NA
+Extraction_blank	Extraction_blank	Extraction_blank	CSN	CSN	Control	Oxford_calculus	Oxford_calculus	PRJEB30331	Paired-end	NA	NA	NA	NA
+Soil	Soil	Soil	CSS	CSS	NA	Oxford_calculus	Oxford_calculus	PRJEB30331	Paired-end	NA	NA	NA	NA

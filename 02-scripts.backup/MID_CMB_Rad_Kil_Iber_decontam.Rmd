@@ -1,5 +1,5 @@
 ---
-title: "Cameroon hunter-gatherer calculus/plaque MALT decontam"
+title: "MID/CMB, Radcliffe, Kilteasheen, Iberian medieval calculus MALT decontam"
 author: "Irina Velsko"
 date: "`r format(Sys.time(), '%b %d, %Y')`"
 output:
@@ -335,7 +335,7 @@ metadata_mid.decontam$is.control <- metadata_mid.decontam$Sample_or_Control=="Co
 #Try changing the probability threshold cut-off to see how many more or less are ID'd as contaminants
 contam_mid.prev.species <- isContaminant(malt_species_mid.matrix, method="prevalence", 
                                  neg=metadata_mid.decontam$is.control, 
-                                 threshold = 0.8)
+                                 threshold = 0.2)
 
 # Check number of contaminants
 table(contam_mid.prev.species$contaminant)
@@ -386,6 +386,9 @@ metadata_rad.decontam <- metadata %>%
 
 ```
 
+All of the taxa identified in the Radcliffe data as contaminants are still
+clearly oral taxa. I won't remove any of these species because I don't want to
+remove true oral taxa
 ```{r decontam_prevalence}
 # Assign sample-type status to identify control samples
 metadata_rad.decontam$is.control <- metadata_rad.decontam$Sample_or_Control=="Control"
@@ -393,7 +396,7 @@ metadata_rad.decontam$is.control <- metadata_rad.decontam$Sample_or_Control=="Co
 #Try changing the probability threshold cut-off to see how many more or less are ID'd as contaminants
 contam_rad.prev.species <- isContaminant(malt_species_rad.matrix, method="prevalence", 
                                  neg=metadata_rad.decontam$is.control, 
-                                 threshold = 0.8)
+                                 threshold = 0.05)
 
 # Check number of contaminants
 table(contam_rad.prev.species$contaminant)
@@ -451,7 +454,7 @@ metadata_iber.decontam$is.control <- metadata_iber.decontam$Sample_or_Control=="
 #Try changing the probability threshold cut-off to see how many more or less are ID'd as contaminants
 contam_iber.prev.species <- isContaminant(malt_species_iber.matrix, method="prevalence", 
                                  neg=metadata_iber.decontam$is.control, 
-                                 threshold = 0.8)
+                                 threshold = 0.7)
 
 # Check number of contaminants
 table(contam_iber.prev.species$contaminant)
@@ -479,30 +482,31 @@ cont_prev_species_list_mid %>% rownames_to_column("Species") %>%
             select(Species) %>% mutate(Radcliffe = "Yes")) %>%
   full_join(., cont_prev_species_list_iber %>% rownames_to_column("Species") %>%
             select(Species) %>% mutate(Iberia = "Yes")) %>%
-  mutate(Shared = ifelse(MID == "Yes" & Radcliffe == "Yes" & Iberia == "Yes", "M-R-I", 
-                         ifelse(MID == Radcliffe & is.na(Iberia), "M-R",
-                                ifelse(MID == "Yes" & Iberia == "Yes" & is.na(Radcliffe), "M-I",
-                                       ifelse(Radcliffe == "Yes" & Iberia == "Yes" & is.na(MID), "R-I", "Single")))))
+  replace(is.na(.), "No") %>%
+  mutate(Shared = ifelse(MID == "Yes" & Radcliffe == "Yes" & Iberia == "Yes", "M-R-I",
+                         ifelse(MID == "Yes"& Radcliffe == "Yes" & Iberia == "No", "M-R",
+                                ifelse(MID == "Yes" & Iberia == "Yes" & Radcliffe == "No", "M-I",
+                                       ifelse(Radcliffe == "Yes" & Iberia == "Yes" & MID == "No", "R-I", "Single"))))) %>%
+  filter(Shared == "Single")
+
+# the majority of the identified contaminants are unique to one group
+
 
 ```
 
 
-We'll use the prevalence method, because this doesn't include known oral taxa in the contaminant list (frequency method does), and it picks up a lot more than the combined method does (but is that important if we cut off the tail of low-abundance taxa (say <0.01% abundance) anyway?). But which cut-off to use? How does changing the cut-off affect the tail of low-abundance taxa?
-List out the pathways that are considered contaminants, to be removed from the table prior to all analyses. Then remove them from the table to make the decontaminated input table for analysis. *Note that the genus list includes Actinomyces, and this needs to be removed from the list b/c Actinomyces are a well known oral genus*
-```{r contaminants, eval = F}
-contaminants_species <- cont_prev_species_list %>% rownames_to_column("Species") %>% select(Species)
-malt_species.decontam <- malt_species %>%
-  anti_join(., contaminants_species)
+Most of the species in the Radcliffe contaminants list are oral taxa, no matter
+how low the cut-off is set. We won't use decontam to remove any taxa from
+Radcliffe because of this. The Kileasheen samples have no associated blank
+samples, so they'll be cleaned up by an abundance cut-off. The MID/CMB and
+Iberian medieval samples will have contaminants removed based on the prevalence
+method.
+```{r contaminants}
+contaminant_species_mid <- cont_prev_species_list_mid %>% rownames_to_column("Species") %>% select(Species)
+fwrite(contaminant_species_mid, file = "./05-results.backup/contaminant_species_mid.tsv", sep="\t", quote=F)
 
-write.table(malt_species.decontam, file = "05-results.backup/malt_species.decontam.tsv", sep="\t", quote=F, row.names = F)
-write.table(malt_species, "05-results.backup/malt_species.tsv", sep="\t", quote=F, row.names = F)
-write.table(contaminants_species, "05-results.backup/malt_contaminants_species.tsv", sep="\t", quote=F, row.names = F)
-
-contaminants_genus <- cont_prev_genus_list %>% rownames_to_column("Species") %>% select(Species) %>% filter(Species != "Actinomyces")
-malt_genus.decontam <- malt_genus %>%
-  anti_join(., contaminants_genus)
-
-write.table(contaminants_genus, "05-results.backup/malt_contaminants_genus.tsv", sep="\t", quote=F, row.names = F)
+contaminant_species_iber <- cont_prev_species_list_iber %>% rownames_to_column("Species") %>% select(Species)
+fwrite(contaminant_species_iber, file = "./05-results.backup/contaminant_species_iber.tsv", sep="\t", quote=F)
 
 ```
 
