@@ -1,0 +1,277 @@
+# Smokers calculus (Middenbeemster calculus) Notes
+
+################################################################
+
+# eager2 to process data
+
+
+# use the KappaHiFiUracil+ data b/c the enzyme is a proofreading one and it should show damage patterns
+# also it seems to be slightly deeper sequenced than the PFU turbo library sequence data
+# run fastQC on the files here to see if they still have internal index sequences that need to be removed: 
+# /projects1/microbiome_sciences/raw_data/external.backup/PaleoBARN/kapaHiFiU_libraries/raw_reads/ENAupload
+
+#!/usr/bin/env bash
+
+#SBATCH -c 4
+#SBATCH --mem=32000
+#SBATCH --partition=long
+#SBATCH -o /projects1/clusterhomes/velsko/slurm_logs/slurm.%j.out
+#SBATCH -e /projects1/clusterhomes/velsko/slurm_logs/slurm.%j.err
+#SBATCH --mail-type=fail
+#SBATCH --mail-type=time_limit
+#SBATCH --mail-use=velsko@shh.mpg.de
+#SBATCH --array=0-99%4
+#SBATCH -J "rad_fastqc"
+
+SAMPLES=( $(find /projects1/microbiome_sciences/raw_data/external.backup/PaleoBARN/kapaHiFiU_libraries/raw_reads/ENAupload/ -name '*.gz' -type f) )
+SAMPLENAME=${SAMPLES[$SLURM_ARRAY_TASK_ID]}
+
+fastqc "${SAMPLENAME}" -o /projects1/microbiome_sciences/raw_data/external.backup/PaleoBARN/kapaHiFiU_libraries/raw_reads/ENAupload/FastQC
+
+# symlink the files to a new folder and give them in-house-style names
+/projects1/microbiome_sciences/raw_data/external.backup/PaleoBARN/kapaHiFiU_libraries/raw_reads/inhouseformat
+
+# ran AdapterRemoval --identify-adapters on several and it didn't pick up the internal index, so run them through 
+# eager2 and then check post AR fastqc to see if they have an internal barcode that still needs to be removed
+
+
+
+nextflow run nf-core/eager \
+-r dev 588e470e2a \
+-profile microbiome_screening,shh \
+--outdir /projects1/microbiome_sciences/raw_data/external.backup/PaleoBARN/kapaHiFiU_libraries/adapter_removed/MPI-SHH/eager2 \
+-work-dir /projects1/microbiome_sciences/raw_data/external.backup/PaleoBARN/kapaHiFiU_libraries/adapter_removed/MPI-SHH/work \
+--input /projects1/microbiome_calculus/strepSABP/00-documentation.backup/Radcliffe_kHFu_eager2.tsv \
+--fasta /projects1/Reference_Genomes/Human/HG19/hg19_complete.fasta \
+--bwa_index /projects1/Reference_Genomes/Human/HG19/ \
+--bwaalnn 0.02 \
+--bwaalnl 1024 \
+--run_bam_filtering \
+--bam_discard_unmapped \
+--bam_unmapped_type fastq \
+--skip_damage_calculation \
+--skip_qualimap \
+--email velsko@shh.mpg.de \
+-name radcliffe_kHFu \
+-with-tower
+
+
+
+
+# from the fastqc after adapter removal, we can see there is still a 6bp internal barcode on each read
+# remove this internal barcode with cutadapt
+
+#!/usr/bin/env bash
+
+#SBATCH -c 4
+#SBATCH --mem=32000
+#SBATCH --partition=long
+#SBATCH -o /projects1/clusterhomes/velsko/slurm_logs/slurm.%j.out
+#SBATCH -e /projects1/clusterhomes/velsko/slurm_logs/slurm.%j.err
+#SBATCH --mail-type=fail
+#SBATCH --mail-type=time_limit
+#SBATCH --mail-use=velsko@shh.mpg.de
+#SBATCH --array=0-99%4
+#SBATCH -J "rad_fastqc"
+
+SAMPLES=( $(find /projects1/microbiome_sciences/raw_data/external.backup/PaleoBARN/kapaHiFiU_libraries/adapter_removed/MPI-SHH/eager2/samtools/filter -name '*.gz' -type f | rev | cut -d/ -f1 | rev) )
+SAMPLENAME=${SAMPLES[$SLURM_ARRAY_TASK_ID]}
+
+cutadapt -u 6 -o /projects1/microbiome_sciences/raw_data/external.backup/PaleoBARN/kapaHiFiU_libraries/adapter_removed/MPI-SHH/internal_index_removed/$(basename "${SAMPLENAME}" .unmapped.fastq.gz).unmapped.clip.fastq.gz /projects1/microbiome_sciences/raw_data/external.backup/PaleoBARN/kapaHiFiU_libraries/adapter_removed/MPI-SHH/eager2/samtools/filter/"${SAMPLENAME}"
+
+
+# now check them with fastqc to make sure the 6 bases are gone
+#!/usr/bin/env bash
+
+#SBATCH -c 4
+#SBATCH --mem=32000
+#SBATCH --partition=short
+#SBATCH -o /projects1/clusterhomes/velsko/slurm_logs/slurm.%j.out
+#SBATCH -e /projects1/clusterhomes/velsko/slurm_logs/slurm.%j.err
+#SBATCH --mail-type=fail
+#SBATCH --mail-type=time_limit
+#SBATCH --mail-use=velsko@shh.mpg.de
+#SBATCH --array=0-49%4
+#SBATCH -J "rad_fastqc"
+
+SAMPLES=( $(find /projects1/microbiome_sciences/raw_data/external.backup/PaleoBARN/kapaHiFiU_libraries/adapter_removed/MPI-SHH/internal_index_removed/ -name '*.gz' -type f) )
+SAMPLENAME=${SAMPLES[$SLURM_ARRAY_TASK_ID]}
+
+fastqc "${SAMPLENAME}" -o /projects1/microbiome_sciences/raw_data/external.backup/PaleoBARN/kapaHiFiU_libraries/adapter_removed/MPI-SHH/internal_index_removed/FastQC
+
+
+rename 's/.unmapped.clip.fastq.gz/_unmapped.clip.fastq.gz/' *.unmapped.clip.fastq.gz
+
+#####
+# repeat with the PFUTurbo libraries
+nextflow run nf-core/eager \
+-r 2.2.1 \
+-profile microbiome_screening,shh \
+--outdir /projects1/microbiome_sciences/raw_data/external.backup/PaleoBARN/pfu_turbo_libraries/adapter_removed/MPI-SHH/eager2 \
+-work-dir /projects1/microbiome_sciences/raw_data/external.backup/PaleoBARN/pfu_turbo_libraries/adapter_removed/MPI-SHH/work \
+--input /projects1/microbiome_sciences/raw_data/external.backup/PaleoBARN/pfu_turbo_libraries/Radcliffe_PFUturbo_eager2_map_human.tsv \
+--fasta /projects1/Reference_Genomes/Human/HG19/hg19_complete.fasta \
+--bwa_index /projects1/Reference_Genomes/Human/HG19/ \
+--bwaalnn 0.02 \
+--bwaalnl 1024 \
+--run_bam_filtering \
+--bam_discard_unmapped \
+--bam_unmapped_type fastq \
+--skip_damage_calculation \
+--skip_qualimap \
+--email velsko@shh.mpg.de \
+-name radcliffe_pfuT \
+-with-tower
+
+# Check the fastQC files from eager after adapter removal to see if they have this 6bp internal index still attached
+
+#!/usr/bin/env bash
+
+#SBATCH -c 4
+#SBATCH --mem=32000
+#SBATCH --partition=long
+#SBATCH -o /projects1/clusterhomes/velsko/slurm_logs/slurm.%j.out
+#SBATCH -e /projects1/clusterhomes/velsko/slurm_logs/slurm.%j.err
+#SBATCH --mail-type=fail
+#SBATCH --mail-type=time_limit
+#SBATCH --mail-use=velsko@shh.mpg.de
+#SBATCH --array=0-99%4
+#SBATCH -J "rad_cut6"
+
+SAMPLES=( $(find /projects1/microbiome_sciences/raw_data/external.backup/PaleoBARN/pfu_turbo_libraries/adapter_removed/MPI-SHH/eager2/samtools/filter -name '*.gz' -type f | rev | cut -d/ -f1 | rev) )
+SAMPLENAME=${SAMPLES[$SLURM_ARRAY_TASK_ID]}
+
+cutadapt -u 6 -o /projects1/microbiome_sciences/raw_data/external.backup/PaleoBARN/pfu_turbo_libraries/adapter_removed/MPI-SHH/internal_index_removed/$(basename "${SAMPLENAME}" .unmapped.fastq.gz).unmapped.clip.fastq.gz /projects1/microbiome_sciences/raw_data/external.backup/PaleoBARN/pfu_turbo_libraries/adapter_removed/MPI-SHH/eager2/samtools/filter/"${SAMPLENAME}"
+
+
+# now check them with fastqc to make sure the 6 bases are gone
+#!/usr/bin/env bash
+
+#SBATCH -c 4
+#SBATCH --mem=32000
+#SBATCH --partition=short
+#SBATCH -o /projects1/clusterhomes/velsko/slurm_logs/slurm.%j.out
+#SBATCH -e /projects1/clusterhomes/velsko/slurm_logs/slurm.%j.err
+#SBATCH --mail-type=fail
+#SBATCH --mail-type=time_limit
+#SBATCH --mail-use=velsko@shh.mpg.de
+#SBATCH --array=0-49%4
+#SBATCH -J "rad_fastqc"
+
+SAMPLES=( $(find /projects1/microbiome_sciences/raw_data/external.backup/PaleoBARN/pfu_turbo_libraries/adapter_removed/MPI-SHH/internal_index_removed/ -name '*.gz' -type f) )
+SAMPLENAME=${SAMPLES[$SLURM_ARRAY_TASK_ID]}
+
+fastqc "${SAMPLENAME}" -o /projects1/microbiome_sciences/raw_data/external.backup/PaleoBARN/pfu_turbo_libraries/adapter_removed/MPI-SHH/internal_index_removed/FastQC
+
+
+rename 's/.unmapped.clip.fastq.gz/_unmapped.clip.fastq.gz/' *.unmapped.clip.fastq.gz
+
+#!/bin/bash
+
+#SBATCH -n 4
+#SBATCH --mem 4G
+#SBATCH --partition=short
+#SBATCH -o /projects1/clusterhomes/velsko/slurm_logs/slurm.%j.mapdmg.out
+#SBATCH -e /projects1/clusterhomes/velsko/slurm_logs/slurm.%j.mapdmg.err
+#SBATCH --mail-type=fail
+#SBATCH --mail-type=time_limit
+#SBATCH --mail-use=velsko@shh.mpg.de
+#SBATCH -J "mpdmg"
+
+
+for f in CS3*; do
+
+bwa aln -n 0.02 -l 1024 /projects1/microbiome_sciences/reference_genomes/Tannerella_forsythia/Tannerella_forsythia_9212.fa $f > ./mapdamage/$(basename $f unmapped.clip.fastq.gz)Tf.sai
+
+bwa samse /projects1/microbiome_sciences/reference_genomes/Tannerella_forsythia/Tannerella_forsythia_9212.fa ./mapdamage/$(basename $f unmapped.clip.fastq.gz)Tf.sai $f > ./mapdamage/$(basename $f unmapped.clip.fastq.gz)Tf.sam
+
+samtools view -bS ./mapdamage/$(basename $f unmapped.clip.fastq.gz)Tf.sam | samtools sort - ./mapdamage/$(basename $f unmapped.clip.fastq.gz)Tf
+
+samtools rmdup -s ./mapdamage/$(basename $f unmapped.clip.fastq.gz)Tf.bam ./mapdamage/$(basename $f unmapped.clip.fastq.gz)Tf.rmdup.bam
+
+/projects1/tools/mapdamage_2.0.6/mapDamage -i ./mapdamage/$(basename $f unmapped.clip.fastq.gz)Tf.rmdup.bam -r /projects1/microbiome_sciences/reference_genomes/Tannerella_forsythia
+
+rm ./mapdamage/*.sam
+
+done
+
+# and finally run eager2 again to profile the samples to compare with the KappHiFiU+ profiles
+# if they are similar, combine the libraries with another eager2 run and make a new MALT profile
+
+nextflow run nf-core/eager \
+-r 2.2.1 \
+-profile microbiome_screening,shh \
+--outdir /projects1/microbiome_calculus/smokers_calculus/03-preprocessing/radcliffe_pfuT/eager2 \
+-work-dir /projects1/microbiome_calculus/smokers_calculus/03-preprocessing/radcliffe_pfuT/work \
+--input /projects1/microbiome_calculus/smokers_calculus/00-documentation.backup/radcliffe_pfuT_eager2_input.tsv \
+--fasta /projects1/microbiome_sciences/reference_genomes/Coliphage_phiX-174/Coliphage_phiX-174.fa \
+--bwa_index /projects1/microbiome_sciences/reference_genomes/Coliphage_phiX-174/ \
+--bwaalnn 0.02 \
+--bwaalnl 1024 \
+--run_bam_filtering \
+--bam_discard_unmapped \
+--bam_unmapped_type fastq \
+--skip_damage_calculation \
+--skip_qualimap \
+--run_metagenomic_screening \
+--metagenomic_tool malt \
+--database /projects1/microbiome_sciences/reference_databases/built/refseq/bacteria_archea_homo_20181122/malt/ \
+--malt_sam_output \
+--email velsko@shh.mpg.de \
+-name radcliffe_pfuT_tsv \
+-with-tower
+
+
+##############
+# For Lena's smokers calc project
+
+# Kilteasheen 
+nextflow run nf-core/eager \
+-r 2.2.1 \
+-profile microbiome_screening,shh \
+--outdir /projects1/microbiome_calculus/smokers_calculus/03-preprocessing/kilteasheen/eager2 \
+-work-dir /projects1/microbiome_calculus/smokers_calculus/03-preprocessing/kilteasheen/work \
+--input /projects1/microbiome_calculus/smokers_calculus/00-documentation.backup/kilteasheen_eager2_input.tsv \
+--complexity_filter_poly_g \
+--fasta /projects1/Reference_Genomes/Human/HG19/hg19_complete.fasta \
+--bwa_index /projects1/Reference_Genomes/Human/HG19/ \
+--bwaalnn 0.02 \
+--bwaalnl 1024 \
+--run_bam_filtering \
+--bam_discard_unmapped \
+--bam_unmapped_type fastq \
+--skip_damage_calculation \
+--skip_qualimap \
+--run_metagenomic_screening \
+--metagenomic_tool malt \
+--database /projects1/microbiome_sciences/reference_databases/built/refseq/bacteria_archea_homo_20181122/malt/ \
+--malt_sam_output \
+--email velsko@shh.mpg.de \
+-name kilteasheen_tsv \
+-with-tower
+
+# Radcliffe KappaHiFiUracil+
+nextflow run nf-core/eager \
+-r 2.2.1 \
+-profile microbiome_screening,shh \
+--outdir /projects1/microbiome_calculus/smokers_calculus/03-preprocessing/radcliffe/eager2 \
+-work-dir /projects1/microbiome_calculus/smokers_calculus/03-preprocessing/radcliffe/work \
+--input /projects1/microbiome_calculus/smokers_calculus/00-documentation.backup/radcliffe_eager2_input.tsv \
+--fasta /projects1/microbiome_sciences/reference_genomes/Coliphage_phiX-174/Coliphage_phiX-174.fa \
+# --skip_fastqc \
+# --skip_adapterremoval \
+--bwa_index /projects1/microbiome_sciences/reference_genomes/Coliphage_phiX-174/ \
+--bwaalnn 0.02 \
+--bwaalnl 1024 \
+--run_bam_filtering \
+--bam_discard_unmapped \
+--bam_unmapped_type fastq \
+--skip_damage_calculation \
+--skip_qualimap \
+--run_metagenomic_screening \
+--metagenomic_tool malt \
+--database /projects1/microbiome_sciences/reference_databases/built/refseq/bacteria_archea_homo_20181122/malt/ \
+--malt_sam_output \
+--email velsko@shh.mpg.de \
+-name radcliffe_tsv \
+-with-tower

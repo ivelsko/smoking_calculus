@@ -1,0 +1,70 @@
+Snumber	Find number	Pandora Individual ID	Sarah order no	Tube number	Include in study (y)es (n)o	Sex Old	Sex 2020	Simple age 2020	Full Age 2020	Total teeth observable (inc DNA samples)	Total positions obs	Obervable anterior dentition	Pipenotch P/A	Min no Pipe notches	AMTL  (y)es or (n)o or (u)nobservable	Total AMTL	%AMTL	Total jaw positions obs for periapical	Periapical y or no	No positions with periapical lesion	% positions perioapical	Caries (y)es or (n)o or (u)nobservable	No with caries	%teeth with caries	caries location	Gross caries	Calc (y)es or (n)o or (u)nobservable	calc sup SI score	Calc sub SI score	total with calc	%teeth with calc	total position obs perio	Periodontal  (y)es or (n)o or (u)nobservable	Max Perio Score	N positions with perio	% positions with Periodontal
+29	24	MID088	5	70	y	U	M	O	OA	24	26	y	Present	2	y	2	7.69	26	y	4	15.38	y	20	83.33	24 O G	y	y	3	3	17	70.83	16	y	4	16	100.00
+54	51	MID083	501	66	y	M	M	M	MA	32	32	y	Present	5	n	0	0	29	y	2	6.8	y	2	6.25	2 L, B	n	y	3	3	26	81.23	29	y	3	29	100
+183	311	MID051	81	38	y	F	F	Y	LYA	25	32	y	Absent	0	y	5	15.63	32	y	1	3.13	y	9	36.00	9 C, G, CEJ, I, O	y	y	2	0	21	84.00	28	y	2	28	100.00
+226	282	MID067	70	53	y	M	M	Y	LYA	25	29	y	Present	2	y	3	10.34	16	y	2	12.50	y	1	4.00	1	n	y	2	2	23	92.00	14	y	3	11	78.60
+233	304	MID049	78	36	y	M	M	M	MA	21	30	y	Present	1	y	5	16.67	30	y	2	6.67	y	5	23.81	4 B, I, R, 	n	y	2	2	16	76.19	28	y	3	25	83.33
+242	338	MID034	88	21	y	M	M	O	OA	20	32	y	Present	4	y	11	34.38	32	y	1	3.13	y	1	5.00	1	n	y	2	3	15	75.00	21	y	4	21	100.00
+249	394	MID050	106	37	y	U	M	Y	LYA	25	32	y	Present	2	y	1	3.13	32	y	1	3.10	y	2	4.00	I, G,	y	y	3	1	10	40.00	31	y	3	27	84.38
+251	624	MID101	155	8	y	M	I	M	MA	27	32	y	Present	2	y	1	3.57	32	n	0	0.00	y	3	11.11	2 O I	n	y	3	1	25	92.59	31	y	3	17	54.80
+263	445	MID059	120	45	y	M	M	M	MA	19	32	y	Present	2	y	5	17.86	32	y	2	6.25	n	1	5.20	1 I	n	y	3	3	19	100.00	18	y	4	18	100.00
+270	1067	MID094	295	76	y	M	M	Y	EYA	27	30	y	Present	1	n	0	0.00	30	n	0	0.00	y	2	7.41	2 O	n	y	2	2	18	66.67	32	u	2		
+275	526	MID035	142	22	y	U	I	I	13- 18 years	24	32	y	Absent	0	n	0	0.00	32	n	0	0.00	n	0	0.00	0	n	y	3	1	1	4.17	32	y	2	1	3.13
+281	542	MID063	143	49	y	M	I	M	MA	12	21	y	Present	2	y	9	42.86	21	n	0	0.00	y	2	16.67	2 I	n	y	2	3	10	83.33	9	u			
+290	472	MID072	129	51	y	M	M	Y	EYA	28	32	y	Present	2	y	1	3.13	32	n	0	0.00	n	0	0.00	n	n	y	3	2	22	78.57	32	y	2	14	43.75
+311	956	MID047	249	34	y	F	F	Y	EYA	28	32	y	Present	2	n	0	0.00	32	n	0	0.00	y	4	14.29	4 O	n	y	3	1	22	78.57	29	y	3	12	41.40
+371	790	MID028	198	16	y	U	I	M	MA	21	32	y	Present	5	y	4	12.5	0				u				n	y	2	2	21	100	28	y	4	28	100
+372	808	MID074	203	58	y	U	F	Y	LYA	25	31	y	Absent	0	y	4	12.90	31	y	2	6.45	y	24	96.00	G I	y	y	3	2	14	56.00	29	y	4	29	100.00
+379	851	MID061	216	47	y	M	M	Y	EYA	29	24	y	Present	1	y	1	3.13	24	n	0	0.00	n	0	0.00	n	n	y	2	2	14	45.16	24	y	3	6	25.00
+380	821	MID037	207	24	y	M	M	M	MA	21	32	y	Present	4	y	5	17.86	32	y	1	3.13	y	1	4.76	1 O	n	y	3	2	18	85.71	23	y	4	18	56.25
+402	907	MID043	235	2	y	M	M	M	MA	26	32	y	Present	1	y	4	13.33	32	n	0	0.00	y	1	3.85	G	y	y	3	2	20	76.92	26	y	3	15	57.70
+405	882	MID066	227	52	y	F	F	M	MA	20	29	y	Absent	0	y	4	14.81	29	y	3	10.34	y	15	75.00	G	y	y	3	3	9	45.00	19	y	4	17	89.50
+420	936	MID081	244	64	y	F	F	Y	LYA	31	31	y	Absent	0	n	0	0.00	31	n	0	0.00	y	17	54.84	10+ G I O	y	y	1	3	10	32.26	31	y	3		
+432	981	MID053	260	3	y	M	M	Y	LYA	27	32	y	Present	2	y	1	3.57	32	n	0	0.00	y	1	3.70	1 O	n	y	1	1	7	25.93	26	y	3	10	38.50
+460	971	MID071	256	56	y	U	M	Y	15-18	29	32	y	Present	1	n	0	0.00	32	n	0	0.00	y	1	3.45	1 G	y	y	3	1	11	37.93	32	y	2	3	9.38
+464	1012	MID044	273	30	y	M	M	M	MA	29	32	y	Absent	0	y	3	9.38	32	y	1	3.13	y	5	17.24	5 I, R, C, G	y	y	1	2	17	58.62	29	y	4	24	82.30
+467	1022	MID058	277	44	y	U	M	Y	LYA	28	32	y	Present	2	n	0	0.00	32	y	2	6.25	y	8	28.57	8 I, R, 	n	y	3	3	20	71.43	16	y	4	14	87.50
+497	1059	MID102	292	9	y	M	M	Y	LYA	28	32	y	Present	5	y	4	12.50	32	n	0	0.00	y	4	14.29	4	n	y	2	2	26	92.86	30	y	3	30	93.30
+498	1071	MID046	297	33	y	F	F	O	OA	27	32	y	Absent	0	y	4	12.50	32	n	0	0.00	y	3	11.11	3	n	y	2	2	17	62.96	28	y	3	6	21.40
+504	1109	MID091	308	73	y	F	F	M	MA	21	30	y	Absent	0	y	9	30.00	30	n	0	0.00	y	6	28.57	6 R 	n	y	3	2	13	61.90	10	y	4	6	60.00
+511	1126	MID048	315	35	y	M	M	O	OA	24	32	y	Present	5	y	7	21.88	32	n	0	0.00	y	4	16.67	4 O I	n	y	2	2	22	91.67	14	y	3	11	78.60
+512	1105	MID055	306	41	y	F	F	M	MA	28	32	y	Absent	0	y	3	9.38	32	y	4	12.50	y	9	32.14	8 CEJ, I, O	n	y	2	2	25	89.29	29	y	3	30	93.75
+518	1086	MID045	298	31	y	F	F	O	OA	13	32	y	Absent	0	y	10	31.25	32	y	3	9.38	n	0	0.00	0	n	y	3	2	11	84.62	22	y	4	16	73.20
+524	1120	MID064	313	4	y	M	M	M	MA	25	29	y	Present	3	y	4	13.79	29	y	10	34.48	n	1	4.00	1 R	n	y	3	2	23	92.00	27	y	4	25	92.60
+538	1164	MID022	323	10	y	F	I	Y	LYA	15	16	y	Absent	0	y	1	6.25	16	n	0	0.00	y	1	6.67	1 C	n	y	2	1	13	86.67	15	y	3	10	66.70
+47	45	MID038	500	25	y	F	F	Y	Y	32	32	y	Present	1	n	0	0	31	n	0	0	y	3	9.3	3 O L	n	y	3	2	11	37.9	31	y	2	9	6.5
+51	59	MID092	502	74	y	U	M	O		12	32	y	Present	2	y	15	46.8	16	n	0	0	n	0	0	0	n	y	1	3			11	y	3	10	90.9
+59	133	MID087	35	6	y	M	M	M	MA	30	32	y	Present	4	y	2	6.25	32	n	0	0.00	y	3	10.00	3 (1 and 3?)	n	y	3	3	29	96.67	29	y	3	26	89.60
+60	37	MID085	10	68	y	U	F	Y	EYA	27	32	y	Absent	0	y	3	9.38	32	n	0	0.00	y	8	29.63	8 I, L, O, G	y	y	2	3	24	88.89	21	y	3	15	71.00
+100	159	MID075	44	59	y	U	M	O	MA	14	32	y	Present	3	y	12	42.86	32	n	0	0.00	y	3	21.43	3	n	y	3	3	14	100.00	17	y	4	17	100.00
+101	131	MID080	34	63	y	F	F	Y	LYA	28	32	y	Absent	0	y	3	9.38	32	n	0	0.00	n	5	19.50	5 I	n	y	3	3	21	75.00	32	y	4	23	71.88
+151	666	MID070	165	55	y	F	F	M	LYA	31	32	y	Absent	0	n	0	0.00	32	n	0	0.00	y	8	25.81	8 I, O.	n	y	1	1	28	90.32	31	y	2	24	75.00
+153	435	MID030	118	19	y	M	M	O	MA	23	32	y	Absent 	0	y	9	28.13	32	n	0	0.00	y	1	4.35	1 B	n	y	2	3	7	30.43	26	y	3	26	100.00
+155	196	MID079	51	62	y	U	M	O	OA	11	32	y	Present	1	y	16	50.00	32	y	2	6.25	u	6	54	6 I	n	u	3	3	0		11	y	3	11	100.00
+160	613	MID027	152	15	y	F	F	M	LYA	32	32	y	Absent	0	n	0	0.00	32	n	0	0.00	y	6	18.75	6 G	y	y	2	1	13	40.63	25	y	2	25	100.00
+174	408	MID032	111	1	y	F	F	M	MA	21	32	y	Absent	0	y	7	21.88	32	n	0	0.00	y	9	42.86	9 I, C, O, G	y	y	1	1	10	47.62	25	y	2	16	64.00
+194	440	MID093	119	75	y	U	M	M	OA	25	32	y	Present	1	y	2	6.67	32	y	1	3.13	y	13	52.00	12 O, I	n	y	3	3	21	84.00	32	y	4	32	100.00
+236	335	MID023	87	11	y	M	M	Y	EYA	32	32	y	Absent	0	n	0	0.00	32	n	0	0.00	y	7	21.88	7 I, O, 	n	y	1	0	7	21.88	32	y	2	7	22.00
+239	369	MID084	100	67	y	U	M	Y	EYA	29	31	y	Present	4	y	1	3.23	31	y	1	3.23	y	5	17.24	4 O, G. 	y	y	3	0	16	55.17	31	y	2	24	77.42
+243	381	MID089	103	71	y	U	F	O	OA	22	32	y	Present	1	y	8	25.00	32	n	0	0.00	y	5	22.73	6 I, R, L, G	y	y	3	2	19	86.36	32	y	4	21	65.63
+285	452	MID068	124	54	y	U	M	O	OA	9	28	y	Present	2	y	19	67.86	28	y	3	10.71	y	5	55.56	5 I	u	y	3	3	7	77.78	28	y	4	10	35.71
+307	591	MID060	150	46	y	U	F	Y	13- 18 years	24	32	y	Absent	0	y	2	7.14	32	n	0	0.00	y	7	29.17	7 G, O, I	y	y	2	1	15	62.50	27	y	4	10	37.00
+313	926	MID054	241	40	y	M	M	M	MA	28	32	y	Present	2	y	4	12.50	32	n	0	0.00	y	2	7.14	1 O	n	y	2	2	25	89.29	28	y	3	26	81.25
+325	676	MID036	168	23	y	M	M	M	LYA	31	32	y	Present	4	y	1	3.13	32	y	1	3.13	y	4	12.90	4 G	y	y	2	1	28	90.32	32	y	3	7	21.88
+342	737	MID024	182	12	y	M	M	O	OA	31	32	y	Present	4	y	1	3.13	32	y	1	3.13	y	2	6.45	3 M and G	y	y	3	3	21	67.74	32	y	4	29	90.63
+345	757	MID040	190	27	y	U	F	M	MA	31	32	y	Absent	0	n	0	0.00	32	n	0	0.00	y	8	25.81	8 G, O, D	y	y	2	2	5	16.13	32	y	3	8	25.00
+347	741	MID073	184	57	y	U	M	O	OA	28	32	y	Present	3	y	1	3.13	32	n	0	0.00	y	2	7.10	2 I	n	y	2	3	28	100.00	32	y	4	23	71.00
+350	884	MID086	228	69	y	U	F	Y	Y	26	32	y	Absent	0	n	0	0	0	n	0	0	y	1	3.8	1	n	u	2	1	26	100	16	y	2	2	12.5
+363	766	MID031	195	18	y	M	M	O	OA	29	32	y	Present	4	y	3	9.38	32	n	0	0.00	n	0	0.00	n	n	y	2	2	15	51.72	28	y	3	15	53.60
+383	880	MID026	226	14	y	F	F	O	MA	17	32	y	Absent	0	y	12	37.50	32	y	5	15.63	y	3	17.65	3 O	n	y	2	3	10	58.82	23	y	3	22	95.60
+399	872	MID042	223	29	y	M	M	M	MA	28	32	y	Present	1	y	3	9.38	32	n	0	0.00	y	12	42.86	17 G, O, CEJ	y	y	3	3	9	32.14	29	y	3	25	86.20
+422	962	MID029	252	17	y	U	F	M	MA	26	32	y	Absent	0	y	4	12.50	32	y	2	6.25	y	1	3.85	2 G	y	y	2	1	13	50.00	29	y	3	13	44.80
+427	938	MID062	245	48	y	U	M	M	LYA	29	32	y	Present	3	n	0	0.00	32	n	0	0.00	y	4	13.80	I, O, G	y	y	2	3	12	41.38	23	y	3	13	56.50
+430	965	MID041	254	28	y	U	F	M	LYA	22	32	y	Absent	0	y	7	21.88	32	y	2	6.25	y	15	68.18	15 O, I, G B	y	y	2	2	20	90.91	25	y	3	22	88.00
+441	932	MID039	243	26	y	F	F	Y	EYA	32	32	y	Absent	0	n	0	0.00	32	n	0	0.00	y	3	9.38	2 O 1 B	n	y	2	2	14	43.75	32	y	2	26	81.25
+466	1010	MID097	272	7	y	F	F	M	MA	14	32	y	Absent	0	y	14	43.75	32	n	0	0.00	y	6	42.86	I, G, C R	y	y	2	2	10	71.43	14	y	2		
+473	1003	MID082	269	65	y	M	M	M	LYA	26	28	y	Present	1	y	2	6.25	28	y	2	7.10	n	0	0.00	n	n	y	3	2	15	57.69	28	y	3	25	89.30
+482	1048	MID077	289	60	y	M	M	M	MA	29	30	y	Present	0	n	0	0.00	30	n	0	0.00	n	0	0.00	n	n	y	3	1	28	96.55	30	y	3	24	80.00
+501	1097	MID057	303	43	y	F	F	Y	EYA	32	32	y	Absent	0	n	0	0.00	32	n	0	0.00	n	0	0.00	0	n	y	2	2	9	28.13	32	y	2	6	18.80
+502	1062	MID090	293	72	y	U	M	Y	EYA	25	32	y	Absent	0	y	6	19.35	32	y	2	6.25	y	2	8.00	3 G, O, I	y	y	2	2	15	60.00	16	y	3	12	75.00
+
