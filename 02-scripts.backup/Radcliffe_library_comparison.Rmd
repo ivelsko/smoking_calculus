@@ -1,0 +1,158 @@
+---
+title: "Radcliffe calculus library comparison"
+author: "Irina Velsko"
+date: "`r format(Sys.time(), '%b %d, %Y')`"
+output: html_notebook
+---
+
+```{r load_libraries, echo = F, message = F}
+library(knitr)
+library(mixOmics)
+library(data.table)
+library(rstatix)
+library(vegan)
+library(compositions)
+library(janitor)
+library(tidyverse)
+library(cowplot)
+```
+
+Set the working directory of the notebook to the parent directory of the 
+notebook itself.  
+
+```{r setup}
+knitr::opts_knit$set(root.dir = normalizePath(".."))
+```
+
+```{r load_data}
+pfuT_otu <- fread("./05-results.backup/Radcliffe_pfuT_comparison-species.txt")
+
+kHiFiU_otu <- fread("./05-results.backup/Radcliffe_comparison-species.txt")
+
+```
+
+Read in the metadata tables
+```{r metadata}
+metadata <- as.data.frame(colnames(pfuT_otu)) %>% rename(SampleID = `colnames(pfuT_otu)`) %>% filter(SampleID != "#Datasets") %>%
+  mutate(Library = "pfuT") %>%
+  bind_rows(., as.data.frame(colnames(kHiFiU_otu)) %>% rename(SampleID = `colnames(kHiFiU_otu)`) %>% filter(SampleID != "#Datasets") %>%
+  mutate(Library = "kHiFiU")) %>%
+  mutate(SampleN = SampleID) %>%
+  separate(., SampleN, into = "Sample", sep = "\\.")
+
+```
+
+```{r}
+full_table <- pfuT_otu %>%
+  full_join(., kHiFiU_otu) %>%
+  rename(Species = `#Datasets`) %>%
+  select(-matches("CSS|CSD|CSN|CSL")) %>% # remove soil, dentin, extraction, library controls
+  gather("SampleID","Counts",2:ncol(.)) %>%
+  mutate_all(~replace(., is.na(.), 0)) %>%
+  spread(SampleID, Counts) %>%
+  # adorn_totals(where = "col", name = "Total") %>%
+  # mutate(Pct = Total/sum(Total)*100) %>%
+  # filter(Pct >= 0.001) %>%
+  # select(-c("Total","Pct")) %>%
+  gather("SampleID","Counts",2:ncol(.)) %>%
+  mutate(Counts = Counts +1) %>%
+  spread(Species,Counts) %>%
+  column_to_rownames("SampleID")
+
+# look at the screenplot to decide how many components to keep for the PCA -> will keep all but 2
+mixOmics::tune.pca(full_table, logratio = 'CLR')
+# perform a PCA to see how the data cluster
+full_table.pca <- mixOmics::pca(full_table, ncomp = 2, logratio = 'CLR')
+full_table_values <- full_table.pca$variates$X %>%
+  as.data.frame() %>%
+  rownames_to_column("SampleID") %>%
+  inner_join(., metadata, by = "SampleID")
+
+
+```
+
+```{r}
+ggplot(full_table_values, aes(PC1, PC2, color = Library, shape = Library)) +
+  # geom_text(aes(label = SampleID)) +
+  geom_point(size = 3) +
+  theme_minimal()
+
+```
+
+```{r}
+# use the CLR-transformed matrix from the mixOmics PCA above
+# Euclidean distance
+species_table_mat.euc <- vegdist(full_table.pca$X, method = "euclidean", na.rm = T)
+species_table_mat.euc.pcoa <- ape::pcoa(species_table_mat.euc)
+
+species_table_mat.euc.pcoavectors <- as.data.frame(species_table_mat.euc.pcoa$vectors)
+species_table_mat.euc.pcoavectors <- species_table_mat.euc.pcoavectors %>%
+  rownames_to_column("SampleID")
+
+species_table_mat.euc.pcoavectors.vecmet <- inner_join(species_table_mat.euc.pcoavectors, metadata, by = "SampleID")
+
+plot1 <- species_table_mat.euc.pcoavectors.vecmet %>%
+  ggplot(., aes(Axis.1, Axis.2, colour = Library, shape = Library)) +
+  geom_point(size = 3) +
+  stat_ellipse(aes(colour = Library, group = Library)) +
+  theme_minimal(base_size = 10) +
+  ggtitle("Radcliffe calculus KHiFiU+ and PFUTurbo libraries")
+plot1
+
+```
+
+```{r}
+betadist <- as.matrix(species_table_mat.euc) %>%
+  # convert to a long table
+  as.data.frame(.) %>%
+  rownames_to_column("SampleID") %>% 
+  # select(SampleID, Group1) %>%
+  inner_join(., metadata %>%
+               select(SampleID, Library)) %>%
+  gather("Group1","distValue",2:ncol(.)) %>%
+  distinct() %>%
+  mutate(distValue = as.numeric(distValue)) %>%
+  filter(distValue > 0)%>%
+  inner_join(., metadata) %>%
+  select(Group1, SampleID, distValue, Library) %>%
+  rename(Sample = Group1,
+         Group1 = SampleID) %>%
+  rename(SampleID = Sample) %>%
+  mutate(Lib1 = ifelse(str_detect(SampleID, "kHFu"), "KHFu","PFUt"),
+         Lib2 = ifelse(str_detect(Group1, "kHFu"), "KHFu","PFUt"),
+         Within = Lib1 == Lib2,
+         Comp = ifelse(Lib1 == "KHFu" & Lib2 == "KHFu", "KHFu-KHFu",
+                       ifelse(Lib1 == "PFUt" & Lib2 == "PFUt", "PFUt-PFUt", "PFUt-KHFu")))
+  
+
+```
+
+```{r}
+betadist %>%
+  ggplot(., aes(x = Comp, y = distValue, fill = Comp)) +
+         geom_boxplot() +
+         geom_dotplot(binaxis = "y", dotsize = 0.4, stackdir = "center", alpha = 0.5, binwidth = 0.75) +
+         # scale_fill_manual(values = c("#FF3200","#065FA3")) +
+         theme_minimal(base_size = 14) +
+         theme(axis.text.x = element_text(angle = 0, hjust = 0.5),
+               text = element_text(size=16)) +
+         ylab("Euclidean distance") +
+         xlab("Library")
+
+
+```
+
+```{r}
+
+betadist %>%
+  pairwise_wilcox_test(distValue ~ Comp, p.adjust.method = "fdr") 
+
+betadist %>%
+  wilcox_effsize(distValue ~ Comp) 
+
+```
+
+
+
+
+
