@@ -32,77 +32,66 @@ full_metadata <- fread("./00-documentation.backup/radcliffe_pfuT_metadata.tsv") 
   full_join(., fread("./00-documentation.backup/MID_analysis_metadata.tsv"))
 
 
-metadata <- metadata %>%
+full_metadata <- full_metadata %>%
   as_tibble() %>%
   mutate(Site = fct_relevel(Site, "Middenbeemster", "CMB", "Radcliffe", "Kilteasheen",
                                    "ELR", "IVE","Extraction_blank","Library_blank"),
          Time_period = fct_relevel(Time_period, "Industrial","Medieval","Extraction_blank","Library_blank"),
-         Region = fct_relevel(Region, "Netherlands","Spain","England", "Iberia","Ireland"),
-         Periodontal_disease_present = fct_relevel(Periodontal_disease_present, "Yes","No","Undetermined"),
-         Caries_present = fct_relevel(Caries_present, "Yes","No","Undetermined"),
-         Sample_or_Control = fct_relevel(Sample_or_Control, "Sample","Control"))
+         Region = fct_relevel(Region, "Netherlands","Spain","England", "Ireland","Iberia"),
+         Periodontal_disease_present = fct_relevel(Periodontal_disease_present, "Yes","No","Unobservable"),
+         Caries_present = fct_relevel(Caries_present, "Yes","No","Unobservable"),
+         Sample_or_Control = fct_relevel(Sample_or_Control, "Sample","Control"),
+         Sex = fct_relevel(Sex, "Female","Male","Indeterminate"))
 
 ```
 
-```{r colors, eval = F}
+```{r colors}
 # lacroix_palette("PeachPear", n = 8, type = "continuous")
 # "#FF3200" "#EF8158" "#E9BD8E" "#CBDDA7" "#38BCAD" "#0B91B5" "#065FA3" "#172869"
 
-Age_group_colors <- c(`18-29` = "#FF3200", `30-39` = "#E9B186", `40-49` = "#82CDAA", `50-59` = "#0686B8", `60+` = "#172869",
-                      `10-18` = "#C70E7B", HMP = "#969696", HMP10M = "#d9d9d9",
-                      ExtractionGauze = "#252525", Extraction_blank = "#737373", Library_blank = "#bdbdbd")
-Age_group_shapes <- c(`18-29` = 15, `30-39` = 16, `40-49` = 17, `50-59` = 18, `60+` = 25, `10-18` = 14, HMP = 7, HMP10M = 9,
-                      ExtractionGauze = 8, Extraction_blank = 4, Library_blank = 3)
-Age_group_size <- c(`18-29` = 4.5, `30-39` = 4, `40-49` = 4, `50-59` = 6, `60+` = 4, `10-18` = 4, HMP = 4, HMP10M = 4,
-                      ExtractionGauze = 4, Extraction_blank = 4, Library_blank = 4)
+Site_colors <- c(Middenbeemster = "#311068", CMB = "#5A167E", Radcliffe = "#C83E73", Kilteasheen = "#E95562", ELR = "#FEA873",
+                      IVE = "#FED395", Extraction_blank = "#252525", Library_blank = "#737373")
+Site_shapes <- c(Middenbeemster = 15, CMB = 16, Radcliffe = 17, Kilteasheen = 18, ELR = 25, IVE = 14, Extraction_blank = 4, Library_blank = 3)
+Site_size <- c(Middenbeemster = 4.5, CMB = 4, Radcliffe = 4, Kilteasheen = 6, ELR = 4, IVE = 4, Extraction_blank = 4, Library_blank = 4)
 
-Ethnic_Group_colors <- c(Baka = "#FF3200", Nzime = "#065FA3", Yanomami = "#C70E7B", HMP = "#969696", HMP10M = "#d9d9d9", 
-                         JAE10M = "#ffeda0", JAE = "#feb24c",ExtractionGauze = "#252525", Extraction_blank = "#737373", Library_blank = "#bdbdbd")
-Ethnic_Group_shapes <- c(Baka = 19, Nzime = 17,  Yanomami = 14, HMP = 7, HMP10M = 9, JAE = 7, JAE10M = 9,
-                         ExtractionGauze = 8, Extraction_blank = 4, Library_blank = 3)
-Ethnic_Group_size <- c(Baka = 4, Nzime = 4,  Yanomami = 4, HMP = 4, HMP10M = 4, JAE = 4, JAE10M = 4,
-                         ExtractionGauze = 4, Extraction_blank = 4, Library_blank = 4)
+Time_period_colors <- c(Industrial = "#311068", Medieval = "#C83E73", Extraction_blank = "#252525", Library_blank = "#737373")
+Time_period_shapes <- c(Industrial = 19, Medieval = 17, Extraction_blank = 4, Library_blank = 3)
+Time_period_size <- c(Industrial = 4, Medieval = 4,  Extraction_blank = 4, Library_blank = 4)
 
-Env_colors <- c(HunterGatherer = "#FF3200", HMP = "#065FA3", HMP10M = "#172869", JAE10M = "#ffeda0", JAE = "#feb24c",
-                ExtractionGauze = "#252525", Extraction_blank = "#737373", Library_blank = "#bdbdbd")
-Env_shapes <- c(HunterGatherer = 19, HMP = 7, HMP10M = 9, JAE = 7, JAE10M = 9, ExtractionGauze = 8, Extraction_blank = 4, Library_blank = 3)
-Env_size <- c(HunterGatherer = 4, HMP = 4, HMP10M = 4, JAE = 4, JAE10M = 4, ExtractionGauze = 4, Extraction_blank = 4, Library_blank = 4)
+Region_colors <- c(Netherlands = "#311068", Spain = "#5A167E", England = "#C83E73", Iberia = "#FEA873", Ireland = "#E95562",
+                Extraction_blank = "#252525", Library_blank = "#737373")
+Region_shapes <- c(Netherlands = 19, Spain = 7, England = 9, Iberia = 7, Ireland = 9, Extraction_blank = 4, Library_blank = 3)
+Region_size <- c(Netherlands = 4, Spain = 4, England = 4, Iberia = 4, Ireland = 4, Extraction_blank = 4, Library_blank = 4)
 
-Description_colors <- c(HunterGatherer = "#FF3200", Yanomami = "#C70E7B", HMP_supPlaque = "#065FA3", HMP_subPlaque = "#065FA3", # HMP_supPlaque = "#", HMP_subPlaque = "#172869", 
-                        HMP10M_supPlaque = "#172869", HMP10M_subPlaque = "#172869", JAE10M = "#ffeda0", JAE = "#feb24c",
-                        ExtractionGauze = "#252525", Extraction_blank = "#737373", Library_blank = "#bdbdbd")
-Description_shapes <- c(HunterGatherer = 19, Yanomami = 14, HMP_supPlaque = 10, HMP_subPlaque = 13, HMP10M_supPlaque = 10, 
-                        HMP10M_subPlaque = 13, JAE = 7, JAE10M = 9, ExtractionGauze = 8, Extraction_blank = 4, Library_blank = 3)
-Description_size <- c(HunterGatherer = 4, Yanomami = 4, HMP_supPlaque = 4, HMP_subPlaque = 4, HMP10M_supPlaque = 4, 
-                        HMP10M_subPlaque = 4, JAE = 4, JAE10M = 4, ExtractionGauze = 4, Extraction_blank = 4, Library_blank = 4)
+Periodontal_disease_present_colors <- c(Yes = "#311068", No = "#C83E73", Unobservable = "#737373")
+Periodontal_disease_present_shapes <- c(Yes = 19, No = 14, Unobservable = 10)
+Periodontal_disease_present_size <- c(Yes = 4, No = 4, Unobservable = 4)
 
-Database_colors <- c(nt = "#065FA3", RefSeqCustom = "#FF3200")
-Kraken_db_colors <- c(RefSeqOnly = "#065FA3", RefSeqPasolliMAGs = "#FF3200")
+Sample_or_Control_colors <- c(Sample = "#311068", Control = "#737373")
+Sample_or_Control_shapes <- c(Sample = 19, Control = 8)
+Sample_or_Control_size <- c(Sample = 4, Control = 4)
 
-Industry_colors <- c(`Non-industrial` = "#FF3200", Industrial = "#969696",
-                           ExtractionGauze = "#252525", Extraction_blank = "#737373", Library_blank = "#bdbdbd")
-Industry_shapes <- c(`Non-industrial` = 19, Industrial = 17,
-                           ExtractionGauze = 8, Extraction_blank = 4, Library_blank = 3)
-Industry_size <- c(`Non-industrial` = 4, Industrial = 4,
-                           ExtractionGauze = 4, Extraction_blank = 4, Library_blank = 4)
+Caries_present_colors <- c(Yes = "#311068", No = "#C83E73", Unobservable = "#737373")
+Caries_present_shapes <- c(Yes = 19, No = 14, Unobservable = 10)
+Caries_present_size <- c(Yes = 4, No = 4, Unobservable = 4)
 
-Market_economy_colors <- c(`Logging road` = "#FF3200", `Forrest camp` = "#065FA3", Farming = "#82CDAA", Yanomami = "#C70E7B", Industrial = "#969696",
-                           ExtractionGauze = "#252525", Extraction_blank = "#737373", Library_blank = "#bdbdbd")
-Market_economy_shapes <- c(`Logging road` = 19, `Forrest camp` = 17, Farming = 18, Yanomami = 14, Industrial = 15,
-                           ExtractionGauze = 8, Extraction_blank = 4, Library_blank = 3)
-Market_economy_size <- c(`Logging road` = 4, `Forrest camp` = 4, Farming = 6, Yanomami = 4, Industrial = 4,
+Sex_colors <- c(Female = "#311068", Male = "#C83E73", Indeterminate = "#737373")
+Sex_shapes <- c(Female = 19, Male = 17, Indeterminate = 8)
+Sex_size <- c(Female = 4, Male = 4, Indeterminate = 4)
 
 
 ```
 
 
 ```{r save_data}
-save(metadata, 
-     Age_group_colors, Age_group_shapes, Age_group_size,
-     Ethnic_Group_colors, Ethnic_Group_shapes, Ethnic_Group_size,
-     Env_colors, Env_shapes, Env_size,
-     ExtractionBatch_colors, ExtractionBatch_shapes, ExtractionBatch_size,
-     Description_colors, Description_shapes, Description_size, 
+save(full_metadata, 
+     Site_colors, Site_shapes, Site_size,
+     Time_period_colors, Time_period_shapes, Time_period_size,
+     Region_colors, Region_shapes, Region_size,
+     Periodontal_disease_present_colors, Periodontal_disease_present_shapes, Periodontal_disease_present_size,
+     Caries_present_colors, Caries_present_shapes, Caries_present_size, 
+     Sample_or_Control_colors, Sample_or_Control_shapes, Sample_or_Control_size, 
+     Sex_colors, Sex_shapes, Sex_size, 
      file = "./05-results.backup/Metadata_tables.RData")
 
 ```
