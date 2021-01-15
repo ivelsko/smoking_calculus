@@ -117,11 +117,17 @@ ggplot(malt_pca_filt_values, aes(PC1, PC2, color = Env, shape = Env)) +
 
 ```
 
+```{r}
+
+# plot with the species ordered by loading in PC1
+
+
+```
+
 
 
 ```{r}
 # plot with the species ordered by clustering
-
 
 # CLR-transform the matrix for plotting the heatmap
 malt_otu_pca_table_clr <- clr(malt_otu_pca_table) # malt_otu_pca_table_filt
