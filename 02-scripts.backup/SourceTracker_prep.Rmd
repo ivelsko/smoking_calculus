@@ -71,6 +71,9 @@ full_table_sourcetracker <- all_species_decontam %>%
               select(-matches("EXB|LIB|CSN|CSL"))) %>%
   replace(is.na(.), 0)
 
+fwrite(full_table_sourcetracker, "./05-results.backup/shotgun_sourcetracker_table.txt", sep = "\t", quote = F)
+
+
 ```
 
 log-transform the table for sourcetracker
@@ -91,6 +94,8 @@ full_table_sourcetracker_log <- full_table_sourcetracker %>%
   mutate(Counts = log2(Counts + 1)) %>%
   spread(SampleID, Counts) %>%
   column_to_rownames("Species")
+
+fwrite(full_table_sourcetracker_log, "./05-results.backup/shotgun_sourcetracker_table_log.txt", sep = "\t", quote = F)
 
 ```
 

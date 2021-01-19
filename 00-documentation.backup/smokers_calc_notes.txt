@@ -352,7 +352,7 @@ sbatch \
 -J "Sourcetracker" \
 --wrap="Rscript \
 /projects1/microbiome_calculus/evolution/04-analysis/screening/sourcetracker.backup/sourcetracker-1.0.1/sourcetracker_for_qiime.r \
--i /projects1/microbiome_calculus/smoking_calculus/04-analysis/sourceTracker/shotgun/shotgun_sourcetracker_table_log.txt \
+-i /projects1/microbiome_calculus/smoking_calculus/04-analysis/sourceTracker/shotgun/shotgun_sourcetracker_table.txt \
 -m "$MAPPINGFILE" \
 -o "$OUTDIR"/shotgun_sourcetracker_table_log_"$(date +"%Y%m%d")" \
 -r 1000 \
