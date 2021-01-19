@@ -287,8 +287,14 @@ ln -s /projects1/microbiome_calculus/smoking_calculus/03-preprocessing/radcliffe
 ln -s /projects1/microbiome_calculus/smoking_calculus/03-preprocessing/kilteasheen/eager2/samtools/filter/*.gz .
 ln -s /projects1/microbiome_calculus/iberian/03-preprocessing/screening/eager2/samtools/filter/ELR*.gz .
 ln -s /projects1/microbiome_calculus/iberian/03-preprocessing/screening/eager2/samtools/filter/IVE*.gz .
-# ln -s /projects1/microbiome_calculus/iberian/03-preprocessing/screening/eager2/samtools/filter/EXB*.gz .
-# ln -s /projects1/microbiome_calculus/iberian/03-preprocessing/screening/eager2/samtools/filter/LIB*.gz .
+
+# remove the extraction and library control blanks
+
+# also can use the MALT tables from the iberian project (or james' project. But better the Iberian project b/c same eager2 parameters)
+# just need to normalize by library size and then do CLR transform
+
+# for 16S mapping run the snakefile. Use the 16S mapping/clustering/otu table of modern data (calculus, plaque, skin?, stool?, soil?) that Zandra prepared for her dental arcade project
+snakemake -s ../../../02-scripts.backup/16S_mapping.Snakefile --cluster 'sbatch --mem 4G -p short  -n {threads}' -j 5 -k --restart-times 3 --max-jobs-per-second 1 --latency-wait 45 -n
 
 
 # map the samples to this database to get just the 16S genes
@@ -327,10 +333,10 @@ sbatch \
 # run sourcetracker with this:
 #!/usr/bin/env bash
 
-INDIR=/projects1/microbiome_calculus/dental_arcade/03-Preprocessing/16S_clustering_moderncalculus/otu_picking
-OUTDIR=/projects1/microbiome_calculus/dental_arcade/04-Analysis/sourcetracker
 
-MAPPINGFILE=/projects1/microbiome_calculus/dental_arcade/05-Files.backup/modern_calculus_mappingfile.tsv
+OUTDIR=/projects1/microbiome_calculus/smoking_calculus/04-analysis/sourceTracker/shotgun
+
+MAPPINGFILE=/projects1/microbiome_calculus/smoking_calculus/00-documentation.backup/source_tracker_mappingfile.tsv
 
 sbatch \
 -c 2 \
@@ -341,17 +347,18 @@ sbatch \
 --partition=long \
 --mail-type=fail \
 --mail-type=time_limit \
---mail-user=fagernaes@shh.mpg.de \
+--mail-user=velsko@shh.mpg.de \
 --export=ALL \
 -J "Sourcetracker" \
 --wrap="Rscript \
 /projects1/microbiome_calculus/evolution/04-analysis/screening/sourcetracker.backup/sourcetracker-1.0.1/sourcetracker_for_qiime.r \
--i "$INDIR"/otu_table_L6_1000.txt \
+-i /projects1/microbiome_calculus/smoking_calculus/04-analysis/sourceTracker/shotgun/shotgun_sourcetracker_table_log.txt \
 -m "$MAPPINGFILE" \
--o "$OUTDIR"/otu_table_L6_1000_"$(date +"%Y%m%d")" \
+-o "$OUTDIR"/shotgun_sourcetracker_table_log_"$(date +"%Y%m%d")" \
 -r 1000 \
 -v"
 
+        # awk -v name={wildcards.sample} '/^>/{print ">"name "_" ++i; next}{print}' \
 
 
 

@@ -332,6 +332,8 @@ heatmap_base <- ggplot(malt_otu_filt_pca_table_clr_long, aes(Species, Library_ID
 
 heatmap_base
 
+ggsave("~/Desktop/heatmap_ordered.pdf", plot = heatmap_base, device = "pdf",
+       scale = 1, width = 12, height = 8, units = c("in"), dpi = 300)
 
 ```
 
@@ -387,6 +389,14 @@ all_species_decontam %>%
 
 ```
 
+```{r}
+
+malt_pca_species %>%
+  mutate(topPC1 = PC1 > PC2 & PC1 > PC3,
+         lowPC1 = PC1 < PC2 & PC1 < PC3) %>%
+  filter(topPC1 == TRUE, lowPC1 == TRUE)
+
+```
 
 
 

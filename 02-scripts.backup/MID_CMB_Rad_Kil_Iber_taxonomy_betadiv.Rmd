@@ -547,7 +547,8 @@ tune.pca(all_species_decontam_filtered_noblanks, logratio = 'CLR')
 # perform and plot a PCA to see how the data cluster
 # by Site
 plot_pca(all_species_decontam_filtered_noblanks, "PC1", "PC2", "Site", "Time_period", 3)
-plot_pca(all_species_decontam_filtered_noblanks, "PC1", "PC3", "Site", "Time_period", 3)
+plot_pca(all_species_decontam_filtered_noblanks, "PC3", "PC2", "Site", "Time_period", 3)
+plot_pca(all_species_decontam_filtered_noblanks, "PC3", "PC1", "Site", "Time_period", 3)
 
 # ggsave("05-results.backup/pca_village.pdf", plot = pca_village, device = "pdf",
 #        scale = 1, width = 7, height = 5, units = c("in"), dpi = 300)

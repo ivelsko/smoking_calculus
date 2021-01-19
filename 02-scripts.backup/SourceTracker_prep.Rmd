@@ -1,0 +1,133 @@
+---
+title: "MID/CMB, Radcliffe, Kilteasheen, Iberian medieval calculus MALT beta diversity"
+author: "Irina Velsko"
+date: "`r format(Sys.time(), '%b %d, %Y')`"
+output:
+    github_document:
+        fig_width: 8
+        fig_height: 6
+        toc: true
+---
+
+
+```{r load_libraries, echo = F, message = F}
+library(knitr)
+library(data.table)
+# library(psych)
+# library(ape)
+# library(mixOmics)
+# library(compositions)
+# library(vegan)
+library(janitor)
+# library(pander)
+library(tidyverse)
+library(gplots)
+# library(ggrepel)
+library(viridis)
+library(cowplot)
+opts_chunk$set(echo=F, warning=F, message=F, dpi=150)
+```
+
+Set the working directory of the notebook to the parent directory of the 
+notebook itself.  
+
+```{r setup}
+knitr::opts_knit$set(root.dir = normalizePath(".."))
+```
+
+# MALT read stats
+
+```{r load_data}
+
+# load the taxonomy tables that have been decontaminated and the column headers are cleaned up
+load("./05-results.backup/Taxonomy_tables.RData")
+
+# load the metadata file
+load("./05-results.backup/Metadata_tables.RData")
+
+```
+
+Read in the species table of sources from the DeepEvo project
+```{r}
+source_table <- fread("./05-results.backup/Evolution-Comparison_MEGAN_20190410-ex_absolute_species_prokaryotes_summarised_refseq.txt") %>%
+  rename(Species = `#Datasets`) %>%
+  select(matches("Species|SRR|ERR|ARS|JAE|VLC")) %>%
+  adorn_totals(where = "col") %>%
+  filter(Total > 0) %>%
+  select(-Total)
+
+# fix the column headers
+colnames(source_table) <- gsub("_S0_L000_R1_000.fastq.merged.prefixed.hg19unmapped","", colnames(source_table))
+colnames(source_table) <- gsub("_S0_L001_R1_001.fastq.combined.fq.prefixed.extractunmapped.bam","", colnames(source_table))
+
+```
+
+Combine the input data table and the source table. This needs to be normalized
+by sequencing depth? and CLR-transformed?
+```{r}
+
+full_table_sourcetracker <- all_species_decontam %>%
+  full_join(., source_table %>%
+              select(-matches("EXB|LIB|CSN|CSL"))) %>%
+  replace(is.na(.), 0)
+
+```
+
+log-transform the table for sourcetracker
+```{r}
+# clr-transform (has negative values)
+full_table_sourcetracker_clr <- clr(full_table_sourcetracker %>%
+                                      gather("SampleID","Counts", 2:ncol(.)) %>%
+                                      mutate(Counts = Counts + 1) %>%
+                                      spread(SampleID, Counts) %>%
+                                      column_to_rownames("Species"))
+
+full_table_sourcetracker_clr <- full_table_sourcetracker_clr %>%
+  as.data.frame.matrix(.)
+
+# log2-transform (no negative values)
+full_table_sourcetracker_log <- full_table_sourcetracker %>%
+  gather("SampleID","Counts", 2:ncol(.)) %>%
+  mutate(Counts = log2(Counts + 1)) %>%
+  spread(SampleID, Counts) %>%
+  column_to_rownames("Species")
+
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
