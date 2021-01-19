@@ -37,6 +37,7 @@ iberian_raw <- fread("./05-results.backup/iberian_medieval_malt_species_raw.tsv"
 # contaminants
 mid_contaminants <- fread("./05-results.backup/contaminant_species_mid.tsv", sep = "\t")
 iber_contaminants <- fread("./05-results.backup/contaminant_species_iber.tsv", sep = "\t")
+rad_contaminants <- fread("./05-results.backup/contaminant_species_rad.tsv", sep = "\t")
 
 ```
 
@@ -51,19 +52,18 @@ iberian_species_decontam <- iberian_raw %>%
   rename(Species = `#Datasets`) %>%
   anti_join(., iber_contaminants)
 
+# remove contaminant species from Iberian medieval samples
+radcliffe_species_decontam <- radcliffe_raw %>%
+  rename(Species = `#Datasets`) %>%
+  anti_join(., rad_contaminants)
+
 # remove contaminant species from both MID/CMD and Iberian from Kilteasheen
 # because I don't know what else to do
 kilteasheen_species_decontam <- kilteasheen_raw %>%
   rename(Species = `#Datasets`) %>%
   anti_join(., mid_contaminants) %>%
-  anti_join(., iber_contaminants)
-
-# remove contaminant species from both MID/CMD and Iberian from Radcliffe
-# because I don't know what else to do
-radcliffe_species_decontam <- radcliffe_raw %>%
-  rename(Species = `#Datasets`) %>%
-  anti_join(., mid_contaminants) %>%
-  anti_join(., iber_contaminants)
+  anti_join(., iber_contaminants) %>%
+  anti_join(., rad_contaminants)
 
 ```
 

@@ -58,7 +58,7 @@ plot_pca_names <- function(df, pc1, pc2, metadata_group) {
               as.data.frame() %>%
               rownames_to_column("Library_ID") %>%
               inner_join(full_metadata %>%
-                           select(Library_ID, Site, Region, Time_period, Sample_or_Control, Periodontal_disease_present, Caries_present, Sex, Age), by = "Library_ID")
+                           select(Library_ID, Site, Region, Time_period, Sample_or_Control, Periodontal_disease_present, Caries_present, Sex, Age, Tooth_location), by = "Library_ID")
     
     metadata_group = df_X[[metadata_group]]
     
@@ -98,8 +98,9 @@ plot_pca_names <- function(df, pc1, pc2, metadata_group) {
                         ylab(paste(yaxis, " - ", exp_var_pc2)) +
                         theme_minimal(base_size = 16) +
                         theme(text = element_text(size=16)) +
-                        theme(legend.position = "top") +
-                        theme(legend.title = element_blank())
+                        theme(legend.position = "top") 
+    # +
+    #                     theme(legend.title = element_blank())
 
     return(pca_plot_names)
 }
@@ -172,7 +173,7 @@ plot_pca <- function(df, pc1, pc2, color_group, shape_group, ncomps) {
 
 ```{r pca_plot_mid_fxn}
 # plot PCA with colored dots 
-plot_pca_mid <- function(df, pc1, pc2, color_group, shape_group, ncomps) {
+plot_pca_mid <- function(df, pc1, pc2, color_group, shape_group, ncomps, title_text) {
 
     pca.list <- mixOmics::pca(df, ncomp = ncomps, logratio = 'CLR')
 
@@ -215,7 +216,7 @@ plot_pca_mid <- function(df, pc1, pc2, color_group, shape_group, ncomps) {
 
     pca_plot <- ggplot(df_X, aes(pc1, pc2, colour = color_group, shape = shape_group)) +
                         geom_point(size = 2) +
-                        scale_colour_manual(values = c("#5A167E","#C83E73","#E95562","#FEA873","#FED395","#252525","#311068")) +
+                        scale_colour_manual(values = c("#5A167E","#E95562","#FED395","#252525","#311068","#C83E73","#FEA873")) + # 
                         scale_shape_manual(values = c(16, 17, 15, 18)) +
                         # stat_ellipse() +
                         xlab(paste(xaxis, " - ", exp_var_pc1)) +
@@ -224,14 +225,18 @@ plot_pca_mid <- function(df, pc1, pc2, color_group, shape_group, ncomps) {
                         theme(text = element_text(size=16)) +
                         theme(legend.title = element_blank(),
                               legend.key.size = unit(2,"mm"),
-                              legend.text = element_text(size = 6)) +
-                        theme(legend.position = "top")
+                              legend.text = element_text(size = 6)) + # 
+                        theme(legend.position = "top") +
+                        ggtitle(title_text) + theme(plot.title = element_text(size = 10))
 
     return(pca_plot)
 }
 
+```
+
+```{r pca_plot_cont_fxn}
 # for continuous data
-plot_pca_cont <- function(df, pc1, pc2, color_group, shape_group, ncomps) {
+plot_pca_cont <- function(df, pc1, pc2, color_group, shape_group, ncomps, title_text) {
 
     pca.list <- mixOmics::pca(df, ncomp = ncomps, logratio = 'CLR')
 
@@ -283,8 +288,9 @@ plot_pca_cont <- function(df, pc1, pc2, color_group, shape_group, ncomps) {
                         theme(text = element_text(size=16)) +
                         theme(legend.title = element_blank(),
                               legend.key.size = unit(2,"mm"),
-                              legend.text = element_text(size = 6)) +
-                        theme(legend.position = "top")
+                              legend.text = element_text(size = 6)) + 
+                        theme(legend.position = "top") +
+                        ggtitle(title_text) + theme(plot.title = element_text(size = 10))
 
     return(pca_plot)
 }
@@ -359,7 +365,7 @@ plot_pca_bi <- function(df, pc1, pc2, metadata_group, columntitle) {
 
 
     pca_plot_bi <- ggplot(df_X, aes(x = Pc1, y = Pc2, colour = metadata_group)) +
-      geom_point(size = 2, aes(shape = metadata_group) )+
+      geom_point(size = 2.5, aes(shape = metadata_group) )+
       geom_segment(data = pws_10,
                    aes(xend = get(paste(pc1)), yend = get(paste(pc2))),
                    x = 0, y = 0, colour = "black",
@@ -413,9 +419,9 @@ samples to eachother between groups.
 ```{r pca_all_species}
 # decontaminated only
 all_species_decontam_unfilt <- all_species_decontam %>%
-  adorn_totals(where = "col", name = "Sum_species.decontam") %>%
   select(-one_of(outliers)) %>%
   select(-one_of(poor_samples)) %>%
+  adorn_totals(where = "col", name = "Sum_species.decontam") %>%
   mutate(Percent = Sum_species.decontam/sum(Sum_species.decontam)*100) %>%
   select(-one_of(c("Sum_species.decontam","Percent"))) %>%
   gather("Library_ID","Counts",2:ncol(.)) %>%
@@ -511,11 +517,13 @@ plot_pca(all_species_decontam_noblanks, "PC1", "PC2", "Time_period", "Time_perio
 plot_pca(all_species_decontam_noblanks, "PC1", "PC2", "Sex", "Time_period", 3)
 plot_pca(all_species_decontam_noblanks, "PC1", "PC2", "Periodontal_disease_present", "Time_period", 3)
 plot_pca(all_species_decontam_noblanks, "PC1", "PC2", "Caries_present", "Time_period", 3)
+plot_pca(all_species_decontam_noblanks, "PC1", "PC2", "Tooth_location", "Time_period", 3)
+plot_pca(all_species_decontam_noblanks, "PC1", "PC2", "alt_tooth_location", "Time_period", 3)
 
 ```
 
-Here we use a cut-off of 0.001% abundance across all samples. This leaves 400
-species, only slightly fewer than the 438 kept by filtering based on prevalence.
+Here we use a cut-off of 0.001% abundance across all samples. This leaves 424
+species, only slightly fewer than the 497 kept by filtering based on prevalence.
 The PCA plots are indistinguishable to me. Is one necessarily better than the
 other to use?
 ```{r pca_abd_noblanks_species}
@@ -538,67 +546,133 @@ tune.pca(all_species_decontam_filtered_noblanks, logratio = 'CLR')
 
 # perform and plot a PCA to see how the data cluster
 # by Site
-pca_village <- plot_pca(all_species_decontam_filtered_noblanks, "PC1", "PC2", "Site", "Time_period", 3)
-pca_village
-plot_pca(all_species_decontam_filtered_noblanks, "PC3", "PC2", "Site", "Time_period", 3)
+plot_pca(all_species_decontam_filtered_noblanks, "PC1", "PC2", "Site", "Time_period", 3)
+plot_pca(all_species_decontam_filtered_noblanks, "PC1", "PC3", "Site", "Time_period", 3)
 
 # ggsave("05-results.backup/pca_village.pdf", plot = pca_village, device = "pdf",
 #        scale = 1, width = 7, height = 5, units = c("in"), dpi = 300)
 
 # by Region
 plot_pca(all_species_decontam_filtered_noblanks, "PC1", "PC2", "Region", "Time_period", 3)
-plot_pca(all_species_decontam_filtered_noblanks, "PC3", "PC2", "Region", "Time_period", 3)
 
 # by Time period
 plot_pca(all_species_decontam_filtered_noblanks, "PC1", "PC2", "Time_period", "Time_period", 3)
-plot_pca(all_species_decontam_filtered_noblanks, "PC3", "PC2", "Time_period", "Time_period", 3)
 
 # by Sex
 plot_pca(all_species_decontam_filtered_noblanks, "PC1", "PC2", "Sex", "Time_period", 3)
-plot_pca(all_species_decontam_filtered_noblanks, "PC3", "PC2", "Sex", "Time_period", 3)
-
-# by Age group
-# plot_pca(all_species_decontam_filtered_noblanks, "PC1", "PC2", "Age", "Time_period", 3)
-# plot_pca(all_species_decontam_filtered_noblanks, "PC3", "PC2", "Age", "Time_period", 3)
 
 # by periodontal diseae (anywhere in the mouth)
 plot_pca(all_species_decontam_filtered_noblanks, "PC1", "PC2", "Periodontal_disease_present", "Time_period", 3)
-plot_pca(all_species_decontam_filtered_noblanks, "PC3", "PC2", "Periodontal_disease_present", "Time_period", 3)
 
 # by caries (anywhere in the mouth)
 plot_pca(all_species_decontam_filtered_noblanks, "PC1", "PC2", "Caries_present", "Time_period", 3)
-plot_pca(all_species_decontam_filtered_noblanks, "PC3", "PC2", "Caries_present", "Time_period", 3)
+
+# by sampled tooth/teeth location
+plot_pca(all_species_decontam_filtered_noblanks, "PC1", "PC2", "Tooth_location", "Time_period", 3)
+
+# by sampled tooth/teeth location
+plot_pca(all_species_decontam_filtered_noblanks, "PC1", "PC2", "alt_tooth_location", "Time_period", 3)
 
 # by Individual sequencing depth
 # perform a PCA to see how the data cluster
-# malt_species_decontam_filtered_noblanks.pca <- mixOmics::pca(all_species_decontam_filtered_noblanks, ncomp = 3, logratio = 'CLR')
-# plot(malt_species_decontam_filtered_noblanks.pca)
+
+malt_species_decontam_filtered_noblanks.pca <- mixOmics::pca(all_species_decontam_filtered_noblanks, ncomp = 3, logratio = 'CLR')
+plot(malt_species_decontam_filtered_noblanks.pca)
 
 # Select out the PC variates into a new table and add the metadata for plotting
-# malt_species_decontam_filtered_noblanks.pca.variates <- as.data.frame(malt_species_decontam_filtered_noblanks.pca$variates$X)
-# malt_species_decontam_filtered_noblanks.pca.variates <- malt_species_decontam_filtered_noblanks.pca.variates %>%
-#   rownames_to_column("Library_ID")
-#   
-# malt_species_decontam_filtered_noblanks.pca.varmet <- inner_join(malt_species_decontam_filtered_noblanks.pca.variates, metadata, by = "Library_ID")
-# 
-# pca_malt_species_pc1pc2 <- ggplot(malt_species_decontam_filtered_noblanks.pca.varmet, aes(PC1, PC2, colour = Individual_Seq_Depth_NonHuman, shape = Ethnic_Group)) +
-#   geom_point(size = 4) +
-#   scale_shape_manual(values = Ethnic_Group_shapes) +
-#   xlab(paste("PC1 - ", 100*(round(malt_species_decontam_filtered_noblanks.pca$explained_variance[1], 2)), "%", sep = "")) +
-#   ylab(paste("PC2 - ", 100*(round(malt_species_decontam_filtered_noblanks.pca$explained_variance[2], 2)), "%", sep = "")) +
-#   theme_minimal(base_size = 14) +
-#   labs(colour = "Seq. depth\n(reads)", shape = "Ethnic group")
-# 
-# pca_malt_species_pc1pc2
+malt_species_decontam_filtered_noblanks.pca.variates <- as.data.frame(malt_species_decontam_filtered_noblanks.pca$variates$X)
+malt_species_decontam_filtered_noblanks.pca.variates <- malt_species_decontam_filtered_noblanks.pca.variates %>%
+  rownames_to_column("Library_ID")
+
+malt_species_decontam_filtered_noblanks.pca.varmet <- inner_join(malt_species_decontam_filtered_noblanks.pca.variates, full_metadata, by = "Library_ID")
+
+malt_species_decontam_filtered_noblanks.pca.varmet %>%
+  ggplot(., aes(PC1, PC2, colour = No_reads_total, shape = Time_period)) +
+    geom_point(size = 2) +
+    scale_shape_manual(values = Time_period_shapes) +
+    scale_color_viridis_c(option = "A") +
+    xlab(paste("PC1 - ", 100*(round(malt_species_decontam_filtered_noblanks.pca$explained_variance[1], 2)), "%", sep = "")) +
+    ylab(paste("PC2 - ", 100*(round(malt_species_decontam_filtered_noblanks.pca$explained_variance[2], 2)), "%", sep = "")) +
+    theme_minimal(base_size = 14) +
+    labs(colour = "Seq. depth\n(reads)", shape = "Time period") +
+    theme(legend.title = element_text(size = 10))
+
+malt_species_decontam_filtered_noblanks.pca.varmet %>%
+  mutate(No_reads_total_log = log10(No_reads_total)) %>%
+  ggplot(., aes(PC1, PC2, colour = No_reads_total_log, shape = Time_period)) +
+    geom_point(size = 2) +
+    scale_shape_manual(values = Time_period_shapes) +
+    scale_color_viridis_c(option = "A") +
+    xlab(paste("PC1 - ", 100*(round(malt_species_decontam_filtered_noblanks.pca$explained_variance[1], 2)), "%", sep = "")) +
+    ylab(paste("PC2 - ", 100*(round(malt_species_decontam_filtered_noblanks.pca$explained_variance[2], 2)), "%", sep = "")) +
+    theme_minimal(base_size = 14) +
+    labs(colour = "Log10\n(Seq. depth)", shape = "Time period") +
+    theme(legend.title = element_text(size = 10))
+
 
 # ggsave("05-results.backup/librarybatch.pdf", plot = extractionbatch, device = "pdf",
 #        scale = 1, width = 7, height = 5, units = c("in"), dpi = 300)
 
 ```
 
+```{r}
+
+# by Site
+plot_pca(all_species_decontam_filtered_noblanks, "PC3", "PC2", "Site", "Time_period", 3)
+
+# by Region
+plot_pca(all_species_decontam_filtered_noblanks, "PC3", "PC2", "Region", "Time_period", 3)
+
+# by Time period
+plot_pca(all_species_decontam_filtered_noblanks, "PC3", "PC2", "Time_period", "Time_period", 3)
+
+# by Sex
+plot_pca(all_species_decontam_filtered_noblanks, "PC3", "PC2", "Sex", "Time_period", 3)
+
+# by periodontal diseae (anywhere in the mouth)
+plot_pca(all_species_decontam_filtered_noblanks, "PC3", "PC2", "Periodontal_disease_present", "Time_period", 3)
+
+# by caries (anywhere in the mouth)
+plot_pca(all_species_decontam_filtered_noblanks, "PC3", "PC2", "Caries_present", "Time_period", 3)
+
+# by sampled tooth/teeth location
+plot_pca(all_species_decontam_filtered_noblanks, "PC3", "PC2", "Tooth_location", "Time_period", 3)
+
+# by sampled tooth/teeth location
+plot_pca(all_species_decontam_filtered_noblanks, "PC3", "PC2", "alt_tooth_location", "Time_period", 3)
+
+# by sequencing depth
+
+malt_species_decontam_filtered_noblanks.pca.varmet %>%
+  ggplot(., aes(PC3, PC2, colour = No_reads_total, shape = Time_period)) +
+    geom_point(size = 2) +
+    scale_shape_manual(values = Time_period_shapes) +
+    scale_color_viridis_c(option = "A") +
+    xlab(paste("PC3 - ", 100*(round(malt_species_decontam_filtered_noblanks.pca$explained_variance[3], 2)), "%", sep = "")) +
+    ylab(paste("PC2 - ", 100*(round(malt_species_decontam_filtered_noblanks.pca$explained_variance[2], 2)), "%", sep = "")) +
+    theme_minimal(base_size = 14) +
+    labs(colour = "Seq. depth\n(reads)", shape = "Time period") +
+    theme(legend.title = element_text(size = 10))
+
+malt_species_decontam_filtered_noblanks.pca.varmet %>%
+  mutate(No_reads_total_log = log10(No_reads_total)) %>%
+  ggplot(., aes(PC3, PC2, colour = No_reads_total_log, shape = Time_period)) +
+    geom_point(size = 2) +
+    scale_shape_manual(values = Time_period_shapes) +
+    scale_color_viridis_c(option = "A") +
+    xlab(paste("PC3 - ", 100*(round(malt_species_decontam_filtered_noblanks.pca$explained_variance[3], 2)), "%", sep = "")) +
+    ylab(paste("PC2 - ", 100*(round(malt_species_decontam_filtered_noblanks.pca$explained_variance[2], 2)), "%", sep = "")) +
+    theme_minimal(base_size = 14) +
+    labs(colour = "Log10\n(Seq. depth)", shape = "Time period") +
+    theme(legend.title = element_text(size = 10))
+
+
+```
+
+
 Make biplots of the top 10 loading species in positive and negative directions
 of PC1 and PC2, using the abundance filter.
-```{r biplot_noblanks, eval = F}
+```{r biplot_noblanks}
 # remove the Yanomami samples from the input table
 all_species_decontam_filtered_noblanks <- all_species_decontam %>%
   select(-matches("EXB|LIB|CSS|CSD|CSN|CSL")) %>%
@@ -618,15 +692,11 @@ all_species_decontam_filtered_noblanks <- all_species_decontam %>%
 all_species_decontam_filtered_noblanks.pca <- mixOmics::pca(all_species_decontam_filtered_noblanks, ncomp = 3, logratio = 'CLR')
 
 # First plot by Description (do HMP supragingival and HMP subgingival plaque samples separate?) to see what it looks like before adding the biplot over the points
-plot_pca(all_species_decontam_filtered_noblanks, "PC1", "PC2", "Description", "Description", "Description", 3)
-plot_pca(all_species_decontam_filtered_noblanks, "PC3", "PC2", "Description", "Description", "Description", 3)
-
-# Then plot by Tooth_site (do anterior teeth and posterior teeth samples separate?) to see what it looks like before adding the biplot over the points
-plot_pca(all_species_decontam_filtered_noblanks, "PC1", "PC2", "Tooth_site", "Ethnic_Group", 3)
-plot_pca(all_species_decontam_filtered_noblanks, "PC3", "PC2", "Tooth_site", "Ethnic_Group", 3)
+plot_pca(all_species_decontam_filtered_noblanks, "PC1", "PC2", "Region", "Time_period", 3)
+plot_pca(all_species_decontam_filtered_noblanks, "PC3", "PC2", "Region", "Time_period", 3)
 
 # Now plot biplots, and make tables of the top 10 species in each loading
-malt_species_decontam_filtered_biplot_121 <- plot_pca_bi(all_species_decontam_filtered_noblanks.pca, "PC1", "PC2", "Ethnic_Group", PC1)
+malt_species_decontam_filtered_biplot_121 <- plot_pca_bi(all_species_decontam_filtered_noblanks.pca, "PC1", "PC2", "Region", PC1)
 malt_species_decontam_filtered_biplot_121
 
 pandoc.table(malt_species_decontam_filtered_biplot_121$plot_env$pws_10 %>% arrange(desc(PC1)),
@@ -644,7 +714,7 @@ pandoc.table(malt_species_decontam_filtered_biplot_121$plot_env$neg_10 %>% arran
              caption = "PC1 negative loadings")
 
 
-malt_species_decontam_filtered_biplot_122 <- plot_pca_bi(all_species_decontam_filtered_noblanks.pca, "PC1", "PC2", "Ethnic_Group", PC2)
+malt_species_decontam_filtered_biplot_122 <- plot_pca_bi(all_species_decontam_filtered_noblanks.pca, "PC1", "PC2", "Region", PC2)
 malt_species_decontam_filtered_biplot_122
 
 pandoc.table(malt_species_decontam_filtered_biplot_122$plot_env$pws_10 %>% arrange(desc(PC2)),
@@ -662,10 +732,10 @@ pandoc.table(malt_species_decontam_filtered_biplot_122$plot_env$neg_10 %>% arran
              caption = "PC2 negative loadings")
 
 
-malt_species_decontam_filtered_biplot_322 <- plot_pca_bi(all_species_decontam_filtered_noblanks.pca, "PC3", "PC2", "Ethnic_Group", PC2)
+malt_species_decontam_filtered_biplot_322 <- plot_pca_bi(all_species_decontam_filtered_noblanks.pca, "PC3", "PC2", "Region", PC2)
 malt_species_decontam_filtered_biplot_322
 
-malt_species_decontam_filtered_biplot_323 <- plot_pca_bi(all_species_decontam_filtered_noblanks.pca, "PC3", "PC2", "Ethnic_Group", PC3)
+malt_species_decontam_filtered_biplot_323 <- plot_pca_bi(all_species_decontam_filtered_noblanks.pca, "PC3", "PC2", "Region", PC3)
 malt_species_decontam_filtered_biplot_323
 
 pandoc.table(malt_species_decontam_filtered_biplot_323$plot_env$pws_10 %>% arrange(desc(PC3)),
@@ -701,6 +771,8 @@ metadata_noblanks <- metadata_noblanks %>%
   filter(!Library_ID %in% outliers) %>%
   filter(!Library_ID %in% poor_samples) %>%
   filter(!str_detect(Library_ID, "CSN|CSL|EXB|LIB")) %>%
+  # remove the MID samples that have no metadata
+  filter(!str_detect(Library_ID, "MID025.A0101|MID033.A0101|MID056.A0101|MID065.A0101|MID068.A0101|MID076.A0101|MID078.A0101")) %>%
   mutate(Site = fct_relevel(Site, "Middenbeemster", "CMB", "Radcliffe", "Kilteasheen",
                                    "ELR", "IVE"),
          Time_period = fct_relevel(Time_period, "Industrial","Medieval"),
@@ -842,14 +914,14 @@ boxplot(tp_betadisper_noblanks)
 What is the relationship of Cameroon plaque samples to eachother without any
 other sample types? Do they cluster by any of the metadata categories?
 Filter the species table by % abundance
-```{r pca_species_mid}
+```{r pca_species_mid_pc12}
 all_species_decontam_filtered_mid <- all_species_decontam %>%
   select(-one_of(outliers)) %>%
   select(-one_of(poor_samples)) %>%
   select(matches("Species|MID")) %>%
-  adorn_totals(where = "col", name = "Sum_species") %>%
-  mutate(Percent = Sum_species/sum(Sum_species)*100) %>%
-  filter(Percent > 0.001) %>%
+  # adorn_totals(where = "col", name = "Sum_species") %>%
+  # mutate(Percent = Sum_species/sum(Sum_species)*100) %>%
+  # filter(Percent > 0.001) %>%
   select(-one_of(c("Sum_species","Percent"))) %>%
   gather("Library_ID","Counts",2:ncol(.)) %>% 
   mutate(Counts = Counts +1) %>%
@@ -861,100 +933,151 @@ all_species_decontam_filtered_mid <- all_species_decontam %>%
 tune.pca(all_species_decontam_filtered_mid, logratio = 'CLR')
 
 # perform and plot a PCA to see how the data cluster
-# by Village
-pca_mid_pipenotch <- plot_pca_mid(all_species_decontam_filtered_mid, "PC1", "PC2", "Pipenotch", "Periodontal_disease_present", 3)
-pca_mid_pipenotch
-plot_pca_mid(all_species_decontam_filtered_mid, "PC3", "PC2", "Pipenotch", "Periodontal_disease_present", 3)
+# by pipe notch presence
+plot_pca_mid(all_species_decontam_filtered_mid, "PC1", "PC2", "Pipenotch", "Pipenotch", 3, "Pipe notch")
 
 # ggsave("05-results.backup/pca_mid_village.pdf", plot = pca_mid_village, device = "pdf",
 #        scale = 1, width = 7, height = 5, units = c("in"), dpi = 300)
 
+# by sex
+plot_pca_mid(all_species_decontam_filtered_mid, "PC1", "PC2", "Sex", "Pipenotch", 3, "Sex")
+
+# by age
+plot_pca_mid(all_species_decontam_filtered_mid, "PC1", "PC2", "Age", "Pipenotch", 3, "Age")
+
+# by presence of periodontal disease
+plot_pca_mid(all_species_decontam_filtered_mid, "PC1", "PC2", "Periodontal_disease_present", "Pipenotch", 3, "Periodontal disease present")
+
 # by presence of caries
-plot_pca_mid(all_species_decontam_filtered_mid, "PC1", "PC2", "Caries_present", "Pipenotch", 3)
-plot_pca_mid(all_species_decontam_filtered_mid, "PC3", "PC2", "Caries_present", "Pipenotch", 3)
+plot_pca_mid(all_species_decontam_filtered_mid, "PC1", "PC2", "Caries_present", "Pipenotch", 3, "Caries present")
 
 # by ante-mortem tooth loss
-plot_pca_mid(all_species_decontam_filtered_mid, "PC1", "PC2", "AMTL", "Pipenotch", 3)
-plot_pca_mid(all_species_decontam_filtered_mid, "PC3", "PC2", "AMTL", "Pipenotch", 3)
+plot_pca_mid(all_species_decontam_filtered_mid, "PC1", "PC2", "AMTL", "Pipenotch", 3, "AMTL")
 
 # by supragingival calculus score
-plot_pca_cont(all_species_decontam_filtered_mid, "PC1", "PC2", "calc_sup_SI_score", "Pipenotch", 3)
-plot_pca_cont(all_species_decontam_filtered_mid, "PC3", "PC2", "calc_sup_SI_score", "Pipenotch", 3)
+plot_pca_cont(all_species_decontam_filtered_mid, "PC1", "PC2", "calc_sup_SI_score", "Pipenotch", 3, "Sup calc SI score")
 
 # by subgingival calculus score
-plot_pca_cont(all_species_decontam_filtered_mid, "PC1", "PC2", "Calc_sub_SI_score", "Pipenotch", 3)
-plot_pca_cont(all_species_decontam_filtered_mid, "PC3", "PC2", "Calc_sub_SI_score", "Pipenotch", 3)
+plot_pca_cont(all_species_decontam_filtered_mid, "PC1", "PC2", "Calc_sub_SI_score", "Pipenotch", 3, "Sub calc SI score")
 
 # by presence of perioapical lesions
-plot_pca_mid(all_species_decontam_filtered_mid, "PC1", "PC2", "Periapical_lesions", "Pipenotch", 3)
-plot_pca_mid(all_species_decontam_filtered_mid, "PC3", "PC2", "Periapical_lesions", "Pipenotch", 3)
+plot_pca_mid(all_species_decontam_filtered_mid, "PC1", "PC2", "Periapical_lesions", "Pipenotch", 3, "Periapical lesions")
 
 # by max periodontal disease score
-plot_pca_cont(all_species_decontam_filtered_mid, "PC1", "PC2", "Max_Perio_Score", "Pipenotch", 3)
-plot_pca_cont(all_species_decontam_filtered_mid, "PC3", "PC2", "Max_Perio_Score", "Pipenotch", 3)
+plot_pca_cont(all_species_decontam_filtered_mid, "PC1", "PC2", "Max_Perio_Score", "Pipenotch", 3, "Max perio score")
 
 # by periodontal affect score
-plot_pca_cont(all_species_decontam_filtered_mid, "PC1", "PC2", "Peridontal_affect_score", "Pipenotch", 3)
-plot_pca_cont(all_species_decontam_filtered_mid, "PC3", "PC2", "Peridontal_affect_score", "Pipenotch", 3)
+plot_pca_cont(all_species_decontam_filtered_mid, "PC1", "PC2", "Peridontal_affect_score", "Pipenotch", 3, "Perio affect score")
 
 # by % antemortem tooth loss
-plot_pca_cont(all_species_decontam_filtered_mid, "PC1", "PC2", "%AMTL", "Pipenotch", 3)
-plot_pca_cont(all_species_decontam_filtered_mid, "PC3", "PC2", "%AMTL", "Pipenotch", 3)
+plot_pca_cont(all_species_decontam_filtered_mid, "PC1", "PC2", "%AMTL", "Pipenotch", 3, " % AMTL")
 
 # by % positions w/periapical lesions
-plot_pca_cont(all_species_decontam_filtered_mid, "PC1", "PC2", "%_positions_perioapical", "Pipenotch", 3)
-plot_pca_cont(all_species_decontam_filtered_mid, "PC3", "PC2", "%_positions_perioapical", "Pipenotch", 3)
+plot_pca_cont(all_species_decontam_filtered_mid, "PC1", "PC2", "%_positions_perioapical", "Pipenotch", 3, "% positions periapical lesions")
 
 # by % teeth with caries
-plot_pca_cont(all_species_decontam_filtered_mid, "PC1", "PC2", "%teeth_with_caries", "Pipenotch", 3)
-plot_pca_cont(all_species_decontam_filtered_mid, "PC3", "PC2", "%teeth_with_caries", "Pipenotch", 3)
+plot_pca_cont(all_species_decontam_filtered_mid, "PC1", "PC2", "%teeth_with_caries", "Pipenotch", 3, "% teeth w/ caries")
 
 # by % teeth with calculus
-plot_pca_cont(all_species_decontam_filtered_mid, "PC1", "PC2", "%teeth_with_calc", "Pipenotch", 3)
-plot_pca_cont(all_species_decontam_filtered_mid, "PC3", "PC2", "%teeth_with_calc", "Pipenotch", 3)
+plot_pca_cont(all_species_decontam_filtered_mid, "PC1", "PC2", "%teeth_with_calc", "Pipenotch", 3, "% teeth w/ calc")
 
 # by % positions with periodontal disease
-plot_pca_cont(all_species_decontam_filtered_mid, "PC1", "PC2", "%_positions_with_Periodontal", "Pipenotch", 3)
-plot_pca_cont(all_species_decontam_filtered_mid, "PC3", "PC2", "%_positions_with_Periodontal", "Pipenotch", 3)
+plot_pca_cont(all_species_decontam_filtered_mid, "PC1", "PC2", "%_positions_with_Periodontal", "Pipenotch", 3, "% positions w/ PD")
 
 # by minimum number of pipenotches 
-plot_pca_cont(all_species_decontam_filtered_mid, "PC1", "PC2", "Min_no_Pipe_notches", "Pipenotch", 3)
-plot_pca_cont(all_species_decontam_filtered_mid, "PC3", "PC2", "Min_no_Pipe_notches", "Pipenotch", 3)
+plot_pca_cont(all_species_decontam_filtered_mid, "PC1", "PC2", "Min_no_Pipe_notches", "Pipenotch", 3, "Min # pipe notches")
 
-# by Individual sequencing depth
-# perform a PCA to see how the data cluster
-# all_species_decontam_filtered_mid.pca <- mixOmics::pca(all_species_decontam_filtered_mid, ncomp = 3, logratio = 'CLR')
-# plot(all_species_decontam_filtered_mid.pca)
-# 
-# # Select out the PC variates into a new table and add the metadata for plotting
-# all_species_decontam_filtered_mid.pca.variates <- as.data.frame(all_species_decontam_filtered_mid.pca$variates$X)
-# all_species_decontam_filtered_mid.pca.variates <- all_species_decontam_filtered_mid.pca.variates %>%
-#   rownames_to_column("Library_ID")
-#   
-# all_species_decontam_filtered_mid.pca.varmet <- inner_join(all_species_decontam_filtered_mid.pca.variates, metadata, by = "Library_ID")
-# 
-# pca_malt_species_pc1pc2 <- ggplot(all_species_decontam_filtered_mid.pca.varmet, aes(PC1, PC2, colour = Individual_Seq_Depth_NonHuman, shape = Ethnic_Group)) +
-#   geom_point(size = 4) +
-#   scale_shape_manual(values = Ethnic_Group_shapes) +
-#   xlab(paste("PC1 - ", 100*(round(all_species_decontam_filtered_mid.pca$explained_variance[1], 2)), "%", sep = "")) +
-#   ylab(paste("PC2 - ", 100*(round(all_species_decontam_filtered_mid.pca$explained_variance[2], 2))< "%", sep = "")) +
-#   theme_minimal(base_size = 14) +
-#   labs(colour = "Seq. depth\n(reads)", shape = "Ethnic group")
-# 
-# pca_malt_species_pc1pc2
+# by sequencing depth 
+plot_pca_cont(all_species_decontam_filtered_mid, "PC1", "PC2", "No_reads_total", "Pipenotch", 3, "Total reads into MALT")
 
+# by sampled tooth site(s)
+plot_pca_mid(all_species_decontam_filtered_mid, "PC1", "PC2", "Tooth_location", "Pipenotch", 3, "Tooth location")
+
+# by sampled tooth site(s)
+plot_pca_mid(all_species_decontam_filtered_mid, "PC1", "PC2", "alt_tooth_location", "Pipenotch", 3, "Tooth location")
+
+# by mg of extracted calculus
+plot_pca_cont(all_species_decontam_filtered_mid, "PC1", "PC2", "Calculus_extracted_mg", "Pipenotch", 3, "Weight of extracted calculus")
 
 # with names
-pca.list <- mixOmics::pca(all_species_decontam_filtered_mid, ncomp = 3, logratio = 'CLR')
-plot_pca_names(pca.list, "PC1", "PC2", "Ethnic_Group")
+# pca.list <- mixOmics::pca(all_species_decontam_filtered_mid, ncomp = 3, logratio = 'CLR')
+# plot_pca_names(pca.list, "PC1", "PC2", "Pipenotch")
 
 # ggsave("05-results.backup/pca_nt_species_pc1pc2.pdf", plot = pca_nt_species_pc1pc2, device = "pdf",
 #        scale = 1, width = 7, height = 5, units = c("in"),
 #        dpi = 300)
 ```
 
+```{r pca_species_mid_pc32}
+# by sex
+plot_pca_mid(all_species_decontam_filtered_mid, "PC3", "PC2", "Sex", "Pipenotch", 3, "Sex")
 
-```{r biplots_cmc_species, eval = F}
+# by age
+plot_pca_mid(all_species_decontam_filtered_mid, "PC3", "PC2", "Age", "Pipenotch", 3, "Age")
+
+# by pipe notch presence
+plot_pca_mid(all_species_decontam_filtered_mid, "PC3", "PC2", "Pipenotch", "Pipenotch", 3, "Pipe notch")
+
+# by presence of periodontal disease
+plot_pca_mid(all_species_decontam_filtered_mid, "PC3", "PC2", "Periodontal_disease_present", "Pipenotch", 3, "Periodontal disease present")
+
+# by presence of caries
+plot_pca_mid(all_species_decontam_filtered_mid, "PC3", "PC2", "Caries_present", "Pipenotch", 3, "Caries present")
+
+# by ante-mortem tooth loss
+plot_pca_mid(all_species_decontam_filtered_mid, "PC3", "PC2", "AMTL", "Pipenotch", 3, "AMTL")
+
+# by supragingival calculus score
+plot_pca_cont(all_species_decontam_filtered_mid, "PC3", "PC2", "calc_sup_SI_score", "Pipenotch", 3, "Sup calc SI score")
+
+# by subgingival calculus score
+plot_pca_cont(all_species_decontam_filtered_mid, "PC3", "PC2", "Calc_sub_SI_score", "Pipenotch", 3, "Sub calc SI score")
+
+# by presence of perioapical lesions
+plot_pca_mid(all_species_decontam_filtered_mid, "PC3", "PC2", "Periapical_lesions", "Pipenotch", 3, "Periapical lesions")
+
+# by max periodontal disease score
+plot_pca_cont(all_species_decontam_filtered_mid, "PC3", "PC2", "Max_Perio_Score", "Pipenotch", 3, "Max perio score")
+
+# by periodontal affect score
+plot_pca_cont(all_species_decontam_filtered_mid, "PC3", "PC2", "Peridontal_affect_score", "Pipenotch", 3, "Perio affect score")
+
+# by % antemortem tooth loss
+plot_pca_cont(all_species_decontam_filtered_mid, "PC3", "PC2", "%AMTL", "Pipenotch", 3, "% AMTL")
+
+# by % positions w/periapical lesions
+plot_pca_cont(all_species_decontam_filtered_mid, "PC3", "PC2", "%_positions_perioapical", "Pipenotch", 3, "% positions periapical lesions")
+
+# by % teeth with caries
+plot_pca_cont(all_species_decontam_filtered_mid, "PC3", "PC2", "%teeth_with_caries", "Pipenotch", 3, "% teeth w/ caries")
+
+# by % teeth with calculus
+plot_pca_cont(all_species_decontam_filtered_mid, "PC3", "PC2", "%teeth_with_calc", "Pipenotch", 3, "% teeth w/ calc")
+
+# by % positions with periodontal disease
+plot_pca_cont(all_species_decontam_filtered_mid, "PC3", "PC2", "%_positions_with_Periodontal", "Pipenotch", 3, "% positions w/ PD")
+
+# by minimum number of pipenotches 
+plot_pca_cont(all_species_decontam_filtered_mid, "PC3", "PC2", "Min_no_Pipe_notches", "Pipenotch", 3, "Min # pipe notches")
+
+# by sequencing depth 
+plot_pca_cont(all_species_decontam_filtered_mid, "PC3", "PC2", "No_reads_total", "Pipenotch", 3, "Total reads into MALT")
+
+# by sampled tooth site(s)
+plot_pca_mid(all_species_decontam_filtered_mid, "PC3", "PC2", "Tooth_location", "Pipenotch", 3, "Tooth location")
+
+# by sampled tooth site(s)
+plot_pca_mid(all_species_decontam_filtered_mid, "PC3", "PC2", "alt_tooth_location", "Pipenotch", 3, "Tooth location")
+
+# by mg of extracted calculus
+plot_pca_cont(all_species_decontam_filtered_mid, "PC3", "PC2", "Calculus_extracted_mg", "Pipenotch", 3, "Weight of extracted calculus")
+
+
+```
+
+
+
+```{r biplots_cmc_species}
 
 all_species_decontam_filtered_mid <- all_species_decontam %>%
   select(-one_of(outliers)) %>%
@@ -997,9 +1120,6 @@ pandoc.table(all_species_decontam_filtered_nocontrols_biplot_121$plot_env$neg_10
              caption = "PC1 negative loadings")
 
 
-all_species_decontam_filtered_nocontrols_biplot_122 <- plot_pca_bi(all_species_decontam_filtered_nocontrols.pca, "PC1", "PC2", "Tooth_site", PC2)
-all_species_decontam_filtered_nocontrols_biplot_122
-
 pandoc.table(all_species_decontam_filtered_nocontrols_biplot_122$plot_env$pws_10 %>% arrange(desc(PC2)),
              digits = 5,
              keep.trailing.zeros = T,
@@ -1015,10 +1135,10 @@ pandoc.table(all_species_decontam_filtered_nocontrols_biplot_122$plot_env$neg_10
              caption = "PC2 negative loadings")
 
 
-all_species_decontam_filtered_nocontrols_biplot_322 <- plot_pca_bi(all_species_decontam_filtered_nocontrols.pca, "PC3", "PC2", "Tooth_site", PC2)
+all_species_decontam_filtered_nocontrols_biplot_322 <- plot_pca_bi(all_species_decontam_filtered_mid.pca, "PC3", "PC2", "Pipenotch", PC2)
 all_species_decontam_filtered_nocontrols_biplot_322
 
-all_species_decontam_filtered_nocontrols_biplot_323 <- plot_pca_bi(all_species_decontam_filtered_nocontrols.pca, "PC3", "PC2", "Tooth_site", PC3)
+all_species_decontam_filtered_nocontrols_biplot_323 <- plot_pca_bi(all_species_decontam_filtered_mid.pca, "PC3", "PC2", "Pipenotch", PC3)
 all_species_decontam_filtered_nocontrols_biplot_323
 
 pandoc.table(all_species_decontam_filtered_nocontrols_biplot_323$plot_env$pws_10 %>% arrange(desc(PC3)),
@@ -1036,17 +1156,6 @@ pandoc.table(all_species_decontam_filtered_nocontrols_biplot_323$plot_env$neg_10
              caption = "PC3 negative loadings")
 
 ```
-In PC1, the positive loading taxa are mostly anaerobic taxa, while the negative
-loading taxa are a mix of aerobic and facultative taxa. This corresonds to the
-separation of samples by posterior (positive values) and anterior (negative
-values) tooth sites. In PC2, the positive loading taxa are largely aerobic, 8
-*Rothia*, while the negative loading taxa are mostly anaerobic. In PC3, the
-positive loading taxa are 8 aerobic *Rothia* in positive PC2 values and
-anaerobic(?) *[Eubacterium]* and *Thermoplasmatales* (archaeon), while the
-negative loading taxa are a mix of facultative anaerobes and anaerobes that can
-be found in early biofilms (*Streptococcus*, *Porphyromonas*). The split in PC3
-positive taxa corresonds with the taxa loading in PC2 (aerobic in positive,
-anaerobic in negative).
 
 
 

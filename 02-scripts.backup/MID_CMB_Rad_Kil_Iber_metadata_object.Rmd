@@ -34,6 +34,8 @@ full_metadata <- fread("./00-documentation.backup/radcliffe_pfuT_metadata.tsv") 
 
 full_metadata <- full_metadata %>%
   as_tibble() %>%
+  # remove the MID samples that have no metadata
+  filter(!str_detect(Library_ID, "MID025.A0101|MID033.A0101|MID056.A0101|MID065.A0101|MID068.A0101|MID076.A0101|MID078.A0101")) %>%
   mutate(Site = fct_relevel(Site, "Middenbeemster", "CMB", "Radcliffe", "Kilteasheen",
                                    "ELR", "IVE","Extraction_blank","Library_blank"),
          Time_period = fct_relevel(Time_period, "Industrial","Medieval","Extraction_blank","Library_blank"),
@@ -41,7 +43,9 @@ full_metadata <- full_metadata %>%
          Periodontal_disease_present = fct_relevel(Periodontal_disease_present, "Yes","No","Unobservable"),
          Caries_present = fct_relevel(Caries_present, "Yes","No","Unobservable"),
          Sample_or_Control = fct_relevel(Sample_or_Control, "Sample","Control"),
-         Sex = fct_relevel(Sex, "Female","Male","Indeterminate"))
+         Sex = fct_relevel(Sex, "Female","Male","Indeterminate"),
+         Tooth_location = fct_relevel(Tooth_location, "Anterior","Anterior/Posterior","Posterior","Unknown"),
+         alt_tooth_location = fct_relevel(alt_tooth_location, "Anterior","Anterior/Posterior","Posterior","Unknown"))
 
 ```
 
@@ -60,7 +64,7 @@ Time_period_size <- c(Industrial = 4, Medieval = 4,  Extraction_blank = 4, Libra
 
 Region_colors <- c(Netherlands = "#311068", Spain = "#5A167E", England = "#C83E73", Iberia = "#FEA873", Ireland = "#E95562",
                 Extraction_blank = "#252525", Library_blank = "#737373")
-Region_shapes <- c(Netherlands = 19, Spain = 7, England = 9, Iberia = 7, Ireland = 9, Extraction_blank = 4, Library_blank = 3)
+Region_shapes <- c(Netherlands = 9, Spain = 12, England = 10, Iberia = 7, Ireland = 13, Extraction_blank = 4, Library_blank = 3)
 Region_size <- c(Netherlands = 4, Spain = 4, England = 4, Iberia = 4, Ireland = 4, Extraction_blank = 4, Library_blank = 4)
 
 Periodontal_disease_present_colors <- c(Yes = "#311068", No = "#C83E73", Unobservable = "#737373")
@@ -79,6 +83,13 @@ Sex_colors <- c(Female = "#311068", Male = "#C83E73", Indeterminate = "#737373")
 Sex_shapes <- c(Female = 19, Male = 17, Indeterminate = 8)
 Sex_size <- c(Female = 4, Male = 4, Indeterminate = 4)
 
+Tooth_location_colors <- c(Anterior = "#311068", `Anterior/Posterior` = "#C83E73", Posterior = "#FEA873", Unknown = "#737373")
+Tooth_location_shapes <- c(Anterior = 19, `Anterior/Posterior` = 18, Posterior = 17, Unknown = 8)
+Tooth_location_size <- c(Anterior = 4, `Anterior/Posterior` = 4.5, Posterior = 4, Unknown = 4)
+
+alt_tooth_location_colors <- c(Anterior = "#311068", `Anterior/Posterior` = "#C83E73", Posterior = "#FEA873", Unknown = "#737373")
+alt_tooth_location_shapes <- c(Anterior = 19, `Anterior/Posterior` = 18, Posterior = 17, Unknown = 8)
+alt_tooth_location_size <- c(Anterior = 4, `Anterior/Posterior` = 4.5, Posterior = 4, Unknown = 4)
 
 ```
 
@@ -92,6 +103,8 @@ save(full_metadata,
      Caries_present_colors, Caries_present_shapes, Caries_present_size, 
      Sample_or_Control_colors, Sample_or_Control_shapes, Sample_or_Control_size, 
      Sex_colors, Sex_shapes, Sex_size, 
+     Tooth_location_colors,Tooth_location_shapes,Tooth_location_size,
+     alt_tooth_location_colors,alt_tooth_location_shapes,alt_tooth_location_size,
      file = "./05-results.backup/Metadata_tables.RData")
 
 ```

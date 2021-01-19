@@ -229,6 +229,34 @@ poor_samples <- fread("./05-results.backup/cuperdec_poor_samples.tsv") %>%
 
 ```
 
+Read in the DeepEvo table with ARS samples, to use as bone controls to hopefully
+clean up more environmental taxa. From
+`https://github.com/jfy133/Hominid_Calculus_Microbiome_Evolution/tree/master/06-additional_data_files/Data_R11_S12_MALTMEGANTables/`.
+```{r}
+ars_bone_sp <- fread("./05-results.backup/Evolution-Comparison_MEGAN_20190410-ex_absolute_species_prokaryotes_summarised_refseq.txt") %>%
+  rename(Species = `#Datasets`) %>%
+  column_to_rownames("Species") %>%
+  select(matches("ARS")) %>%
+  rownames_to_column("Species") %>%
+# remove all species that aren't in the gut samples
+  adorn_totals(where = "col") %>%
+  filter(Total != 0) %>%
+  select(-Total)
+
+colnames(ars_bone_sp) <- gsub("_S0_L003_R1_001.fastq.combined.fq.prefixed.extractunmapped.bam","", colnames(ars_bone_sp))
+
+```
+
+```{r deep_evo_meta}
+deep_evo_metadata <- fread("./00-documentation.backup/02-calculus_microbiome-deep_evolution-individualscontrolssources_metadata_20200219.tsv") %>%
+  rename(Library_ID = `#SampleID`) %>%
+  filter(str_detect(Library_ID, "ARS"))
+
+ars_samples <- deep_evo_metadata %>%
+  pull(Library_ID)
+  
+```
+
 # Decontamination with Decontam
 We want to know if there are any species that can be removed b/c they appear to
 be contaminants. Use the package decontam to determine which species may be
@@ -245,6 +273,8 @@ malt_species.dataframe <- all_raw %>%
   filter(!str_detect(Species, "Not assigned|Homo sapiens")) %>%
   select(-one_of(outliers)) %>%
   select(-one_of(poor_samples)) %>%
+  full_join(., ars_bone_sp) %>%
+  replace(is.na(.), 0) %>%
   gather("Library_ID","Counts", 2:ncol(.)) %>%
   spread(Species,Counts) 
 # %>%
@@ -261,7 +291,11 @@ metadata.decontam <- metadata %>%
   filter(!str_detect(Library_ID, outliers %>% str_c(collapse = "|"))) %>%
   filter(Library_ID != "LIB058.A0101") %>% # this sample is not in the metadata
   arrange(Library_ID) %>%
-  distinct()
+  distinct() %>%
+  bind_rows(., deep_evo_metadata %>%
+              mutate(Site = "Bone") %>%
+              select(Site, Library_ID, Sample_or_Control)) %>%
+  arrange(Site)
 
 # metadata.decontam %>% select(Library_ID) %>%
 #   anti_join(., malt_species.dataframe %>% select(Library_ID))
@@ -301,9 +335,11 @@ ggplot(contam.prev.species, aes(x=p)) +
 # remove NA value samples from the input data frame
 malt_species_mid.dataframe <- mid_raw %>%
   rename(Species = `#Datasets`) %>%
-  filter(!str_detect(Species, "Not assigned|Homo sapiens")) %>%
   select(-one_of(outliers)) %>%
   select(-one_of(poor_samples)) %>%
+  full_join(., ars_bone_sp) %>%
+  replace(is.na(.), 0) %>%
+  filter(!str_detect(Species, "Not assigned|Homo sapiens")) %>%
   gather("Library_ID","Counts", 2:ncol(.)) %>%
   spread(Species,Counts) 
 # %>%
@@ -321,7 +357,11 @@ metadata_mid.decontam <- metadata %>%
   filter(str_detect(Library_ID, "MID|CMB|EXB059|LIB058")) %>%
   filter(Library_ID != "LIB058.A0101") %>% # this sample is not in the metadata
   arrange(Library_ID) %>%
-  distinct()
+  distinct() %>%
+  bind_rows(., deep_evo_metadata %>%
+              mutate(Site = "Bone") %>%
+              select(Site, Library_ID, Sample_or_Control)) %>%
+  arrange(Site)
 
 # metadata.decontam %>% select(Library_ID) %>%
 #   anti_join(., malt_species.dataframe %>% select(Library_ID))
@@ -360,9 +400,11 @@ ggplot(contam_mid.prev.species, aes(x=p)) +
 # remove NA value samples from the input data frame
 malt_species_rad.dataframe <- radcliffe_raw %>%
   rename(Species = `#Datasets`) %>%
-  filter(!str_detect(Species, "Not assigned|Homo sapiens")) %>%
   select(-one_of(outliers)) %>%
   select(-one_of(poor_samples)) %>%
+  full_join(., ars_bone_sp) %>%
+  replace(is.na(.), 0) %>%
+  filter(!str_detect(Species, "Not assigned|Homo sapiens")) %>%
   gather("Library_ID","Counts", 2:ncol(.)) %>%
   spread(Species,Counts) 
 # %>%
@@ -379,7 +421,11 @@ metadata_rad.decontam <- metadata %>%
   filter(!str_detect(Library_ID, outliers %>% str_c(collapse = "|"))) %>%
   filter(str_detect(Library_ID, "CS")) %>%
   arrange(Library_ID) %>%
-  distinct()
+  distinct() %>%
+  bind_rows(., deep_evo_metadata %>%
+              mutate(Site = "Bone") %>%
+              select(Site, Library_ID, Sample_or_Control)) %>%
+  arrange(Site)
 
 # metadata.decontam %>% select(Library_ID) %>%
 #   anti_join(., malt_species.dataframe %>% select(Library_ID))
@@ -421,9 +467,11 @@ ggplot(contam_rad.prev.species, aes(x=p)) +
 # remove NA value samples from the input data frame
 malt_species_iber.dataframe <- iberian_raw %>%
   rename(Species = `#Datasets`) %>%
-  filter(!str_detect(Species, "Not assigned|Homo sapiens")) %>%
   select(-one_of(outliers)) %>%
   select(-one_of(poor_samples)) %>%
+  full_join(., ars_bone_sp) %>%
+  replace(is.na(.), 0) %>%
+  filter(!str_detect(Species, "Not assigned|Homo sapiens")) %>%
   gather("Library_ID","Counts", 2:ncol(.)) %>%
   spread(Species,Counts) 
 # %>%
@@ -440,7 +488,11 @@ metadata_iber.decontam <- metadata %>%
   filter(!str_detect(Library_ID, outliers %>% str_c(collapse = "|"))) %>%
   filter(str_detect(Library_ID, "ELR|IVE|EXB015|LIB007")) %>%
   arrange(Library_ID) %>%
-  distinct()
+  distinct() %>%
+  bind_rows(., deep_evo_metadata %>%
+              mutate(Site = "Bone") %>%
+              select(Site, Library_ID, Sample_or_Control)) %>%
+  arrange(Site)
 
 # metadata.decontam %>% select(Library_ID) %>%
 #   anti_join(., malt_species.dataframe %>% select(Library_ID))
@@ -474,6 +526,7 @@ ggplot(contam_iber.prev.species, aes(x=p)) +
 ## Kilteasheen
 ?? No controls available
 
+## Overlapping contaminant species
 ```{r}
 # Overlapping contaminant species
 cont_prev_species_list_mid %>% rownames_to_column("Species") %>%
@@ -487,9 +540,13 @@ cont_prev_species_list_mid %>% rownames_to_column("Species") %>%
                          ifelse(MID == "Yes"& Radcliffe == "Yes" & Iberia == "No", "M-R",
                                 ifelse(MID == "Yes" & Iberia == "Yes" & Radcliffe == "No", "M-I",
                                        ifelse(Radcliffe == "Yes" & Iberia == "Yes" & MID == "No", "R-I", "Single"))))) %>%
-  filter(Shared == "Single")
+  # filter(Shared == "R-I") %>%
+  mutate(Shared = fct_relevel(Shared, "M-R-I","M-I","M-R","Single")) %>%
+  arrange(Shared) %>%
+  group_by(Shared) %>%
+  count()
 
-# the majority of the identified contaminants are unique to one group
+# the majority of the identified contaminants are shared across all groups
 
 
 ```
@@ -504,6 +561,9 @@ method.
 ```{r contaminants}
 contaminant_species_mid <- cont_prev_species_list_mid %>% rownames_to_column("Species") %>% select(Species)
 fwrite(contaminant_species_mid, file = "./05-results.backup/contaminant_species_mid.tsv", sep="\t", quote=F)
+
+contaminant_species_rad <- cont_prev_species_list_rad %>% rownames_to_column("Species") %>% select(Species)
+fwrite(contaminant_species_rad, file = "./05-results.backup/contaminant_species_rad.tsv", sep="\t", quote=F)
 
 contaminant_species_iber <- cont_prev_species_list_iber %>% rownames_to_column("Species") %>% select(Species)
 fwrite(contaminant_species_iber, file = "./05-results.backup/contaminant_species_iber.tsv", sep="\t", quote=F)
