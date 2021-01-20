@@ -16,7 +16,7 @@ library(data.table)
 # library(psych)
 # library(ape)
 # library(mixOmics)
-# library(compositions)
+library(compositions)
 # library(vegan)
 library(janitor)
 # library(pander)
@@ -59,6 +59,8 @@ source_table <- fread("./05-results.backup/Evolution-Comparison_MEGAN_20190410-e
 # fix the column headers
 colnames(source_table) <- gsub("_S0_L000_R1_000.fastq.merged.prefixed.hg19unmapped","", colnames(source_table))
 colnames(source_table) <- gsub("_S0_L001_R1_001.fastq.combined.fq.prefixed.extractunmapped.bam","", colnames(source_table))
+colnames(source_table) <- gsub("_S0_L003_R1_001.fastq.combined.fq.prefixed.extractunmapped.bam","", colnames(source_table))
+colnames(source_table) <- gsub("_S0_L001_R1_000.fastq.merged.prefixed.hg19unmapped","", colnames(source_table))
 
 ```
 
