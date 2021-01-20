@@ -42,7 +42,7 @@ load("./05-results.backup/Metadata_tables.RData")
 ```
 
 Read the metadata file and order alphabetically
-```{r}
+```{r, eval = F}
 mapfile <- fread("./00-documentation.backup/source_tracker_mappingfile.tsv") %>%
   arrange(`X.SampleID`) %>%
   filter(!str_detect(`X.SampleID`, "ARS006.A0101.SG1.2|MID025.A0101|MID033.A0101|MID056.A0101|MID065.A0101|MID068.A0101|MID076.A0101|MID078.A0101|SRR059454|SRR513449")) %>%
@@ -57,6 +57,11 @@ fwrite(mapfile, "./00-documentation.backup/source_tracker_mappingfile.tsv", sep 
 #   select(`#SampleID`, BarcodeSequence, LinkerPrimerSequence, Study, Env, SourceSink) %>%
 #   fwrite(., "./00-documentation.backup/source_tracker_mappingfile_new.tsv", sep = "\t", quote = T)
   
+```
+
+Read in the formatted metadata table
+```{r}
+mapfile <- fread("./00-documentation.backup/source_tracker_mappingfile.tsv")
 ```
 
 
@@ -86,9 +91,10 @@ full_table_sourcetracker <- all_species_decontam %>%
   select(-matches("EXB|LIB|CSN|CSL")) %>%
   replace(is.na(.), 0) %>%
   gather("SampleID","Counts", 2:ncol(.)) %>%
-  spread(SampleID, Counts)
+  spread(SampleID, Counts) %>%
+  rename(`#OTU ID` = Species)
 
-# fwrite(full_table_sourcetracker, "./05-results.backup/shotgun_sourcetracker_table.txt", sep = "\t", quote = F)
+fwrite(full_table_sourcetracker, "./05-results.backup/shotgun_sourcetracker_table_noblanks.txt", sep = "\t", quote = F)
 
 
 ```
@@ -123,11 +129,11 @@ full_table_sourcetracker %>%
   spread(Species, Counts) %>%
   select(SampleID) %>%
   anti_join(., mapfile %>%
-              rename(SampleID = `X.SampleID`) %>%
+              rename(SampleID = `#SampleID`) %>%
               select(SampleID))
   
 mapfile %>%
-  rename(SampleID = `X.SampleID`) %>%
+  rename(SampleID = `#SampleID`) %>%
   select(SampleID) %>%
   anti_join(., full_table_sourcetracker %>%
     gather("SampleID","Counts",2:ncol(.)) %>%
@@ -136,6 +142,10 @@ mapfile %>%
     
 ```
 
+```{r}
+st_table <- fread("./05-results.backup/shotgun_sourcetracker_table.txt")
+
+```
 
 
 

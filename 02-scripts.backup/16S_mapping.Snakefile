@@ -8,12 +8,12 @@ from glob import glob
 import os
 import re
 
-workdir: "/projects1/microbiome_calculus/smoking_calculus/04-anaysis/sourceTracker/16S_mapping"
+workdir: "/projects1/microbiome_calculus/smoking_calculus/04-analysis/sourceTracker/16S_mapping"
 
 #### SAMPLES ###################################################################
 SAMPLES = {}
-for sample in glob("/projects1/microbiome_calculus/smoking_calculus/04-anaysis/sourceTracker/input/*.gz"):
-	SAMPLES[os.path.basename(sample).split(".f")[0]] = sample
+for sample in glob("/projects1/microbiome_calculus/smoking_calculus/04-analysis/sourceTracker/input/*.gz"):
+	SAMPLES[os.path.basename(sample).split(".u")[0]] = sample
 ################################################################################
 
 if not os.path.isdir("snakemake_tmp"):
@@ -22,7 +22,7 @@ if not os.path.isdir("snakemake_tmp"):
 
 rule all:
     input: 
-        expand("{sample}.16S.gz", sample=SAMPLES.keys())
+        expand("{sample}.16S.fa", sample=SAMPLES.keys())
 
 rule bwa_aln:
     output:
@@ -35,7 +35,7 @@ rule bwa_aln:
     threads: 4
     shell:
         """
-        bwa aln -n 0.02 -l 1024 -t {threads} \ # -n 0.01 -l 32 use these parameters b/c they're in Zandra's file from James and we want to use her sources
+        bwa aln -n 0.02 -l 1024 -t {threads} \
             {params.reffa} \
             {params.fastq} > {output}
         """
@@ -67,23 +67,28 @@ rule samtools_fasta:
     message: "Convert the 16S-mapped reads back into a fasta file"
     group: "bwa"
     params:
+        fastq = lambda wildcards: SAMPLES[wildcards.sample]
     shell:
         """
-        samtools fasta -s {input} {output}
-        """
+        samtools fasta {input} > {output}
         
+        """
+    
 rule samtools_header_fix:
     input:
         "{sample}.16Smapped.fa"
     output:
         "{sample}.16S.fa"
-    message: "Convert the 16S-mapped reads back into a fasta file"
+    message: "Fix headers to be compatible with QIIME"
     group: "bwa"
     params:
-        fastq = lambda wildcards: SAMPLES[wildcards.sample]
+        fasta = lambda wildcards: SAMPLES[wildcards.sample]
     shell:
         """
-        awk -v name="$HEADER" '/^>/{print ">"name "_" ++i; next}{print}' {input} > {output}
+        name={wildcards.sample}
+        awk '/^>/{print ">"name "_" ++i; next}{print}' \
+        < {input} > \
+        {output}
+        
         pigz -p 4 {output}
         """
-        
