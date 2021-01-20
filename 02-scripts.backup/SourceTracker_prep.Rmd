@@ -13,16 +13,10 @@ output:
 ```{r load_libraries, echo = F, message = F}
 library(knitr)
 library(data.table)
-# library(psych)
-# library(ape)
-# library(mixOmics)
 library(compositions)
-# library(vegan)
 library(janitor)
-# library(pander)
 library(tidyverse)
 library(gplots)
-# library(ggrepel)
 library(viridis)
 library(cowplot)
 opts_chunk$set(echo=F, warning=F, message=F, dpi=150)
@@ -51,9 +45,11 @@ Read the metadata file and order alphabetically
 ```{r}
 mapfile <- fread("./00-documentation.backup/source_tracker_mappingfile.tsv") %>%
   arrange(`X.SampleID`) %>%
-  filter(!str_detect(`X.SampleID`, "ARS006.A0101.SG1.2|MID025.A0101|MID033.A0101|MID056.A0101|MID065.A0101|MID068.A0101|MID076.A0101|MID078.A0101|SRR059454|SRR513449"))
+  filter(!str_detect(`X.SampleID`, "ARS006.A0101.SG1.2|MID025.A0101|MID033.A0101|MID056.A0101|MID065.A0101|MID068.A0101|MID076.A0101|MID078.A0101|SRR059454|SRR513449")) %>%
+  mutate_all(na_if,"") %>%
+  replace(is.na(.), "NA")
 
-fwrite(mapfile, "./00-documentation.backup/source_tracker_mappingfile.tsv", sep = "\t", quote = T)
+# fwrite(mapfile, "./00-documentation.backup/source_tracker_mappingfile.tsv", sep = "\t", quote = T)
 
 ```
 
@@ -86,7 +82,7 @@ full_table_sourcetracker <- all_species_decontam %>%
   gather("SampleID","Counts", 2:ncol(.)) %>%
   spread(SampleID, Counts)
 
-fwrite(full_table_sourcetracker, "./05-results.backup/shotgun_sourcetracker_table.txt", sep = "\t", quote = F)
+# fwrite(full_table_sourcetracker, "./05-results.backup/shotgun_sourcetracker_table.txt", sep = "\t", quote = F)
 
 
 ```
@@ -110,7 +106,7 @@ full_table_sourcetracker_log <- full_table_sourcetracker %>%
   spread(SampleID, Counts) %>%
   column_to_rownames("Species")
 
-fwrite(full_table_sourcetracker_log, "./05-results.backup/shotgun_sourcetracker_table_log.txt", sep = "\t", quote = F)
+# fwrite(full_table_sourcetracker_log, "./05-results.backup/shotgun_sourcetracker_table_log.txt", sep = "\t", quote = F)
 
 ```
 
