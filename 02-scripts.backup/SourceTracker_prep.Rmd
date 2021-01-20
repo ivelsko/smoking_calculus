@@ -35,7 +35,7 @@ notebook itself.
 knitr::opts_knit$set(root.dir = normalizePath(".."))
 ```
 
-# MALT read stats
+# SourceTracker table from MALT shotgun profile
 
 ```{r load_data}
 
@@ -46,6 +46,17 @@ load("./05-results.backup/Taxonomy_tables.RData")
 load("./05-results.backup/Metadata_tables.RData")
 
 ```
+
+Read the metadata file and order alphabetically
+```{r}
+mapfile <- fread("./00-documentation.backup/source_tracker_mappingfile.tsv") %>%
+  arrange(`X.SampleID`) %>%
+  filter(!str_detect(`X.SampleID`, "ARS006.A0101.SG1.2|MID025.A0101|MID033.A0101|MID056.A0101|MID065.A0101|MID068.A0101|MID076.A0101|MID078.A0101|SRR059454|SRR513449"))
+
+fwrite(mapfile, "./00-documentation.backup/source_tracker_mappingfile.tsv", sep = "\t", quote = T)
+
+```
+
 
 Read in the species table of sources from the DeepEvo project
 ```{r}
@@ -69,9 +80,11 @@ by sequencing depth? and CLR-transformed?
 ```{r}
 
 full_table_sourcetracker <- all_species_decontam %>%
-  full_join(., source_table %>%
-              select(-matches("EXB|LIB|CSN|CSL"))) %>%
-  replace(is.na(.), 0)
+  full_join(., source_table) %>%
+  select(-matches("EXB|LIB|CSN|CSL")) %>%
+  replace(is.na(.), 0) %>%
+  gather("SampleID","Counts", 2:ncol(.)) %>%
+  spread(SampleID, Counts)
 
 fwrite(full_table_sourcetracker, "./05-results.backup/shotgun_sourcetracker_table.txt", sep = "\t", quote = F)
 
@@ -101,6 +114,25 @@ fwrite(full_table_sourcetracker_log, "./05-results.backup/shotgun_sourcetracker_
 
 ```
 
+```{r}
+
+full_table_sourcetracker %>%
+  gather("SampleID","Counts",2:ncol(.)) %>%
+  spread(Species, Counts) %>%
+  select(SampleID) %>%
+  anti_join(., mapfile %>%
+              rename(SampleID = `X.SampleID`) %>%
+              select(SampleID))
+  
+mapfile %>%
+  rename(SampleID = `X.SampleID`) %>%
+  select(SampleID) %>%
+  anti_join(., full_table_sourcetracker %>%
+    gather("SampleID","Counts",2:ncol(.)) %>%
+    spread(Species, Counts) %>%
+    select(SampleID))
+    
+```
 
 
 
