@@ -47,10 +47,16 @@ mapfile <- fread("./00-documentation.backup/source_tracker_mappingfile.tsv") %>%
   arrange(`X.SampleID`) %>%
   filter(!str_detect(`X.SampleID`, "ARS006.A0101.SG1.2|MID025.A0101|MID033.A0101|MID056.A0101|MID065.A0101|MID068.A0101|MID076.A0101|MID078.A0101|SRR059454|SRR513449")) %>%
   mutate_all(na_if,"") %>%
-  replace(is.na(.), "NA")
+  replace(is.na(.), "NA") %>%
+  rename(`#SampleID` = `X.SampleID`)
 
-# fwrite(mapfile, "./00-documentation.backup/source_tracker_mappingfile.tsv", sep = "\t", quote = T)
+fwrite(mapfile, "./00-documentation.backup/source_tracker_mappingfile.tsv", sep = "\t", quote = F)
 
+
+# mapfile %>%
+#   select(`#SampleID`, BarcodeSequence, LinkerPrimerSequence, Study, Env, SourceSink) %>%
+#   fwrite(., "./00-documentation.backup/source_tracker_mappingfile_new.tsv", sep = "\t", quote = T)
+  
 ```
 
 
