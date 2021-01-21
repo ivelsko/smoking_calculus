@@ -54,12 +54,18 @@ reduced_source_results <- fread("./05-results.backup/sink_predictions_reduced_so
 Get the samples ordered by decreasing amount of modern calculus
 ```{r}
 samples_order_full <- full_source_results %>%
-  arrange(desc(modernCalculus)) %>%
-  pull(SampleID)
+  rename(Library_ID = SampleID) %>%
+  full_join(., full_metadata %>%
+              select(Library_ID, Site), by = "Library_ID") %>%
+  arrange(Site, desc(modernCalculus)) %>%
+  pull(Library_ID)
 
 samples_order_reduced <- reduced_source_results %>%
-  arrange(desc(modernCalculus)) %>%
-  pull(SampleID)
+  rename(Library_ID = SampleID) %>%
+  full_join(., full_metadata %>%
+              select(Library_ID, Site), by = "Library_ID") %>%
+  arrange(Site, desc(modernCalculus)) %>%
+  pull(Library_ID)
 
 ```
 
@@ -72,7 +78,7 @@ full_source_results %>%
   mutate(Sources = fct_relevel(Sources, "modernCalculus","subPlaque","supPlaque","urbanGut","ruralGut","skin","sediment","boneARS","Unknown"),
          SampleID = fct_relevel(SampleID, samples_order_full)) %>%
   ggplot(., aes(x = SampleID, y = Percent, fill = Sources)) +
-         geom_bar(stat = "identity", color = "black") +
+         geom_bar(stat = "identity") + # , color = "black"
          theme_minimal(base_size = 14) +
          scale_fill_manual(values = c("#80b1d3","#8dd3c7","#b3de69","#fccde5","#fb8072","#ffffb3","#bebada","#fdb462","#d9d9d9")) +
          theme(axis.text.x = element_text(angle = 90, hjust = 1),
@@ -90,7 +96,7 @@ reduced_source_results %>%
   mutate(Sources = fct_relevel(Sources, "modernCalculus","plaque","stool","skin","sediment","bone","Unknown"),
          SampleID = fct_relevel(SampleID, samples_order_reduced)) %>%
   ggplot(., aes(x = SampleID, y = Percent, fill = Sources)) +
-         geom_bar(stat = "identity", color = "black") +
+         geom_bar(stat = "identity") +
          theme_minimal(base_size = 14) +
          scale_fill_manual(values = c("#80b1d3","#b3de69","#fb8072","#ffffb3","#bebada","#fdb462","#d9d9d9")) +
          theme(axis.text.x = element_text(angle = 90, hjust = 1),
@@ -101,13 +107,166 @@ reduced_source_results %>%
 
 ```
 
+What if we look at only the MID and CMB samples, and we order them by the PCA
+PC1 order?
+```{r}
+# prep the table
+
+outliers <- c("EXB059.A2501","LIB058.A0103","LIB058.A0106","CSS","CSD")
+poor_samples <- fread("./05-results.backup/cuperdec_poor_samples.tsv") %>%
+  pull(Sample)
+
+malt_otu_pca_table <- all_species_decontam %>%
+  select(matches("Species|MID|CMB")) %>%
+  select(-one_of(outliers)) %>%
+  select(-one_of(poor_samples)) %>%
+  gather("Library_ID","Counts",2:ncol(.)) %>%
+  mutate(Counts = Counts + 1) %>%
+  spread(Species, Counts) %>%
+  column_to_rownames("Library_ID")
+
+# perform a PCA to see how the data cluster
+malt_otu.pca <- mixOmics::pca(malt_otu_pca_table, ncomp = 2, logratio = 'CLR')
+malt_pca_values <- malt_otu.pca$variates$X %>%
+  as.data.frame() %>%
+  rownames_to_column("Library_ID") %>%
+  inner_join(., full_metadata, by = "Library_ID")
+
+mid_pc1_sample_order <- malt_pca_values %>%
+  arrange(PC1) %>%
+  pull(Library_ID)
+
+ggplot(malt_pca_values, aes(PC1, PC2, color = Region, shape = Region)) +
+  geom_text(aes(label = Library_ID), size = 3) +
+  theme_minimal()
+
+```
+
+```{r}
+full_source_results %>%
+  filter(str_detect(SampleID, "MID|CMB")) %>%
+  gather("Sources", "Percent",2:ncol(.)) %>%
+  mutate(Sources = fct_relevel(Sources, "modernCalculus","subPlaque","supPlaque","urbanGut","ruralGut","skin","sediment","boneARS","Unknown"),
+         SampleID = fct_relevel(SampleID, mid_pc1_sample_order)) %>%
+  ggplot(., aes(x = SampleID, y = Percent, fill = Sources)) +
+         geom_bar(stat = "identity") + # , color = "black"
+         theme_minimal(base_size = 14) +
+         scale_fill_manual(values = c("#80b1d3","#8dd3c7","#b3de69","#fccde5","#fb8072","#ffffb3","#bebada","#fdb462","#d9d9d9")) +
+         theme(axis.text.x = element_text(angle = 90, hjust = 1),
+               axis.text = element_text(size = 8)) +
+         # scale_y_continuous(breaks=scales::pretty_breaks(n=6)) +
+         ylab("% attributed to source") +
+         ggtitle("Full sources")
+
+```
+
+```{r}
+reduced_source_results %>%
+  filter(str_detect(SampleID, "MID|CMB")) %>%
+  gather("Sources", "Percent",2:ncol(.)) %>%
+  mutate(Sources = fct_relevel(Sources, "modernCalculus","plaque","stool","skin","sediment","bone","Unknown"),
+         SampleID = fct_relevel(SampleID, mid_pc1_sample_order)) %>%
+  ggplot(., aes(x = SampleID, y = Percent, fill = Sources)) +
+         geom_bar(stat = "identity") + # , color = "black"
+         theme_minimal(base_size = 14) +
+         scale_fill_manual(values = c("#80b1d3","#b3de69","#fb8072","#ffffb3","#bebada","#fdb462","#d9d9d9")) +
+         theme(axis.text.x = element_text(angle = 90, hjust = 1),
+               axis.text = element_text(size = 8)) +
+         # scale_y_continuous(breaks=scales::pretty_breaks(n=6)) +
+         ylab("% attributed to source") +
+         ggtitle("Full sources")
+
+```
+
+Let's look at the species going into each source. Start iwth the reduced sources for simplicity
+```{r}
+
+modernCalc_sources <- fread("~/projects1/microbiome_calculus/smoking_calculus/04-analysis/sourceTracker/shotgun/reduced_sources/shotgun_sourcetracker_table_log_20210120/full_results/sink_predictions_modernCalculus_contributions.txt") %>%
+  rename(Library_ID = SampleID) %>%
+  gather("Species","Percent",2:ncol(.)) %>%
+  spread(Library_ID, Percent) %>%
+  adorn_totals(where = "col") %>%
+  filter(Total > 0) %>%
+  select(-Total)
+
+plaque_sources <- fread("~/projects1/microbiome_calculus/smoking_calculus/04-analysis/sourceTracker/shotgun/reduced_sources/shotgun_sourcetracker_table_log_20210120/full_results/sink_predictions_plaque_contributions.txt") %>%
+  rename(Library_ID = SampleID) %>%
+  gather("Species","Percent",2:ncol(.)) %>%
+  spread(Library_ID, Percent) %>%
+  adorn_totals(where = "col") %>%
+  filter(Total > 0) %>%
+  select(-Total)
+
+stool_sources <- fread("~/projects1/microbiome_calculus/smoking_calculus/04-analysis/sourceTracker/shotgun/reduced_sources/shotgun_sourcetracker_table_log_20210120/full_results/sink_predictions_stool_contributions.txt") %>%
+  rename(Library_ID = SampleID) %>%
+  gather("Species","Percent",2:ncol(.)) %>%
+  spread(Library_ID, Percent) %>%
+  adorn_totals(where = "col") %>%
+  filter(Total > 0) %>%
+  select(-Total)
+
+skin_sources <- fread("~/projects1/microbiome_calculus/smoking_calculus/04-analysis/sourceTracker/shotgun/reduced_sources/shotgun_sourcetracker_table_log_20210120/full_results/sink_predictions_skin_contributions.txt") %>%
+  rename(Library_ID = SampleID) %>%
+  gather("Species","Percent",2:ncol(.)) %>%
+  spread(Library_ID, Percent) %>%
+  adorn_totals(where = "col") %>%
+  filter(Total > 0) %>%
+  select(-Total)
+
+sediment_sources <- fread("~/projects1/microbiome_calculus/smoking_calculus/04-analysis/sourceTracker/shotgun/reduced_sources/shotgun_sourcetracker_table_log_20210120/full_results/sink_predictions_sediment_contributions.txt") %>%
+  rename(Library_ID = SampleID) %>%
+  gather("Species","Percent",2:ncol(.)) %>%
+  spread(Library_ID, Percent) %>%
+  adorn_totals(where = "col") %>%
+  filter(Total > 0) %>%
+  select(-Total)
+
+bone_sources <- fread("~/projects1/microbiome_calculus/smoking_calculus/04-analysis/sourceTracker/shotgun/reduced_sources/shotgun_sourcetracker_table_log_20210120/full_results/sink_predictions_bone_contributions.txt") %>%
+  rename(Library_ID = SampleID) %>%
+  gather("Species","Percent",2:ncol(.)) %>%
+  spread(Library_ID, Percent) %>%
+  adorn_totals(where = "col") %>%
+  filter(Total > 0) %>%
+  select(-Total)
+
+unknown_sources <- fread("~/projects1/microbiome_calculus/smoking_calculus/04-analysis/sourceTracker/shotgun/reduced_sources/shotgun_sourcetracker_table_log_20210120/full_results/sink_predictions_Unknown_contributions.txt") %>%
+  rename(Library_ID = SampleID) %>%
+  gather("Species","Percent",2:ncol(.)) %>%
+  spread(Library_ID, Percent) %>%
+  adorn_totals(where = "col") %>%
+  filter(Total > 0) %>%
+  select(-Total)
+
+```
+
+Overlap between modernCalculus and unknown?
+```{r}
+# only in unknown sources, not also in modernCalculus
+unknown_sources %>%
+  select(Species) %>%
+  anti_join(., modernCalc_sources %>%
+              select(Species))
+
+# in both unknown and modernCalculus
+unknown_sources %>%
+  select(Species) %>%
+  inner_join(., modernCalc_sources %>%
+              select(Species))
 
 
+```
+
+```{r}
+unknown_sources %>%
+    filter(str_detect(Species, "Anaerovorax")) %>%
+  as_tibble()
+
+modernCalc_sources %>%
+    filter(str_detect(Species, "Anaerovorax")) %>%
+  as_tibble()
 
 
-
-
-
+```
 
 
 

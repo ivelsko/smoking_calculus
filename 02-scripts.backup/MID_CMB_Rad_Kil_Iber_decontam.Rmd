@@ -303,7 +303,7 @@ metadata.decontam <- metadata %>%
 ```
 
 Try the prevalence method to compare. 
-```{r decontam_prevalence}
+```{r decontam_prevalence, eval = F}
 # Assign sample-type status to identify control samples
 metadata.decontam$is.control <- metadata.decontam$Sample_or_Control=="Control"
 
@@ -375,7 +375,7 @@ metadata_mid.decontam$is.control <- metadata_mid.decontam$Sample_or_Control=="Co
 #Try changing the probability threshold cut-off to see how many more or less are ID'd as contaminants
 contam_mid.prev.species <- isContaminant(malt_species_mid.matrix, method="prevalence", 
                                  neg=metadata_mid.decontam$is.control, 
-                                 threshold = 0.2)
+                                 threshold = 0.8)
 
 # Check number of contaminants
 table(contam_mid.prev.species$contaminant)
@@ -442,7 +442,7 @@ metadata_rad.decontam$is.control <- metadata_rad.decontam$Sample_or_Control=="Co
 #Try changing the probability threshold cut-off to see how many more or less are ID'd as contaminants
 contam_rad.prev.species <- isContaminant(malt_species_rad.matrix, method="prevalence", 
                                  neg=metadata_rad.decontam$is.control, 
-                                 threshold = 0.05)
+                                 threshold = 0.8)
 
 # Check number of contaminants
 table(contam_rad.prev.species$contaminant)
@@ -506,7 +506,7 @@ metadata_iber.decontam$is.control <- metadata_iber.decontam$Sample_or_Control=="
 #Try changing the probability threshold cut-off to see how many more or less are ID'd as contaminants
 contam_iber.prev.species <- isContaminant(malt_species_iber.matrix, method="prevalence", 
                                  neg=metadata_iber.decontam$is.control, 
-                                 threshold = 0.7)
+                                 threshold = 0.98)
 
 # Check number of contaminants
 table(contam_iber.prev.species$contaminant)
@@ -548,7 +548,6 @@ cont_prev_species_list_mid %>% rownames_to_column("Species") %>%
 
 # the majority of the identified contaminants are shared across all groups
 
-
 ```
 
 
@@ -558,7 +557,7 @@ Radcliffe because of this. The Kileasheen samples have no associated blank
 samples, so they'll be cleaned up by an abundance cut-off. The MID/CMB and
 Iberian medieval samples will have contaminants removed based on the prevalence
 method.
-```{r contaminants}
+```{r contaminants, eval = F}
 contaminant_species_mid <- cont_prev_species_list_mid %>% rownames_to_column("Species") %>% select(Species)
 fwrite(contaminant_species_mid, file = "./05-results.backup/contaminant_species_mid.tsv", sep="\t", quote=F)
 

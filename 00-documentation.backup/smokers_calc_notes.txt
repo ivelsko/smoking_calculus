@@ -330,33 +330,6 @@ sbatch \
 -t $GREENGENESDB/taxonomy/97_otu_taxonomy.txt \
 -p $SCRIPTS/010-qiime_1_9_1_params_CrefOTUpick.txt"
 
-# run sourcetracker with this:
-#!/usr/bin/env bash
-
-
-OUTDIR=/projects1/microbiome_calculus/smoking_calculus/04-analysis/sourceTracker/shotgun
-
-MAPPINGFILE=/projects1/microbiome_calculus/smoking_calculus/00-documentation.backup/source_tracker_mappingfile.tsv
-
-sbatch \
--c 2 \
---mem=8000 \
--o ~/slurm_logs/slurm.%j.out \
--e ~/slurm_logs/slurm.%j.err \
---partition=long \
---mail-type=fail \
---mail-type=time_limit \
---mail-user=velsko@shh.mpg.de \
---export=ALL \
--J "Sourcetracker" \
---wrap="Rscript \
-/projects1/users/velsko/bin/sourcetracker-1.0.1/sourcetracker_for_qiime.r \
--i /projects1/microbiome_calculus/smoking_calculus/04-analysis/sourceTracker/shotgun/shotgun_sourcetracker_table.txt \
--m "$MAPPINGFILE" \
--o "$OUTDIR"/shotgun_sourcetracker_table_log_"$(date +"%Y%m%d")" \
--r 5000 \
--v"
-
 # For shotgun data, take the sources from the DeepEvo table James made
 # Take the metadata sheet from Zandra's modern calculus SourceTracker run
 # Combine DeepEvo sources and the sinks from this project in R

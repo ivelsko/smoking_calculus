@@ -5,6 +5,7 @@ Species
 [Polyangium] brachysporum
 [Pseudomonas] mesoacidophila
 Achromobacter denitrificans
+Achromobacter sp. DMS1
 Achromobacter xylosoxidans
 Acidihalobacter prosperus
 Acidimicrobium ferrooxidans
@@ -30,6 +31,7 @@ Actinoalloteichus hymeniacidonis
 Actinoalloteichus sp. GBA129-24
 Actinobacteria bacterium IMCC26256
 actinobacterium LLX17
+Actinobaculum sp. oral taxon 183
 Actinokineospora bangkokensis
 Actinokineospora cianjurensis
 Actinokineospora enzanensis
@@ -48,7 +50,12 @@ Actinomadura rifamycini
 Actinomadura sp. 5-2
 Actinomadura sp. CNU-125
 Actinomadura viridilutea
+Actinomyces culturomici
+Actinomyces glycerinitolerans
+Actinomyces sp. HMSC035G02
 Actinomyces sp. HMSC062G12
+Actinomyces sp. oral taxon 178
+Actinomyces sp. oral taxon 848
 Actinomycetospora chiangmaiensis
 Actinomycetospora cinnamomea
 Actinoplanes atraurantiacus
@@ -82,6 +89,7 @@ Aeromicrobium sp. Leaf272
 Aeromicrobium sp. Root344
 Aeromicrobium sp. Root472D3
 Aeromicrobium sp. Root495
+Aeromonas sp. ASNIH5
 Afifella marina
 Afifella pfennigii
 Afipia birgiae
@@ -98,6 +106,7 @@ Agromyces flavus
 Agromyces sp. Root81
 Albidovulum xiamenense
 Albimonas pacifica
+Alicycliphilus denitrificans
 Alicyclobacillus acidocaldarius
 Alloactinosynnema album
 Alloactinosynnema iranicum
@@ -106,6 +115,7 @@ Allochromatium vinosum
 Allokutzneria albata
 Allokutzneria sp. NRRL B-24872
 Allonocardiopsis opalescens
+Alloprevotella tannerae
 Altererythrobacter marensis
 Altererythrobacter sp. B11
 Aminobacter aminovorans
@@ -141,6 +151,7 @@ Anaeromassilibacillus senegalensis
 Anaeromyxobacter dehalogenans
 Anaeromyxobacter sp. Fw109-5
 Anaeromyxobacter sp. K
+Anaerosalibacter massiliensis
 Anaplasma phagocytophilum
 Angustibacter sp. Root456
 Aquamicrobium defluvii
@@ -155,6 +166,7 @@ Arsenicicoccus sp. oral taxon 190
 Arthrobacter sp. Soil736
 Asanoa hainanensis
 Asticcacaulis biprosthecium
+Atopobium sp. oral taxon 810
 Aurantimonas manganoxydans
 Auraticoccus monumenti
 Aureimonas jatrophae
@@ -208,8 +220,10 @@ Bosea sp. UNC402CLCol
 Bosea vaviloviae
 Brachybacterium alimentarium
 Brachybacterium ginsengisoli
+Brachybacterium muris
 Brachybacterium phenoliresistens
 Brachybacterium sp. HMSC06H03
+Brachymonas chironomi
 Bradyrhizobiaceae bacterium SG-6C
 Bradyrhizobium arachidis
 Bradyrhizobium diazoefficiens
@@ -269,20 +283,27 @@ Bradyrhizobium yuanmingense
 Brevundimonas diminuta
 Brevundimonas sp. Root1423
 Burkholderia ambifaria
+Burkholderia anthina
 Burkholderia cenocepacia
 Burkholderia cepacia
+Burkholderia diffusa
 Burkholderia gladioli
 Burkholderia glumae
 Burkholderia insecticola
 Burkholderia lata
+Burkholderia latens
 Burkholderia metallica
 Burkholderia multivorans
 Burkholderia oklahomensis
 Burkholderia pseudomallei
 Burkholderia pseudomultivorans
 Burkholderia pyrrocinia
+Burkholderia sp. BDU6
+Burkholderia sp. Bp7605
 Burkholderia sp. IDO3
 Burkholderia sp. K24
+Burkholderia sp. LA-2-3-30-S1-D2
+Burkholderia sp. MSMB0856
 Burkholderia stabilis
 Burkholderia stagnalis
 Burkholderia territorii
@@ -297,10 +318,13 @@ Candidatus Accumulibacter phosphatis
 Candidatus Blastococcus massiliensis
 Candidatus Koribacter versatilis
 Candidatus Kryptobacter tengchongensis
+Candidatus Kryptonium thompsoni
 Candidatus Microthrix parvicella
 Candidatus Nitrospira inopinata
 Candidatus Promineofilum breve
 Candidatus Solibacter usitatus
+Capnocytophaga sp. oral taxon 323
+Capnocytophaga sp. oral taxon 336
 Castellaniella defragrans
 Catelliglobosispora koreensis
 Catenulispora acidiphila
@@ -325,6 +349,12 @@ Chelatococcus asaccharovorans
 Chelatococcus sp. CO-6
 Chitinimonas koreensis
 Chitiniphilus shinanonensis
+Chlorobaculum limnaeum
+Chlorobaculum parvum
+Chlorobaculum tepidum
+Chlorobium limicola
+Chlorobium phaeobacteroides
+Chlorobium phaeovibrioides
 Chondromyces crocatus
 Chthoniobacter flavus
 Citrobacter werkmanii
@@ -335,9 +365,13 @@ Clostridium botulinum
 Cnuibacter physcomitrellae
 Comamonadaceae bacterium URHA0028
 Comamonas aquatica
+Comamonas testosteroni
 Conexibacter woesei
 Corallococcus coralloides
+Coriobacteriaceae bacterium 68-1-3
+Corynebacterium argentoratense
 Corynebacterium aurimucosum
+Corynebacterium durum
 Corynebacterium ihumii
 Corynebacterium jeikeium
 Corynebacterium kroppenstedtii
@@ -365,6 +399,7 @@ Derxia gummosa
 Devosia enhydra
 Devosia sp. 17-2-E-8
 Devosia sp. A16
+Dialister invisus
 Dokdonella immobilis
 Dokdonella koreensis
 Dongia sp. URHE0060
@@ -374,6 +409,7 @@ Dyella jiangningensis
 Dyella thiooxydans
 Edaphobacter aggregans
 Edwardsiella piscicida
+Eggerthella lenta
 Elioraea tepidiphila
 Enhydrobacter aerosaccus
 Ensifer aridi
@@ -381,7 +417,10 @@ Enterobacter hormaechei
 Enterococcus faecium
 Ereboglobus luteus
 Escherichia coli
+Eubacterium pyruvativorans
 Euzebya sp. DY32-46
+Extensimonas vulgaris
+Firmicutes bacterium
 Fontimonas thermophila
 Francisellaceae bacterium
 Frankia coriariae
@@ -401,7 +440,10 @@ Friedmanniella flava
 Friedmanniella luteola
 Friedmanniella sagamiharensis
 Fulvimonas soli
+Fusobacterium naviforme
+Fusobacterium sp. oral taxon 203
 Gardnerella vaginalis
+Gemella haemolysans
 Geminicoccus roseus
 Gemmata obscuriglobus
 Gemmata sp. SH-PL17
@@ -440,6 +482,8 @@ Gordonia terrae
 Granulicella mallensis
 Granulicoccus phenolivorans
 Gryllotalpicola ginsengisoli
+Haemophilus haemolyticus
+Haemophilus influenzae
 Haliangium ochraceum
 Halomonas sp. Marseille-P2426
 Hamadaea tsunoensis
@@ -477,6 +521,7 @@ Janibacter sp. HTCC2649
 Janthinobacterium lividum
 Janthinobacterium sp. 1_2014MBL_MicDiv
 Janthinobacterium sp. CG3
+Janthinobacterium sp. GW458P
 Janthinobacterium sp. TND4EL3
 Janthinobacterium svalbardensis
 Jatrophihabitans sp. GAS493
@@ -486,6 +531,7 @@ Jiangella alkaliphila
 Jiangella gansuensis
 Jiangella muralis
 Jiangella sp. DSM 45060
+Jonquetella anthropi
 Kaistia adipata
 Kaistia soli
 Kibdelosporangium aridum
@@ -562,6 +608,7 @@ Massilia sp. WG5
 Massilia sp. YMA4
 Mastigocladus laminosus
 Meiothermus chliarophilus
+Melaminivora sp. SC2-7
 Melaminivora sp. SC2-9
 Melittangium boletus
 Mesorhizobium amorphae
@@ -776,6 +823,10 @@ Nakamurella lactea
 Nakamurella multipartita
 Nakamurella panacisegetis
 Nannocystis exedens
+Neisseria cinerea
+Neisseria sp. HMSC064D07
+Neisseria sp. HMSC065C04
+Neisseria sp. KEM232
 Neorhizobium galegae
 Nevskia soli
 Niastella koreensis
@@ -855,6 +906,7 @@ Ochrobactrum anthropi
 Oleiagrimonas soli
 Oligotropha carboxidovorans
 Olsenella sp. SIT9
+Olsenella urininfantis
 Opitutaceae bacterium TAV1
 Opitutaceae bacterium TAV5
 Opitutaceae bacterium TSB47
@@ -872,20 +924,31 @@ Pannonibacter phragmitetus
 Paraburkholderia aromaticivorans
 Paraburkholderia caballeronis
 Paraburkholderia caribensis
+Paraburkholderia eburnea
 Paraburkholderia fungorum
+Paraburkholderia hospita
 Paraburkholderia kururiensis
 Paraburkholderia mimosarum
+Paraburkholderia nodosa
+Paraburkholderia silvatlantica
 Paraburkholderia tropica
 Paraburkholderia unamae
 Paracoccus contaminans
 Paracoccus sp. 228
 Paracoccus yeei
+Paraeggerthella hongkongensis
 Paraoerskovia marina
 Parvibaculum lavamentivorans
+Parvimonas sp. KA00067
+Pasteurella multocida
 Patulibacter minatonensis
+Pediococcus acidilactici
+Pelodictyon luteolum
+Pelodictyon phaeoclathratiforme
 Pelomonas sp. Root1237
 Pelomonas sp. Root1444
 Pelomonas sp. Root662
+Peptococcus niger
 Phenylobacterium sp. Root700
 Phenylobacterium zucineum
 Phreatobacter cathodiphilus
@@ -911,11 +974,16 @@ Polaromonas sp. JS666
 Polymorphum gilvum
 Prauserella marina
 Prauserella sp. PE36
+Prevotella maculosa
+Prevotella shahii
 Promicromonospora kroppenstedtii
 Promicromonosporaceae bacterium W15
 Propionibacteriaceae bacterium P6A17
 Propionibacterium freudenreichii
 Propionicicella superfundia
+Propionivibrio dicarboxylicus
+Prosthecochloris sp. GSB1
+Prosthecochloris sp. HL-130-GSB
 Prosthecomicrobium hirschii
 Pseudacidovorax intermedius
 Pseudaminobacter salicylatoxidans
@@ -956,6 +1024,7 @@ Pseudoxanthomonas sp. Root630
 Pseudoxanthomonas suwonensis
 Pseudoxanthomonas wuyuanensis
 Raineyella antarctica
+Ralstonia mannitolilytica
 Ralstonia pickettii
 Ralstonia solanacearum
 Ralstonia sp. MD27
@@ -1010,6 +1079,7 @@ Rhodospirillum centenum
 Rhodothermaceae bacterium RA
 Rhodothermus marinus
 Rhodovibrio salinarum
+Riemerella columbipharyngis
 Roseiarcus fermentans
 Roseimicrobium gellanilyticum
 Roseomonas aestuarii
@@ -1019,6 +1089,8 @@ Roseomonas rosea
 Roseomonas stagni
 Roseospirillum parvum
 Roseovarius indicus
+Rothia dentocariosa
+Rothia sp. HMSC067H10
 Rubellimicrobium mesophilum
 Rubricoccus marinus
 Rubritepida flocculans
@@ -1134,6 +1206,8 @@ Streptacidiphilus carbonis
 Streptacidiphilus jiangxiensis
 Streptacidiphilus melanogenes
 Streptacidiphilus neutrinimicus
+Streptococcus sp. C300
+Streptococcus sp. HMSC072D05
 Streptomyces abyssalis
 Streptomyces acidiscabies
 Streptomyces actuosus
@@ -1279,6 +1353,7 @@ Streptomyces sp. F-1
 Streptomyces sp. HGB0020
 Streptomyces sp. HmicA12
 Streptomyces sp. ICBB 8177
+Streptomyces sp. JV178
 Streptomyces sp. KhCrAH-43
 Streptomyces sp. LaPpAH-108
 Streptomyces sp. MBT76
@@ -1370,6 +1445,7 @@ Thauera linaloolentis
 Thauera sp. MZ1T
 Thermaerobacter marianensis
 Thermaerobacter subterraneus
+Thermanaerovibrio acidaminovorans
 Thermithiobacillus tepidarius
 Thermoactinospora rubra
 Thermobifida cellulosilytica
@@ -1392,6 +1468,7 @@ Thioflavicoccus mobilis
 Thiohalobacter thiocyanaticus
 Thiomonas sp. FB-6
 Thiomonas sp. X19
+Tissierella praeacuta
 Tistlia consotensis
 Tistrella mobilis
 Truepera radiovictrix
@@ -1405,6 +1482,7 @@ Variovorax sp. CF079
 Variovorax sp. HW608
 Variovorax sp. URHB0020
 Variovorax sp. WDL1
+Veillonella parvula
 Verrucomicrobia bacterium IMCC26134
 Verrucomicrobium sp. GAS474
 Verrucosispora maris

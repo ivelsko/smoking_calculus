@@ -1373,7 +1373,7 @@ all_species_decontam_top50_each_clr_order <- all_species_decontam_top50_each_clr
   rownames_to_column("Library_ID") %>%
   gather("Species","CLR",2:ncol(.)) %>%
   spread(Library_ID,CLR) %>%
-  mutate(SpOrder = as.character(seq(1,66))) %>%
+  mutate(SpOrder = as.character(seq(1,64))) %>%
   select(Species, SpOrder, everything()) %>%
   mutate(SpOrder = fct_relevel(SpOrder, sp_each_order)) %>%
   arrange(SpOrder) %>%
