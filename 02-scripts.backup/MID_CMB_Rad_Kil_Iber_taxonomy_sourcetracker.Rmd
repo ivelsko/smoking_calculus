@@ -1,0 +1,126 @@
+---
+title: "MID/CMB, Radcliffe, Kilteasheen, Iberian medieval calculus MALT beta diversity"
+author: "Irina Velsko"
+date: "`r format(Sys.time(), '%b %d, %Y')`"
+output:
+    github_document:
+        fig_width: 8
+        fig_height: 6
+        toc: true
+---
+
+
+```{r load_libraries, echo = F, message = F}
+library(knitr)
+library(data.table)
+library(janitor)
+library(tidyverse)
+library(gplots)
+library(viridis)
+library(cowplot)
+opts_chunk$set(echo=F, warning=F, message=F, dpi=150)
+```
+
+Set the working directory of the notebook to the parent directory of the 
+notebook itself.  
+
+```{r setup}
+knitr::opts_knit$set(root.dir = normalizePath(".."))
+```
+
+# MALT read stats
+
+```{r load_data}
+
+# load the taxonomy tables that have been decontaminated and the column headers are cleaned up
+load("./05-results.backup/Taxonomy_tables.RData")
+
+
+# load the metadata file
+load("./05-results.backup/Metadata_tables.RData")
+
+# full_metadata <- full_metadata %>%
+#   mutate(`DNA_molecules_per_library_x10^6_log` = log10(`DNA_molecules_per_library_x10^6`))
+
+```
+
+```{r load_sourcetracker_out}
+full_source_results <- fread("./05-results.backup/sink_predictions_full_sources_5000.txt")
+
+reduced_source_results <- fread("./05-results.backup/sink_predictions_reduced_sources_5000.txt")
+
+```
+
+Get the samples ordered by decreasing amount of modern calculus
+```{r}
+samples_order_full <- full_source_results %>%
+  arrange(desc(modernCalculus)) %>%
+  pull(SampleID)
+
+samples_order_reduced <- reduced_source_results %>%
+  arrange(desc(modernCalculus)) %>%
+  pull(SampleID)
+
+```
+
+
+Plot bar charts
+```{r}
+
+full_source_results %>%
+  gather("Sources", "Percent",2:ncol(.)) %>%
+  mutate(Sources = fct_relevel(Sources, "modernCalculus","subPlaque","supPlaque","urbanGut","ruralGut","skin","sediment","boneARS","Unknown"),
+         SampleID = fct_relevel(SampleID, samples_order_full)) %>%
+  ggplot(., aes(x = SampleID, y = Percent, fill = Sources)) +
+         geom_bar(stat = "identity", color = "black") +
+         theme_minimal(base_size = 14) +
+         scale_fill_manual(values = c("#80b1d3","#8dd3c7","#b3de69","#fccde5","#fb8072","#ffffb3","#bebada","#fdb462","#d9d9d9")) +
+         theme(axis.text.x = element_text(angle = 90, hjust = 1),
+               axis.text = element_text(size = 8)) +
+         # scale_y_continuous(breaks=scales::pretty_breaks(n=6)) +
+         ylab("% attributed to source") +
+         ggtitle("Full sources")
+
+```
+
+```{r}
+reduced_source_results %>%
+  arrange(desc(modernCalculus)) %>%
+  gather("Sources", "Percent",2:ncol(.)) %>%
+  mutate(Sources = fct_relevel(Sources, "modernCalculus","plaque","stool","skin","sediment","bone","Unknown"),
+         SampleID = fct_relevel(SampleID, samples_order_reduced)) %>%
+  ggplot(., aes(x = SampleID, y = Percent, fill = Sources)) +
+         geom_bar(stat = "identity", color = "black") +
+         theme_minimal(base_size = 14) +
+         scale_fill_manual(values = c("#80b1d3","#b3de69","#fb8072","#ffffb3","#bebada","#fdb462","#d9d9d9")) +
+         theme(axis.text.x = element_text(angle = 90, hjust = 1),
+               axis.text = element_text(size = 8)) +
+         # scale_y_continuous(breaks=scales::pretty_breaks(n=6)) +
+         ylab("% attributed to source") +
+         ggtitle("Reduced sources")
+
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

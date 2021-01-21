@@ -83,7 +83,7 @@ colnames(source_table) <- gsub("_S0_L001_R1_000.fastq.merged.prefixed.hg19unmapp
 ```
 
 Combine the input data table and the source table. This needs to be normalized
-by sequencing depth? and CLR-transformed?
+by sequencing depth
 ```{r}
 
 full_table_sourcetracker <- all_species_decontam %>%
@@ -94,13 +94,76 @@ full_table_sourcetracker <- all_species_decontam %>%
   spread(SampleID, Counts) %>%
   rename(`#OTU ID` = Species)
 
-fwrite(full_table_sourcetracker, "./05-results.backup/shotgun_sourcetracker_table_noblanks.txt", sep = "\t", quote = F)
+```
+
+Create a rarefied table with phyloseq to use in SourceTracker
+```{r}
+# all_species_decontam is the OTU table
+# what is the lowest sequencing depth?
+full_table_sourcetracker %>%
+  gather("Library_ID","Counts", 2:ncol(.)) %>%
+  spread(`#OTU ID`, Counts) %>%
+  adorn_totals(where = "col") %>%
+  select(Library_ID, Total) %>%
+  arrange(Total) %>%
+  as_tibble()
+
+# Make the table a matrix
+st_table <- full_table_sourcetracker %>%
+  column_to_rownames("#OTU ID") %>%
+  as.matrix(.)
+
+# make an accompanying taxonomy matrix
+st_taxa <- full_table_sourcetracker %>%
+  mutate(Species_2 = `#OTU ID`) %>%
+  select(`#OTU ID`, Species_2) %>%
+  column_to_rownames("#OTU ID") %>%
+  rename(Species = Species_2) %>%
+  as.matrix(.)
+
+# now convert to a phyloseq object
+library("phyloseq")
+OTU = otu_table(st_table, taxa_are_rows = TRUE)
+TAX = tax_table(st_taxa)
+
+st_physeq = phyloseq(OTU, TAX)
+st_physeq
+
+rare_st_physeq <- rarefy_even_depth(st_physeq, rngseed = 14)
+
+# save the rarefied table (from https://github.com/joey711/phyloseq/issues/613)
+# Extract abundance matrix from the phyloseq object
+OTU1 <- as(otu_table(rare_st_physeq), "matrix")
+# transpose if necessary
+if(taxa_are_rows(rare_st_physeq)){OTU1 <- t(OTU1)}
+# Coerce to data.frame
+st_table_rare <- as.data.frame(OTU1)
+
+# check the depth of rarefaction
+st_table_rare %>%
+  rownames_to_column("#OTU ID") %>%
+  adorn_totals(where = "col") %>%
+  select(`#OTU ID`,Total) %>%
+  as_tibble()
+
+# make the rownames a column with the appropriate header
+st_table_rare <- st_table_rare %>%
+  rownames_to_column("SampleID") %>%
+  gather("#OTU ID","Counts",2:ncol(.)) %>%
+  spread(SampleID, Counts)
 
 
 ```
 
-log-transform the table for sourcetracker
+
 ```{r}
+# save the rarefied table for input to sourcetracker
+fwrite(st_table_rare, "./05-results.backup/shotgun_sourcetracker_table_noblanks_rarefied.txt", sep = "\t", quote = F)
+
+```
+
+log-transform the table for sourcetracker
+```{r, eval = F}
 # clr-transform (has negative values)
 full_table_sourcetracker_clr <- clr(full_table_sourcetracker %>%
                                       gather("SampleID","Counts", 2:ncol(.)) %>%
@@ -124,7 +187,7 @@ full_table_sourcetracker_log <- full_table_sourcetracker %>%
 
 ```{r}
 
-full_table_sourcetracker %>%
+st_table_rare %>%
   gather("SampleID","Counts",2:ncol(.)) %>%
   spread(Species, Counts) %>%
   select(SampleID) %>%
@@ -135,16 +198,11 @@ full_table_sourcetracker %>%
 mapfile %>%
   rename(SampleID = `#SampleID`) %>%
   select(SampleID) %>%
-  anti_join(., full_table_sourcetracker %>%
+  anti_join(., st_table_rare %>%
     gather("SampleID","Counts",2:ncol(.)) %>%
     spread(Species, Counts) %>%
     select(SampleID))
     
-```
-
-```{r}
-st_table <- fread("./05-results.backup/shotgun_sourcetracker_table.txt")
-
 ```
 
 

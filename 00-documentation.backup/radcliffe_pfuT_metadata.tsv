@@ -1,49 +1,49 @@
-Site	Time_period	Region	Individual_ID	Library_ID	Sample_or_Control	Extraction_protocol	Library_protocol	Study_accession	Sequencing_type	No_reads_total	No_reads_no_human	Age	Sex	Tooth_location	Sampled_teeth_FDI	alt_tooth_location	Caries_present	Periodontal_disease_present
-Radcliffe	Industrial	England	CS01	CS01	Sample	Oxford_calculus	Oxford_calculus	PRJEB30331	Paired-end	9529281	9268520	18-24 	Female	Posterior	16/27	Posterior	Yes	Yes
-Radcliffe	Industrial	England	CS02	CS02	Sample	Oxford_calculus	Oxford_calculus	PRJEB30331	Paired-end	13024929	12699450	25-34 	Male	Posterior	38/34/35/44/45	Posterior	Yes	Yes
-Radcliffe	Industrial	England	CS03	CS03	Sample	Oxford_calculus	Oxford_calculus	PRJEB30331	Paired-end	12060217	11667718	35-44 	Female	Anterior	31/41/43/11	Anterior	Yes	Yes
-Radcliffe	Industrial	England	CS04	CS04	Sample	Oxford_calculus	Oxford_calculus	PRJEB30331	Paired-end	13417510	9982091	18-24 	Male	Anterior	31/41/42/43	Anterior	Yes	Yes
-Radcliffe	Industrial	England	CS07	CS07	Sample	Oxford_calculus	Oxford_calculus	PRJEB30331	Paired-end	9608738	9375837	25-34 	Male	Anterior	31/41	Anterior	Yes	Yes
-Radcliffe	Industrial	England	CS08	CS08	Sample	Oxford_calculus	Oxford_calculus	PRJEB30331	Paired-end	8937506	8676714	25-34 	Male	Anterior	31/41/42/43	Anterior	Yes	Yes
-Radcliffe	Industrial	England	CS09	CS09	Sample	Oxford_calculus	Oxford_calculus	PRJEB30331	Paired-end	14526662	13898022	25-34 	Male	Anterior/Posterior	36/41	Anterior/Posterior	Yes	Yes
-Radcliffe	Industrial	England	CS10	CS10	Sample	Oxford_calculus	Oxford_calculus	PRJEB30331	Paired-end	17355985	16884003	25-34 	Male	Anterior	31/33/43	Anterior	Yes	Yes
-Radcliffe	Industrial	England	CS11	CS11	Sample	Oxford_calculus	Oxford_calculus	PRJEB30331	Paired-end	20028871	18065421	18-24 	Male	Anterior	33/42	Anterior	Yes	No
-Radcliffe	Industrial	England	CS12	CS12	Sample	Oxford_calculus	Oxford_calculus	PRJEB30331	Paired-end	7448490	6491099	35-44 	Male	Posterior	16	Posterior	Yes	Yes
-Radcliffe	Industrial	England	CS13	CS13	Sample	Oxford_calculus	Oxford_calculus	PRJEB30331	Paired-end	15461954	13823332	25-34 	Male	Anterior	42	Anterior	Yes	Yes
-Radcliffe	Industrial	England	CS14	CS14	Sample	Oxford_calculus	Oxford_calculus	PRJEB30331	Paired-end	1664383	1583366	25-34 	Male	Anterior	32/33/34	Anterior	Yes	Yes
-Radcliffe	Industrial	England	CS15	CS15	Sample	Oxford_calculus	Oxford_calculus	PRJEB30331	Paired-end	13906172	12467154	25-34 	Female	Anterior	31/34/41	Anterior	Yes	Yes
-Radcliffe	Industrial	England	CS16	CS16	Sample	Oxford_calculus	Oxford_calculus	PRJEB30331	Paired-end	11533423	10318933	25-34 	Male	Anterior	31/32/41/42	Anterior	Yes	Yes
-Radcliffe	Industrial	England	CS17	CS17	Sample	Oxford_calculus	Oxford_calculus	PRJEB30331	Paired-end	14948555	12973777	25-34 	Female	Posterior	17	Posterior	Yes	Yes
-Radcliffe	Industrial	England	CS18	CS18	Sample	Oxford_calculus	Oxford_calculus	PRJEB30331	Paired-end	5682870	5467020	35-44 	Male	Anterior	32/33/41/43	Anterior	No	Yes
-Radcliffe	Industrial	England	CS19	CS19	Sample	Oxford_calculus	Oxford_calculus	PRJEB30331	Paired-end	7442909	6656087	35-44 	Male	Anterior	31/32/41	Anterior	Yes	Yes
-Radcliffe	Industrial	England	CS20	CS20	Sample	Oxford_calculus	Oxford_calculus	PRJEB30331	Paired-end	20200241	17870393	35-44 	Male	Anterior	42/43	Anterior	Yes	Yes
-Radcliffe	Industrial	England	CS21	CS21	Sample	Oxford_calculus	Oxford_calculus	PRJEB30331	Paired-end	18270291	15796513	25-34 	Male	Anterior/Posterior	37/43	Anterior/Posterior	No	No
-Radcliffe	Industrial	England	CS22	CS22	Sample	Oxford_calculus	Oxford_calculus	PRJEB30331	Paired-end	16889621	16716651	25-34 	Male	Posterior	27	Posterior	Yes	Yes
-Radcliffe	Industrial	England	CS23	CS23	Sample	Oxford_calculus	Oxford_calculus	PRJEB30331	Paired-end	22562246	21821929	25-34 	Female	Anterior	34	Anterior	Yes	Yes
-Radcliffe	Industrial	England	CS24	CS24	Sample	Oxford_calculus	Oxford_calculus	PRJEB30331	Paired-end	7023131	6678987	35-44 	Female	Posterior	26	Posterior	Yes	Yes
-Radcliffe	Industrial	England	CS26	CS26	Sample	Oxford_calculus	Oxford_calculus	PRJEB30331	Paired-end	5508537	4735440	35-44 	Male	Posterior	34/35/36	Posterior	Yes	Yes
-Radcliffe	Industrial	England	CS27	CS27	Sample	Oxford_calculus	Oxford_calculus	PRJEB30331	Paired-end	587406	504562	25-34 	Male	Anterior	33	Anterior	Yes	Yes
-Radcliffe	Industrial	England	CS28	CS28	Sample	Oxford_calculus	Oxford_calculus	PRJEB30331	Paired-end	14017323	12436242	35-44 	Female	Anterior/Posterior	34/43/45	Anterior/Posterior	Yes	Yes
-Radcliffe	Industrial	England	CS29	CS29	Sample	Oxford_calculus	Oxford_calculus	PRJEB30331	Paired-end	21423643	20570118	25-34 	Male	Anterior/Posterior	31/32/36	Anterior/Posterior	Yes	Yes
-Radcliffe	Industrial	England	CS30	CS30	Sample	Oxford_calculus	Oxford_calculus	PRJEB30331	Paired-end	6114912	5310403	18-24 	Female	Anterior/Posterior	31/32/34/41	Anterior	Yes	No
-Radcliffe	Industrial	England	CS31	CS31	Sample	Oxford_calculus	Oxford_calculus	PRJEB30331	Paired-end	22270231	21411500	35-44 	Female	Anterior/Posterior	35/42/47	Anterior/Posterior	Yes	Yes
-Radcliffe	Industrial	England	CS32	CS32	Sample	Oxford_calculus	Oxford_calculus	PRJEB30331	Paired-end	29635850	28191823	35-44 	Male	Anterior	11/12/21/23	Anterior	Yes	Yes
-Radcliffe	Industrial	England	CS33	CS33	Sample	Oxford_calculus	Oxford_calculus	PRJEB30331	Paired-end	11119374	11034508	35-44 	Male	Anterior/Posterior	32/34/35/44	Anterior/Posterior	Yes	Yes
-Radcliffe	Industrial	England	CS34	CS34	Sample	Oxford_calculus	Oxford_calculus	PRJEB30331	Paired-end	8914674	8806330	25-34 	Female	Anterior	31/41	Anterior	No	Yes
-Radcliffe	Industrial	England	CS35	CS35	Sample	Oxford_calculus	Oxford_calculus	PRJEB30331	Paired-end	27917645	27626722	25-34 	Male	Anterior/Posterior	37/43	Anterior/Posterior	Yes	Yes
-Radcliffe	Industrial	England	CS36	CS36	Sample	Oxford_calculus	Oxford_calculus	PRJEB30331	Paired-end	7210350	7114853	35-44 	Female	Anterior/Posterior	31/32/33/41/42/43/14	Anterior	Yes	Yes
-Radcliffe	Industrial	England	CS37	CS37	Sample	Oxford_calculus	Oxford_calculus	PRJEB30331	Paired-end	23619905	22322368	35-44 	Male	Anterior/Posterior	11/13/21/23/25	Anterior	Yes	Yes
-Radcliffe	Industrial	England	CS38	CS38	Sample	Oxford_calculus	Oxford_calculus	PRJEB30331	Paired-end	14406710	14218191	18-24 	Male	Posterior	34/34/45	Posterior	Yes	Yes
-Radcliffe	Industrial	England	CS39	CS39	Sample	Oxford_calculus	Oxford_calculus	PRJEB30331	Paired-end	9648776	9276113	35-44 	Male	Anterior	43	Anterior	No	Yes
-Radcliffe	Industrial	England	CS40	CS40	Sample	Oxford_calculus	Oxford_calculus	PRJEB30331	Paired-end	4817273	4768356	35-44 	Male	Posterior	27	Posterior	No	No
-Radcliffe	Industrial	England	CS42	CS42	Sample	Oxford_calculus	Oxford_calculus	PRJEB30331	Paired-end	5649067	5411508	18-24 	Male	Anterior	31/32/41/42	Anterior	No	No
-Radcliffe	Industrial	England	CS43	CS43	Sample	Oxford_calculus	Oxford_calculus	PRJEB30331	Paired-end	8686024	8625418	25-34 	Male	Anterior	31/33/41/42/43	Anterior	Yes	Yes
-Radcliffe	Industrial	England	CS44	CS44	Sample	Oxford_calculus	Oxford_calculus	PRJEB30331	Paired-end	9801170	9373352	35-44 	Female	Anterior	43	Anterior	Yes	Yes
-Radcliffe	Industrial	England	CS45	CS45	Sample	Oxford_calculus	Oxford_calculus	PRJEB30331	Paired-end	4440302	4310740	25-34 	Male	Anterior	31/32/33/41	Anterior	No	Yes
-Radcliffe	Industrial	England	CS46	CS46	Sample	Oxford_calculus	Oxford_calculus	PRJEB30331	Paired-end	10002791	9558464	35-44 	Female	Anterior	42	Anterior	Yes	Yes
-Radcliffe	Industrial	England	CS47	CS47	Sample	Oxford_calculus	Oxford_calculus	PRJEB30331	Paired-end	30323327	30007572	25-34 	Male	Anterior/Posterior	31/32/33/41/42/43/44	Anterior	Yes	Yes
-Radcliffe	Industrial	England	CS48	CS48	Sample	Oxford_calculus	Oxford_calculus	PRJEB30331	Paired-end	541272	531961	35-44 	Male	Anterior	31/33	Anterior	Yes	Yes
-Dentin	Dentin	Dentin	CSD	CSD	NA	Oxford_calculus	Oxford_calculus	PRJEB30331	Paired-end	586899	566610	NA	NA	NA	NA	NA	NA	NA
-Library_blank	Library_blank	Library_blank	CSL	CSL	Control	Oxford_calculus	Oxford_calculus	PRJEB30331	Paired-end	6934389	6624740	NA	NA	NA	NA	NA	NA	NA
-Extraction_blank	Extraction_blank	Extraction_blank	CSN	CSN	Control	Oxford_calculus	Oxford_calculus	PRJEB30331	Paired-end	18200049	17826750	NA	NA	NA	NA	NA	NA	NA
-Soil	Soil	Soil	CSS	CSS	NA	Oxford_calculus	Oxford_calculus	PRJEB30331	Paired-end	6995023	6498455	NA	NA	NA	NA	NA	NA	NA
+Site	Time_period	Region	Individual_ID	Library_ID	Sample_or_Control	Extraction_batch	Extraction_protocol	Library_protocol	Study_accession	Sequencing_type	extract_conc_ng/uL	No_reads_total	No_reads_no_human	Age	Sex	Tooth_location	Sampled_teeth_FDI	alt_tooth_location	Caries_present	Periodontal_disease_present
+Radcliffe	Industrial	England	CS01	CS01	Sample	radcliffe_batch_1	Oxford_calculus	Oxford_calculus	PRJEB30331	Paired-end	19.4	9529281	9268520	18-24 	Female	Posterior	16/27	Posterior	Yes	Yes
+Radcliffe	Industrial	England	CS02	CS02	Sample	radcliffe_batch_1	Oxford_calculus	Oxford_calculus	PRJEB30331	Paired-end	96.2	13024929	12699450	25-34 	Male	Posterior	38/34/35/44/45	Posterior	Yes	Yes
+Radcliffe	Industrial	England	CS03	CS03	Sample	radcliffe_batch_1	Oxford_calculus	Oxford_calculus	PRJEB30331	Paired-end	20.8	12060217	11667718	35-44 	Female	Anterior	31/41/43/11	Anterior	Yes	Yes
+Radcliffe	Industrial	England	CS04	CS04	Sample	radcliffe_batch_1	Oxford_calculus	Oxford_calculus	PRJEB30331	Paired-end	77.3	13417510	9982091	18-24 	Male	Anterior	31/41/42/43	Anterior	Yes	Yes
+Radcliffe	Industrial	England	CS07	CS07	Sample	radcliffe_batch_1	Oxford_calculus	Oxford_calculus	PRJEB30331	Paired-end	120	9608738	9375837	25-34 	Male	Anterior	31/41	Anterior	Yes	Yes
+Radcliffe	Industrial	England	CS08	CS08	Sample	radcliffe_batch_1	Oxford_calculus	Oxford_calculus	PRJEB30331	Paired-end	14.4	8937506	8676714	25-34 	Male	Anterior	31/41/42/43	Anterior	Yes	Yes
+Radcliffe	Industrial	England	CS09	CS09	Sample	radcliffe_batch_1	Oxford_calculus	Oxford_calculus	PRJEB30331	Paired-end	35.2	14526662	13898022	25-34 	Male	Anterior/Posterior	36/41	Anterior/Posterior	Yes	Yes
+Radcliffe	Industrial	England	CS10	CS10	Sample	radcliffe_batch_1	Oxford_calculus	Oxford_calculus	PRJEB30331	Paired-end	73	17355985	16884003	25-34 	Male	Anterior	31/33/43	Anterior	Yes	Yes
+Radcliffe	Industrial	England	CS11	CS11	Sample	radcliffe_batch_1	Oxford_calculus	Oxford_calculus	PRJEB30331	Paired-end	39.8	20028871	18065421	18-24 	Male	Anterior	33/42	Anterior	Yes	No
+Radcliffe	Industrial	England	CS12	CS12	Sample	radcliffe_batch_3	Oxford_calculus	Oxford_calculus	PRJEB30331	Paired-end	103	7448490	6491099	35-44 	Male	Posterior	16	Posterior	Yes	Yes
+Radcliffe	Industrial	England	CS13	CS13	Sample	radcliffe_batch_1	Oxford_calculus	Oxford_calculus	PRJEB30331	Paired-end	67.6	15461954	13823332	25-34 	Male	Anterior	42	Anterior	Yes	Yes
+Radcliffe	Industrial	England	CS14	CS14	Sample	radcliffe_batch_3	Oxford_calculus	Oxford_calculus	PRJEB30331	Paired-end	103	1664383	1583366	25-34 	Male	Anterior	32/33/34	Anterior	Yes	Yes
+Radcliffe	Industrial	England	CS15	CS15	Sample	radcliffe_batch_1	Oxford_calculus	Oxford_calculus	PRJEB30331	Paired-end	14.1	13906172	12467154	25-34 	Female	Anterior	31/34/41	Anterior	Yes	Yes
+Radcliffe	Industrial	England	CS16	CS16	Sample	radcliffe_batch_1	Oxford_calculus	Oxford_calculus	PRJEB30331	Paired-end	24	11533423	10318933	25-34 	Male	Anterior	31/32/41/42	Anterior	Yes	Yes
+Radcliffe	Industrial	England	CS17	CS17	Sample	radcliffe_batch_1	Oxford_calculus	Oxford_calculus	PRJEB30331	Paired-end	6.73	14948555	12973777	25-34 	Female	Posterior	17	Posterior	Yes	Yes
+Radcliffe	Industrial	England	CS18	CS18	Sample	radcliffe_batch_3	Oxford_calculus	Oxford_calculus	PRJEB30331	Paired-end	53.7	5682870	5467020	35-44 	Male	Anterior	32/33/41/43	Anterior	No	Yes
+Radcliffe	Industrial	England	CS19	CS19	Sample	radcliffe_batch_1	Oxford_calculus	Oxford_calculus	PRJEB30331	Paired-end	70.5	7442909	6656087	35-44 	Male	Anterior	31/32/41	Anterior	Yes	Yes
+Radcliffe	Industrial	England	CS20	CS20	Sample	radcliffe_batch_1	Oxford_calculus	Oxford_calculus	PRJEB30331	Paired-end	42.9	20200241	17870393	35-44 	Male	Anterior	42/43	Anterior	Yes	Yes
+Radcliffe	Industrial	England	CS21	CS21	Sample	radcliffe_batch_1	Oxford_calculus	Oxford_calculus	PRJEB30331	Paired-end	8.61	18270291	15796513	25-34 	Male	Anterior/Posterior	37/43	Anterior/Posterior	No	No
+Radcliffe	Industrial	England	CS22	CS22	Sample	radcliffe_batch_2	Oxford_calculus	Oxford_calculus	PRJEB30331	Paired-end	17.3	16889621	16716651	25-34 	Male	Posterior	27	Posterior	Yes	Yes
+Radcliffe	Industrial	England	CS23	CS23	Sample	radcliffe_batch_2	Oxford_calculus	Oxford_calculus	PRJEB30331	Paired-end	18.1	22562246	21821929	25-34 	Female	Anterior	34	Anterior	Yes	Yes
+Radcliffe	Industrial	England	CS24	CS24	Sample	radcliffe_batch_2	Oxford_calculus	Oxford_calculus	PRJEB30331	Paired-end	105	7023131	6678987	35-44 	Female	Posterior	26	Posterior	Yes	Yes
+Radcliffe	Industrial	England	CS26	CS26	Sample	radcliffe_batch_2	Oxford_calculus	Oxford_calculus	PRJEB30331	Paired-end	32.7	5508537	4735440	35-44 	Male	Posterior	34/35/36	Posterior	Yes	Yes
+Radcliffe	Industrial	England	CS27	CS27	Sample	radcliffe_batch_2	Oxford_calculus	Oxford_calculus	PRJEB30331	Paired-end	75	587406	504562	25-34 	Male	Anterior	33	Anterior	Yes	Yes
+Radcliffe	Industrial	England	CS28	CS28	Sample	radcliffe_batch_2	Oxford_calculus	Oxford_calculus	PRJEB30331	Paired-end	23.9	14017323	12436242	35-44 	Female	Anterior/Posterior	34/43/45	Anterior/Posterior	Yes	Yes
+Radcliffe	Industrial	England	CS29	CS29	Sample	radcliffe_batch_2	Oxford_calculus	Oxford_calculus	PRJEB30331	Paired-end	58.8	21423643	20570118	25-34 	Male	Anterior/Posterior	31/32/36	Anterior/Posterior	Yes	Yes
+Radcliffe	Industrial	England	CS30	CS30	Sample	radcliffe_batch_2	Oxford_calculus	Oxford_calculus	PRJEB30331	Paired-end	21	6114912	5310403	18-24 	Female	Anterior/Posterior	31/32/34/41	Anterior	Yes	No
+Radcliffe	Industrial	England	CS31	CS31	Sample	radcliffe_batch_2	Oxford_calculus	Oxford_calculus	PRJEB30331	Paired-end	45.5	22270231	21411500	35-44 	Female	Anterior/Posterior	35/42/47	Anterior/Posterior	Yes	Yes
+Radcliffe	Industrial	England	CS32	CS32	Sample	radcliffe_batch_2	Oxford_calculus	Oxford_calculus	PRJEB30331	Paired-end	17.8	29635850	28191823	35-44 	Male	Anterior	11/12/21/23	Anterior	Yes	Yes
+Radcliffe	Industrial	England	CS33	CS33	Sample	radcliffe_batch_2	Oxford_calculus	Oxford_calculus	PRJEB30331	Paired-end	22.8	11119374	11034508	35-44 	Male	Anterior/Posterior	32/34/35/44	Anterior/Posterior	Yes	Yes
+Radcliffe	Industrial	England	CS34	CS34	Sample	radcliffe_batch_2	Oxford_calculus	Oxford_calculus	PRJEB30331	Paired-end	62.5	8914674	8806330	25-34 	Female	Anterior	31/41	Anterior	No	Yes
+Radcliffe	Industrial	England	CS35	CS35	Sample	radcliffe_batch_2	Oxford_calculus	Oxford_calculus	PRJEB30331	Paired-end	20.5	27917645	27626722	25-34 	Male	Anterior/Posterior	37/43	Anterior/Posterior	Yes	Yes
+Radcliffe	Industrial	England	CS36	CS36	Sample	radcliffe_batch_2	Oxford_calculus	Oxford_calculus	PRJEB30331	Paired-end	54.3	7210350	7114853	35-44 	Female	Anterior/Posterior	31/32/33/41/42/43/14	Anterior	Yes	Yes
+Radcliffe	Industrial	England	CS37	CS37	Sample	radcliffe_batch_3	Oxford_calculus	Oxford_calculus	PRJEB30331	Paired-end	43.6	23619905	22322368	35-44 	Male	Anterior/Posterior	11/13/21/23/25	Anterior	Yes	Yes
+Radcliffe	Industrial	England	CS38	CS38	Sample	radcliffe_batch_2	Oxford_calculus	Oxford_calculus	PRJEB30331	Paired-end	41.4	14406710	14218191	18-24 	Male	Posterior	34/34/45	Posterior	Yes	Yes
+Radcliffe	Industrial	England	CS39	CS39	Sample	radcliffe_batch_3	Oxford_calculus	Oxford_calculus	PRJEB30331	Paired-end	192	9648776	9276113	35-44 	Male	Anterior	43	Anterior	No	Yes
+Radcliffe	Industrial	England	CS40	CS40	Sample	radcliffe_batch_2	Oxford_calculus	Oxford_calculus	PRJEB30331	Paired-end	48.3	4817273	4768356	35-44 	Male	Posterior	27	Posterior	No	No
+Radcliffe	Industrial	England	CS42	CS42	Sample	radcliffe_batch_3	Oxford_calculus	Oxford_calculus	PRJEB30331	Paired-end	136	5649067	5411508	18-24 	Male	Anterior	31/32/41/42	Anterior	No	No
+Radcliffe	Industrial	England	CS43	CS43	Sample	radcliffe_batch_2	Oxford_calculus	Oxford_calculus	PRJEB30331	Paired-end	36.8	8686024	8625418	25-34 	Male	Anterior	31/33/41/42/43	Anterior	Yes	Yes
+Radcliffe	Industrial	England	CS44	CS44	Sample	radcliffe_batch_2	Oxford_calculus	Oxford_calculus	PRJEB30331	Paired-end	31.5	9801170	9373352	35-44 	Female	Anterior	43	Anterior	Yes	Yes
+Radcliffe	Industrial	England	CS45	CS45	Sample	radcliffe_batch_2	Oxford_calculus	Oxford_calculus	PRJEB30331	Paired-end	75.7	4440302	4310740	25-34 	Male	Anterior	31/32/33/41	Anterior	No	Yes
+Radcliffe	Industrial	England	CS46	CS46	Sample	radcliffe_batch_3	Oxford_calculus	Oxford_calculus	PRJEB30331	Paired-end	24.6	10002791	9558464	35-44 	Female	Anterior	42	Anterior	Yes	Yes
+Radcliffe	Industrial	England	CS47	CS47	Sample	radcliffe_batch_2	Oxford_calculus	Oxford_calculus	PRJEB30331	Paired-end	8.86	30323327	30007572	25-34 	Male	Anterior/Posterior	31/32/33/41/42/43/44	Anterior	Yes	Yes
+Radcliffe	Industrial	England	CS48	CS48	Sample	radcliffe_batch_2	Oxford_calculus	Oxford_calculus	PRJEB30331	Paired-end	117	541272	531961	35-44 	Male	Anterior	31/33	Anterior	Yes	Yes
+Dentin	Dentin	Dentin	CSD	CSD	NA	NA	Oxford_calculus	Oxford_calculus	PRJEB30331	Paired-end	4.01	586899	566610	NA	NA	NA	NA	NA	NA	NA
+Library_blank	Library_blank	Library_blank	CSL	CSL	Control	NA	Oxford_calculus	Oxford_calculus	PRJEB30331	Paired-end	NA	6934389	6624740	NA	NA	NA	NA	NA	NA	NA
+Extraction_blank	Extraction_blank	Extraction_blank	CSN	CSN	Control	NA	Oxford_calculus	Oxford_calculus	PRJEB30331	Paired-end	NA	18200049	17826750	NA	NA	NA	NA	NA	NA	NA
+Soil	Soil	Soil	CSS	CSS	NA	NA	Oxford_calculus	Oxford_calculus	PRJEB30331	Paired-end	31.4	6995023	6498455	NA	NA	NA	NA	NA	NA	NA

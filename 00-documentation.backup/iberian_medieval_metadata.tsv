@@ -1,17 +1,17 @@
-Site	Time_period	Region	Individual_ID	Library_ID	Sample_or_Control	Extraction_batch	Library_batch	Extraction_protocol	Library_protocol	Study_accession	Sequencing_type	No_reads_total	No_reads_no_human	Tooth_location	Sampled_teeth_FDI	alt_tooth_location	Age	Sex	Caries_present	Periodontal_disease_present
-ELR	Medieval	Iberia	ELR003	ELR003.A0101	Sample	Ex18_AR_2017-11-09	Li24_AR_2018-01-24	Jena_calculus	Jena_calculus	NA	Paired-end	8832445	8787351	Unknown	Unknown	Unknown	NA	Female	NA	NA
-ELR	Medieval	Iberia	ELR004	ELR004.A0101	Sample	Ex18_AR_2017-11-09	Li24_AR_2018-01-24	Jena_calculus	Jena_calculus	NA	Paired-end	5148193	5093249	Unknown	Unknown	Unknown	NA	Male	NA	NA
-ELR	Medieval	Iberia	ELR006	ELR006.A0101	Sample	Ex24_AR_2018-06-19	Li29_AR_2018-06-26	Jena_calculus	Jena_calculus	NA	Paired-end	14904716	14868553	Unknown	Unknown	Unknown	NA	Female	NA	NA
-ELR	Medieval	Iberia	ELR008	ELR008.A0101	Sample	Ex24_AR_2018-06-19	Li29_AR_2018-06-26	Jena_calculus	Jena_calculus	NA	Paired-end	16374289	16336229	Unknown	Unknown	Unknown	NA	Female	NA	NA
-ELR	Medieval	Iberia	ELR010	ELR010.A0101	Sample	Ex24_AR_2018-06-19	Li29_AR_2018-06-26	Jena_calculus	Jena_calculus	NA	Paired-end	12878328	12745020	Unknown	Unknown	Unknown	NA	Female	NA	NA
-IVE	Medieval	Iberia	IVE002	IVE002.B0101	Sample	Ex24_AR_2018-06-19	Li29_AR_2018-06-26	Jena_calculus	Jena_calculus	NA	Paired-end	14043974	13998607	Posterior	16	Posterior	NA	NA	NA	NA
-IVE	Medieval	Iberia	IVE003	IVE003.A0101	Sample	Ex23_AR_2018-03-02	Li28_AR_2018-03-06	Jena_calculus	Jena_calculus	NA	Paired-end	8741755	8710552	Anterior	33	Anterior	NA	NA	NA	NA
-IVE	Medieval	Iberia	IVE005	IVE005.A0101	Sample	Ex23_AR_2018-03-02	Li28_AR_2018-03-06	Jena_calculus	Jena_calculus	NA	Paired-end	8622298	8590597	Anterior	31/41/42	Anterior	NA	NA	NA	NA
-IVE	Medieval	Iberia	IVE005	IVE005.B0101	Sample	Ex24_AR_2018-06-19	Li29_AR_2018-06-26	Jena_calculus	Jena_calculus	NA	Paired-end	15408959	15354846	Anterior	31/32/41	Anterior	NA	NA	NA	NA
-IVE	Medieval	Iberia	IVE007	IVE007.B0101	Sample	Ex24_AR_2018-06-19	Li29_AR_2018-06-26	Jena_calculus	Jena_calculus	NA	Paired-end	14714883	14667059	Anterior	33	Anterior	NA	NA	NA	NA
-Extraction_blank	Extraction_blank	Extraction_blank	EXB015	EXB015.A3001	Control	Ex20_AR_2018-01-19	Li24_AR_2018-01-24	Jena_calculus	Jena_calculus	NA	Paired-end	1069637	751701	NA	NA	NA	NA	NA	NA	NA
-Extraction_blank	Extraction_blank	Extraction_blank	EXB015	EXB015.A3301	Control	Ex23_AR_2018-03-02	Li28_AR_2018-03-06	Jena_calculus	Jena_calculus	NA	Paired-end	780085	583178	NA	NA	NA	NA	NA	NA	NA
-Extraction_blank	Extraction_blank	Extraction_blank	EXB015	EXB015.A3401	Control	Ex24_AR_2018-06-19	Li29_AR_2018-06-26	Jena_calculus	Jena_calculus	NA	Paired-end	54458	50990	NA	NA	NA	NA	NA	NA	NA
-Library_blank	Library_blank	Library_blank	LIB007	LIB007.A0125	Control	NA	Li24_AR_2018-01-24	Jena_calculus	Jena_calculus	NA	Paired-end	886708	527666	NA	NA	NA	NA	NA	NA	NA
-Library_blank	Library_blank	Library_blank	LIB007	LIB007.A0130	Control	NA	Li28_AR_2018-03-06	Jena_calculus	Jena_calculus	NA	Paired-end	714218	424124	NA	NA	NA	NA	NA	NA	NA
-Library_blank	Library_blank	Library_blank	LIB007	LIB007.A0131	Control	NA	Li29_AR_2018-06-26	Jena_calculus	Jena_calculus	NA	Paired-end	789475	781690	NA	NA	NA	NA	NA	NA	NA
+Site	Time_period	Region	Individual_ID	Library_ID	Sample_or_Control	Extraction_batch	Library_batch	Extraction_protocol	Library_protocol	Study_accession	Sequencing_type	No_reads_total	No_reads_no_human	Tooth_location	Sampled_teeth_FDI	alt_tooth_location	DNA_molecules_per_library_x10^6	Age	Sex	Caries_present	Periodontal_disease_present
+ELR	Medieval	Iberia	ELR003	ELR003.A0101	Sample	Ex18_AR_2017-11-09	Li24_AR_2018-01-24	Jena_calculus	Jena_calculus	thisstudy	Paired-end	8832445	8787351	Unknown	Unknown	Unknown	58328000	NR	Female	NR	NR
+ELR	Medieval	Iberia	ELR004	ELR004.A0101	Sample	Ex18_AR_2017-11-09	Li24_AR_2018-01-24	Jena_calculus	Jena_calculus	thisstudy	Paired-end	5148193	5093249	Unknown	Unknown	Unknown	112930000	NR	Male	NR	NR
+ELR	Medieval	Iberia	ELR006	ELR006.A0101	Sample	Ex24_AR_2018-06-19	Li29_AR_2018-06-26	Jena_calculus	Jena_calculus	thisstudy	Paired-end	14904716	14868553	Unknown	Unknown	Unknown	15934800	NR	Female	NR	NR
+ELR	Medieval	Iberia	ELR008	ELR008.A0101	Sample	Ex24_AR_2018-06-19	Li29_AR_2018-06-26	Jena_calculus	Jena_calculus	thisstudy	Paired-end	16374289	16336229	Unknown	Unknown	Unknown	11716800	NR	Female	NR	NR
+ELR	Medieval	Iberia	ELR010	ELR010.A0101	Sample	Ex24_AR_2018-06-19	Li29_AR_2018-06-26	Jena_calculus	Jena_calculus	thisstudy	Paired-end	12878328	12745020	Unknown	Unknown	Unknown	878400	NR	Female	NR	NR
+IVE	Medieval	Iberia	IVE002	IVE002.B0101	Sample	Ex24_AR_2018-06-19	Li29_AR_2018-06-26	Jena_calculus	Jena_calculus	thisstudy	Paired-end	14043974	13998607	Posterior	16	Posterior	10936800	NR	NA	NR	NR
+IVE	Medieval	Iberia	IVE003	IVE003.A0101	Sample	Ex23_AR_2018-03-02	Li28_AR_2018-03-06	Jena_calculus	Jena_calculus	thisstudy	Paired-end	8741755	8710552	Anterior	33	Anterior	20107200	NR	NA	NR	NR
+IVE	Medieval	Iberia	IVE005	IVE005.A0101	Sample	Ex23_AR_2018-03-02	Li28_AR_2018-03-06	Jena_calculus	Jena_calculus	thisstudy	Paired-end	8622298	8590597	Anterior	31/41/42	Anterior	21026400	NR	NA	NR	NR
+IVE	Medieval	Iberia	IVE005	IVE005.B0101	Sample	Ex24_AR_2018-06-19	Li29_AR_2018-06-26	Jena_calculus	Jena_calculus	thisstudy	Paired-end	15408959	15354846	Anterior	31/32/41	Anterior	11671800	NR	NA	NR	NR
+IVE	Medieval	Iberia	IVE007	IVE007.B0101	Sample	Ex24_AR_2018-06-19	Li29_AR_2018-06-26	Jena_calculus	Jena_calculus	thisstudy	Paired-end	14714883	14667059	Anterior	33	Anterior	16669800	NR	NA	NR	NR
+Extraction_blank	Extraction_blank	Extraction_blank	EXB015	EXB015.A3001	Control	Ex20_AR_2018-01-19	Li24_AR_2018-01-24	Jena_calculus	Jena_calculus	thisstudy	Paired-end	1069637	751701	NA	NA	NA	NA	NA	NA	NA	NA
+Extraction_blank	Extraction_blank	Extraction_blank	EXB015	EXB015.A3301	Control	Ex23_AR_2018-03-02	Li28_AR_2018-03-06	Jena_calculus	Jena_calculus	thisstudy	Paired-end	780085	583178	NA	NA	NA	NA	NA	NA	NA	NA
+Extraction_blank	Extraction_blank	Extraction_blank	EXB015	EXB015.A3401	Control	Ex24_AR_2018-06-19	Li29_AR_2018-06-26	Jena_calculus	Jena_calculus	thisstudy	Paired-end	54458	50990	NA	NA	NA	NA	NA	NA	NA	NA
+Library_blank	Library_blank	Library_blank	LIB007	LIB007.A0125	Control	NA	Li24_AR_2018-01-24	Jena_calculus	Jena_calculus	thisstudy	Paired-end	886708	527666	NA	NA	NA	NA	NA	NA	NA	NA
+Library_blank	Library_blank	Library_blank	LIB007	LIB007.A0130	Control	NA	Li28_AR_2018-03-06	Jena_calculus	Jena_calculus	thisstudy	Paired-end	714218	424124	NA	NA	NA	NA	NA	NA	NA	NA
+Library_blank	Library_blank	Library_blank	LIB007	LIB007.A0131	Control	NA	Li29_AR_2018-06-26	Jena_calculus	Jena_calculus	thisstudy	Paired-end	789475	781690	NA	NA	NA	NA	NA	NA	NA	NA

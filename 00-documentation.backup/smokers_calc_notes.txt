@@ -343,7 +343,6 @@ sbatch \
 --mem=8000 \
 -o ~/slurm_logs/slurm.%j.out \
 -e ~/slurm_logs/slurm.%j.err \
--t 48:00:00 \
 --partition=long \
 --mail-type=fail \
 --mail-type=time_limit \
@@ -351,18 +350,21 @@ sbatch \
 --export=ALL \
 -J "Sourcetracker" \
 --wrap="Rscript \
-/projects1/microbiome_calculus/evolution/04-analysis/screening/sourcetracker.backup/sourcetracker-1.0.1/sourcetracker_for_qiime.r \
+/projects1/users/velsko/bin/sourcetracker-1.0.1/sourcetracker_for_qiime.r \
 -i /projects1/microbiome_calculus/smoking_calculus/04-analysis/sourceTracker/shotgun/shotgun_sourcetracker_table.txt \
 -m "$MAPPINGFILE" \
 -o "$OUTDIR"/shotgun_sourcetracker_table_log_"$(date +"%Y%m%d")" \
--r 1000 \
+-r 5000 \
 -v"
 
-        # awk -v name={wildcards.sample} '/^>/{print ">"name "_" ++i; next}{print}' \
-
-
-
-
+# For shotgun data, take the sources from the DeepEvo table James made
+# Take the metadata sheet from Zandra's modern calculus SourceTracker run
+# Combine DeepEvo sources and the sinks from this project in R
+# add the samples from this project to the metadata table
+# convert the species header to match QIIME v1 formatting
+# add '# Constructed from biom file' as the 1st line and
+# replace Species with '#OTU ID'
+# remove quotes around NA in metadata file perl -p -i -e 's/\"NA\"/NA/g' source_tracker_mappingfile_new.tsv
 
 
 
