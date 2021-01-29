@@ -558,14 +558,17 @@ tune.pca(all_species_decontam_filtered_noblanks, logratio = 'CLR')
 
 # perform and plot a PCA to see how the data cluster
 # by Site
-plot_pca(all_species_decontam_filtered_noblanks, "PC1", "PC2", "Site", "Time_period", 3)
+mid_all_pc12 <- plot_pca(all_species_decontam_filtered_noblanks, "PC1", "PC2", "Site", "Time_period", 3)
+mid_all_pc12
 plot_pca(all_species_decontam_filtered_noblanks, "PC1", "PC3", "Site", "Time_period", 3)
 plot_pca(all_species_decontam_filtered_noblanks, "PC2", "PC3", "Site", "Time_period", 3)
-plot_pca(all_species_decontam_filtered_noblanks, "PC3", "PC2", "Site", "Time_period", 3)
+mid_all_pc32 <- plot_pca(all_species_decontam_filtered_noblanks, "PC3", "PC2", "Site", "Time_period", 3)
+mid_all_pc32
 
-
-# ggsave("05-results.backup/pca_village.pdf", plot = pca_village, device = "pdf",
-#        scale = 1, width = 7, height = 5, units = c("in"), dpi = 300)
+ggsave("~/Desktop/MID_pca_all_pc12.pdf", plot = mid_all_pc12, device = "pdf",
+       scale = 1, width = 9, height = 5, units = c("in"), dpi = 300)
+ggsave("~/Desktop/MID_pca_all_pc32.pdf", plot = mid_all_pc32, device = "pdf",
+       scale = 1, width = 5, height = 5, units = c("in"), dpi = 300)
 
 ```
 
@@ -587,7 +590,10 @@ plot_pca(all_species_decontam_filtered_noblanks, "PC1", "PC2", "Periodontal_dise
 plot_pca(all_species_decontam_filtered_noblanks, "PC1", "PC2", "Caries_present", "Time_period", 3)
 
 # by sampled tooth/teeth location
-plot_pca(all_species_decontam_filtered_noblanks, "PC1", "PC2", "Tooth_location", "Time_period", 3)
+all_tooth_pc12 <- plot_pca(all_species_decontam_filtered_noblanks, "PC1", "PC2", "Tooth_location", "Time_period", 3)
+all_tooth_pc12
+ggsave("~/Desktop/MID_pca_all_tooth_pc12.pdf", plot = all_tooth_pc12, device = "pdf",
+       scale = 1, width = 8, height = 5, units = c("in"), dpi = 300)
 
 # by sampled tooth/teeth location
 plot_pca(all_species_decontam_filtered_noblanks, "PC1", "PC2", "alt_tooth_location", "Time_period", 3)
@@ -605,9 +611,9 @@ malt_species_decontam_filtered_noblanks.pca.variates <- malt_species_decontam_fi
 
 malt_species_decontam_filtered_noblanks.pca.varmet <- inner_join(malt_species_decontam_filtered_noblanks.pca.variates, full_metadata, by = "Library_ID")
 
-malt_species_decontam_filtered_noblanks.pca.varmet %>%
+all_seqdepth_pc12 <- malt_species_decontam_filtered_noblanks.pca.varmet %>%
   ggplot(., aes(PC1, PC2, colour = No_reads_total, shape = Time_period)) +
-    geom_point(size = 2) +
+    geom_point(size = 3) +
     scale_shape_manual(values = Time_period_shapes) +
     scale_color_viridis_c(option = "A") +
     xlab(paste("PC1 - ", 100*(round(malt_species_decontam_filtered_noblanks.pca$explained_variance[1], 2)), "%", sep = "")) +
@@ -615,11 +621,15 @@ malt_species_decontam_filtered_noblanks.pca.varmet %>%
     theme_minimal(base_size = 14) +
     labs(colour = "Seq. depth\n(reads)", shape = "Time period") +
     theme(legend.title = element_text(size = 10))
+all_seqdepth_pc12
+ggsave("~/Desktop/MID_pca_all_seqdepth_pc12.pdf", plot = all_seqdepth_pc12, device = "pdf",
+       scale = 1, width = 9, height = 5, units = c("in"), dpi = 300)
+
 
 malt_species_decontam_filtered_noblanks.pca.varmet %>%
   mutate(No_reads_total_log = log10(No_reads_total)) %>%
   ggplot(., aes(PC1, PC2, colour = No_reads_total_log, shape = Time_period)) +
-    geom_point(size = 2) +
+    geom_point(size = 3) +
     scale_shape_manual(values = Time_period_shapes) +
     scale_color_viridis_c(option = "A") +
     xlab(paste("PC1 - ", 100*(round(malt_species_decontam_filtered_noblanks.pca$explained_variance[1], 2)), "%", sep = "")) +
@@ -629,9 +639,9 @@ malt_species_decontam_filtered_noblanks.pca.varmet %>%
     theme(legend.title = element_text(size = 10))
 
 # by extract concentration (only available for CMB, MID, Radcliffe)
-malt_species_decontam_filtered_noblanks.pca.varmet %>%
+all_extract_pc12 <- malt_species_decontam_filtered_noblanks.pca.varmet %>%
   ggplot(., aes(PC1, PC2, colour = `extract_conc_ng/uL`, shape = Time_period)) +
-    geom_point(size = 2) +
+    geom_point(size = 3) +
     scale_shape_manual(values = Time_period_shapes) +
     scale_color_viridis_c(option = "A") +
     xlab(paste("PC1 - ", 100*(round(malt_species_decontam_filtered_noblanks.pca$explained_variance[1], 2)), "%", sep = "")) +
@@ -639,11 +649,15 @@ malt_species_decontam_filtered_noblanks.pca.varmet %>%
     theme_minimal(base_size = 14) +
     labs(colour = "[DNA Extract]\n(ng/uL)", shape = "Time period") +
     theme(legend.title = element_text(size = 10))
+all_extract_pc12
+ggsave("~/Desktop/MID_pca_all_extract_pc12.pdf", plot = all_extract_pc12, device = "pdf",
+       scale = 1, width = 9, height = 5, units = c("in"), dpi = 300)
+
 
 malt_species_decontam_filtered_noblanks.pca.varmet %>%
   mutate(`extract_conc_ng/uL_log` = log10(`extract_conc_ng/uL`)) %>%
   ggplot(., aes(PC1, PC2, colour = `extract_conc_ng/uL_log`, shape = Time_period)) +
-    geom_point(size = 2) +
+    geom_point(size = 3) +
     scale_shape_manual(values = Time_period_shapes) +
     scale_color_viridis_c(option = "A") +
     xlab(paste("PC1 - ", 100*(round(malt_species_decontam_filtered_noblanks.pca$explained_variance[1], 2)), "%", sep = "")) +
@@ -653,11 +667,11 @@ malt_species_decontam_filtered_noblanks.pca.varmet %>%
     theme(legend.title = element_text(size = 10))
 
 # by sourceTracker results % modernCalculus
-malt_species_decontam_filtered_noblanks.pca.varmet %>%
+all_modcalc_pc12 <- malt_species_decontam_filtered_noblanks.pca.varmet %>%
   full_join(., full_source_results %>%
               rename(Library_ID = SampleID)) %>%
   ggplot(., aes(PC1, PC2, colour = modernCalculus, shape = Time_period)) +
-    geom_point(size = 2) +
+    geom_point(size = 3) +
     scale_shape_manual(values = Time_period_shapes) +
     scale_color_viridis_c(option = "A") +
     xlab(paste("PC1 - ", 100*(round(malt_species_decontam_filtered_noblanks.pca$explained_variance[1], 2)), "%", sep = "")) +
@@ -665,13 +679,16 @@ malt_species_decontam_filtered_noblanks.pca.varmet %>%
     theme_minimal(base_size = 14) +
     labs(colour = "% modernCalculus", shape = "Time period") +
     theme(legend.title = element_text(size = 10))
+all_modcalc_pc12
+ggsave("~/Desktop/MID_pca_all_modcalc_pc12.pdf", plot = all_modcalc_pc12, device = "pdf",
+       scale = 1, width = 9, height = 5, units = c("in"), dpi = 300)
 
 # by sourceTracker results % subgingival Plaque
 malt_species_decontam_filtered_noblanks.pca.varmet %>%
   full_join(., full_source_results %>%
               rename(Library_ID = SampleID)) %>%
   ggplot(., aes(PC1, PC2, colour = subPlaque, shape = Time_period)) +
-    geom_point(size = 2) +
+    geom_point(size = 3) +
     scale_shape_manual(values = Time_period_shapes) +
     scale_color_viridis_c(option = "A") +
     xlab(paste("PC1 - ", 100*(round(malt_species_decontam_filtered_noblanks.pca$explained_variance[1], 2)), "%", sep = "")) +
@@ -682,11 +699,11 @@ malt_species_decontam_filtered_noblanks.pca.varmet %>%
 
 
 # by sourceTracker results % unknown
-malt_species_decontam_filtered_noblanks.pca.varmet %>%
+all_unknown_pc12 <- malt_species_decontam_filtered_noblanks.pca.varmet %>%
   full_join(., full_source_results %>%
               rename(Library_ID = SampleID)) %>%
   ggplot(., aes(PC1, PC2, colour = Unknown, shape = Time_period)) +
-    geom_point(size = 2) +
+    geom_point(size = 3) +
     scale_shape_manual(values = Time_period_shapes) +
     scale_color_viridis_c(option = "A") +
     xlab(paste("PC1 - ", 100*(round(malt_species_decontam_filtered_noblanks.pca$explained_variance[1], 2)), "%", sep = "")) +
@@ -694,6 +711,9 @@ malt_species_decontam_filtered_noblanks.pca.varmet %>%
     theme_minimal(base_size = 14) +
     labs(colour = "% Unknown", shape = "Time period") +
     theme(legend.title = element_text(size = 10))
+all_unknown_pc12
+ggsave("~/Desktop/MID_pca_all_unknown_pc12.pdf", plot = all_unknown_pc12, device = "pdf",
+       scale = 1, width = 9, height = 5, units = c("in"), dpi = 300)
 
 # ggsave("05-results.backup/librarybatch.pdf", plot = extractionbatch, device = "pdf",
 #        scale = 1, width = 7, height = 5, units = c("in"), dpi = 300)
@@ -1097,10 +1117,10 @@ ggplot(malt_pca_values, aes(PC1, PC2, color = Region, shape = Region)) +
 
 # perform and plot a PCA to see how the data cluster
 # by pipe notch presence
-plot_pca_mid(all_species_decontam_filtered_mid, "PC1", "PC2", "Pipenotch", "Pipenotch", 3, "Pipe notch")
-
-# ggsave("05-results.backup/pca_mid_village.pdf", plot = pca_mid_village, device = "pdf",
-#        scale = 1, width = 7, height = 5, units = c("in"), dpi = 300)
+mid_pipe_pc12 <- plot_pca_mid(all_species_decontam_filtered_mid, "PC1", "PC2", "Pipenotch", "Pipenotch", 3, "Pipe notch")
+mid_pipe_pc12
+ggsave("~/Desktop/MID_pca_mid_pipe_pc12.pdf", plot = mid_pipe_pc12, device = "pdf",
+       scale = 1, width = 9, height = 5, units = c("in"), dpi = 300)
 
 # by sex
 plot_pca_mid(all_species_decontam_filtered_mid, "PC1", "PC2", "Sex", "Pipenotch", 3, "Sex")
@@ -1148,13 +1168,22 @@ plot_pca_cont(all_species_decontam_filtered_mid, "PC1", "PC2", "%teeth_with_calc
 plot_pca_cont(all_species_decontam_filtered_mid, "PC1", "PC2", "%_positions_with_Periodontal", "Pipenotch", 3, "% positions w/ PD")
 
 # by minimum number of pipenotches 
-plot_pca_cont(all_species_decontam_filtered_mid, "PC1", "PC2", "Min_no_Pipe_notches", "Pipenotch", 3, "Min # pipe notches")
+mid_minpipe_pc12 <- plot_pca_cont(all_species_decontam_filtered_mid, "PC1", "PC2", "Min_no_Pipe_notches", "Pipenotch", 3, "Min # pipe notches")
+mid_minpipe_pc12
+ggsave("~/Desktop/MID_pca_mid_minpipe_pc12.pdf", plot = mid_minpipe_pc12, device = "pdf",
+       scale = 1, width = 9, height = 5, units = c("in"), dpi = 300)
 
 # by sequencing depth 
-plot_pca_cont(all_species_decontam_filtered_mid, "PC1", "PC2", "No_reads_total", "Pipenotch", 3, "Total reads into MALT")
+mid_seqdepth_pc12 <- plot_pca_cont(all_species_decontam_filtered_mid, "PC1", "PC2", "No_reads_total", "Pipenotch", 3, "Total reads into MALT")
+mid_seqdepth_pc12
+ggsave("~/Desktop/MID_pca_mid_seqdepth_pc12.pdf", plot = mid_seqdepth_pc12, device = "pdf",
+       scale = 1, width = 9, height = 5, units = c("in"), dpi = 300)
 
 # by sampled tooth site(s)
-plot_pca_mid(all_species_decontam_filtered_mid, "PC1", "PC2", "Tooth_location", "Pipenotch", 3, "Tooth location")
+mid_tooth_pc12 <- plot_pca_mid(all_species_decontam_filtered_mid, "PC1", "PC2", "Tooth_location", "Pipenotch", 3, "Tooth location")
+mid_tooth_pc12
+ggsave("~/Desktop/MID_pca_mid_tooth_pc12.pdf", plot = mid_tooth_pc12, device = "pdf",
+       scale = 1, width = 9, height = 5, units = c("in"), dpi = 300)
 
 # by sampled tooth site(s)
 plot_pca_mid(all_species_decontam_filtered_mid, "PC1", "PC2", "alt_tooth_location", "Pipenotch", 3, "Tooth location")
@@ -1166,22 +1195,37 @@ plot_pca_cont(all_species_decontam_filtered_mid, "PC1", "PC2", "Calculus_extract
 plot_pca_cont(all_species_decontam_filtered_mid, "PC1", "PC2", "extract_conc_ng/mg", "Pipenotch", 3, "DNA extract concentration (ng/mg)")
 
 # by [DNA] after extraction per uL of eluate
-plot_pca_cont(all_species_decontam_filtered_mid, "PC1", "PC2", "extract_conc_ng/uL", "Pipenotch", 3, "DNA extract concentration (ng/uL)")
+mid_extract_pc12 <- plot_pca_cont(all_species_decontam_filtered_mid, "PC1", "PC2", "extract_conc_ng/uL", "Pipenotch", 3, "DNA extract concentration (ng/uL)")
+mid_extract_pc12
+ggsave("~/Desktop/MID_pca_mid_extract_pc12.pdf", plot = mid_extract_pc12, device = "pdf",
+       scale = 1, width = 9, height = 5, units = c("in"), dpi = 300)
 
 # by [DNA] after storage, before building libraries
-# plot_pca_cont(all_species_decontam_filtered_mid, "PC1", "PC2", "extract_conc_after_storage_ng/mg", "Pipenotch", 3, "DNA extract concentration after storage (ng/uL)")
+plot_pca_cont(all_species_decontam_filtered_mid, "PC1", "PC2", "extract_conc_after_storage_ng/mg", "Pipenotch", 3, "DNA extract concentration after storage (ng/uL)")
 
 # by # of molecules in the library after indexing amplification
-plot_pca_cont(all_species_decontam_filtered_mid, "PC1", "PC2", "DNA_molecules_per_library_x10^6_log", "Pipenotch", 3, "log10(DNA_molecules_per_library_x10^6)")
+mid_library_pc12 <- plot_pca_cont(all_species_decontam_filtered_mid, "PC1", "PC2", "DNA_molecules_per_library_x10^6_log", "Pipenotch", 3, "log10(DNA_molecules_per_library_x10^6)")
+mid_library_pc12
+ggsave("~/Desktop/MID_pca_mid_library_pc12.pdf", plot = mid_library_pc12, device = "pdf",
+       scale = 1, width = 9, height = 5, units = c("in"), dpi = 300)
 
 # by % attributed to modern calculus by sourcetracker
-plot_pca_cont(all_species_decontam_filtered_mid, "PC1", "PC2", "modernCalculus", "Pipenotch", 3, "% modern calculus")
+mid_modalc_pc12 <- plot_pca_cont(all_species_decontam_filtered_mid, "PC1", "PC2", "modernCalculus", "Pipenotch", 3, "% modern calculus")
+mid_modalc_pc12
+ggsave("~/Desktop/MID_pca_mid_modcalc_pc12.pdf", plot = mid_modalc_pc12, device = "pdf",
+       scale = 1, width = 9, height = 5, units = c("in"), dpi = 300)
 
-# by % attributed to modern calculus by sourcetracker
-plot_pca_cont(all_species_decontam_filtered_mid, "PC1", "PC2", "subPlaque", "Pipenotch", 3, "% subgingival plaque")
+# by % attributed to subgingical plaque by sourcetracker
+mid_plaque_pc12 <- plot_pca_cont(all_species_decontam_filtered_mid, "PC1", "PC2", "subPlaque", "Pipenotch", 3, "% subgingival plaque")
+mid_plaque_pc12
+ggsave("~/Desktop/MID_pca_mid_subplaque_pc12.pdf", plot = mid_plaque_pc12, device = "pdf",
+       scale = 1, width = 9, height = 5, units = c("in"), dpi = 300)
 
 # by % attributed to unknown source by sourcetracker
-plot_pca_cont(all_species_decontam_filtered_mid, "PC1", "PC2", "Unknown", "Pipenotch", 3, "% Unknown source")
+mid_unknown_pc12 <- plot_pca_cont(all_species_decontam_filtered_mid, "PC1", "PC2", "Unknown", "Pipenotch", 3, "% Unknown source")
+mid_unknown_pc12
+ggsave("~/Desktop/MID_pca_mid_unknown_pc12.pdf", plot = mid_unknown_pc12, device = "pdf",
+       scale = 1, width = 9, height = 5, units = c("in"), dpi = 300)
 
 # with names
 # pca.list <- mixOmics::pca(all_species_decontam_filtered_mid, ncomp = 3, logratio = 'CLR')
@@ -1263,7 +1307,7 @@ plot_pca_cont(all_species_decontam_filtered_mid, "PC3", "PC2", "extract_conc_ng/
 plot_pca_cont(all_species_decontam_filtered_mid, "PC3", "PC2", "extract_conc_ng/uL", "Pipenotch", 3, "DNA extract concentration (ng/uL)")
 
 # by [DNA] after storage, before building libraries
-# plot_pca_cont(all_species_decontam_filtered_mid, "PC3", "PC2", "extract_conc_after_storage_ng/mg", "Pipenotch", 3, "DNA extract concentration after storage (ng/uL)")
+plot_pca_cont(all_species_decontam_filtered_mid, "PC3", "PC2", "extract_conc_after_storage_ng/mg", "Pipenotch", 3, "DNA extract concentration after storage (ng/uL)")
 
 # by # of molecules in the library after indexing amplification
 plot_pca_cont(all_species_decontam_filtered_mid, "PC3", "PC2", "DNA_molecules_per_library_x10^6_log", "Pipenotch", 3, "log10(DNA_molecules_per_library_x10^6)")

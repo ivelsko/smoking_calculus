@@ -135,7 +135,11 @@ rank_burnin_result <- hard_burnin_filter(curves, percent_threshold = 50, rank_bu
 # plot_cuperdec(curves, metadata_map, rank_burnin_result)
 
 # restrict the plot to only the 1st 250 taxa
-plot_cuperdec(curves, metadata_map, rank_burnin_result, restrict_x = 75)
+cd_curve_plot <- plot_cuperdec(curves, metadata_map, rank_burnin_result, restrict_x = 75)
+cd_curve_plot
+
+ggsave("~/Desktop/MID_cuperdec_rank7_pct50.pdf", plot = cd_curve_plot, device = "pdf",
+       scale = 1, width = 7, height = 5, units = c("in"), dpi = 300)
 
 ```
 
@@ -145,15 +149,13 @@ adaptive_rank_burnin_result <- adaptive_burnin_filter(curves, percent_threshold 
 cd_curve_plot <- plot_cuperdec(curves, metadata_map, adaptive_rank_burnin_result, restrict_x = 150)
 cd_curve_plot
 
-# ggsave("./06-publication/supplemental_figures/SXX1/SXX1_cuperdec_adaptive_59pct.pdf", plot = cd_curve_plot, device = "pdf",
-#        scale = 1, width = 7, height = 5, units = c("in"), dpi = 300)
 # 
 # ggsave("./06-publication/supplemental_figures/SXX1/SXX1_cuperdec_adaptive_59pct.png", plot = cd_curve_plot, device = "png",
 #        scale = 1, width = 7, height = 5, units = c("in"), dpi = 300)
 
 ```
 
-```{r discard_list}
+```{r discard_list, eval = F}
 # this will not have any CMC samples
 discard_list <- rank_burnin_result %>% filter(!Passed) %>%
   filter(!str_detect(Sample, "EXB|LIB|CSD|CSL|CSN|CSS")) # these are blanks, dentin, or soil

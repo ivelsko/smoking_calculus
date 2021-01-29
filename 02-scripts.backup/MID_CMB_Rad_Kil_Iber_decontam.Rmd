@@ -400,7 +400,6 @@ ggplot(contam_mid.prev.species, aes(x=p)) +
 # remove NA value samples from the input data frame
 malt_species_rad.dataframe <- radcliffe_raw %>%
   rename(Species = `#Datasets`) %>%
-  select(-one_of(outliers)) %>%
   select(-one_of(poor_samples)) %>%
   full_join(., ars_bone_sp) %>%
   replace(is.na(.), 0) %>%
@@ -418,8 +417,8 @@ rownames(malt_species_rad.matrix) <- malt_species_rad.dataframe$Library_ID
 metadata_rad.decontam <- metadata %>%
   filter(!str_detect(Library_ID, poor_samples %>% str_c(collapse = "|"))) %>%
   # anti_join(., NA_filter_list, by = "Library_ID") %>%
-  filter(!str_detect(Library_ID, outliers %>% str_c(collapse = "|"))) %>%
   filter(str_detect(Library_ID, "CS")) %>%
+  filter(!str_detect(Library_ID, "CSD")) %>%
   arrange(Library_ID) %>%
   distinct() %>%
   bind_rows(., deep_evo_metadata %>%

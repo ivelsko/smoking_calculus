@@ -258,14 +258,14 @@ ggplot(malt_filt_pca_values, aes(PC1, PC2, color = Region, shape = Region)) +
   geom_text(aes(label = Library_ID), size = 3) +
   theme_minimal()
 
-horseshoe <- ggplot(malt_filt_pca_values, aes(PC1, PC2, color = Region, shape = Region)) +
+horseshoe <- ggplot(malt_filt_pca_values, aes(PC2, PC1, color = Region, shape = Region)) +
   geom_point(size = 2) +
   theme_minimal()
 
 horseshoe
 
-# ggsave("~/Desktop/MID_horseshoe.pdf", plot = horseshoe, device = "pdf",
-#        scale = 1, width = 7, height = 5, units = c("in"), dpi = 300)
+ggsave("~/Desktop/MID_horseshoe.pdf", plot = horseshoe, device = "pdf",
+       scale = 1, width = 5, height = 5, units = c("in"), dpi = 300)
 
 ```
 

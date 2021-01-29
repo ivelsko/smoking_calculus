@@ -189,7 +189,7 @@ full_table_sourcetracker_log <- full_table_sourcetracker %>%
 
 st_table_rare %>%
   gather("SampleID","Counts",2:ncol(.)) %>%
-  spread(Species, Counts) %>%
+  spread(`#OTU ID`, Counts) %>%
   select(SampleID) %>%
   anti_join(., mapfile %>%
               rename(SampleID = `#SampleID`) %>%
@@ -200,7 +200,7 @@ mapfile %>%
   select(SampleID) %>%
   anti_join(., st_table_rare %>%
     gather("SampleID","Counts",2:ncol(.)) %>%
-    spread(Species, Counts) %>%
+    spread(`#OTU ID`, Counts) %>%
     select(SampleID))
     
 ```

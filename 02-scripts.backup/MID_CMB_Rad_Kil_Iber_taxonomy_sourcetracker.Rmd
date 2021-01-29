@@ -45,9 +45,14 @@ load("./05-results.backup/Metadata_tables.RData")
 ```
 
 ```{r load_sourcetracker_out}
-full_source_results <- fread("./05-results.backup/sink_predictions_full_sources_5000.txt")
+# full_source_results <- fread("./05-results.backup/sink_predictions_full_sources_5000.txt")
+# full_source_results <- fread("~/projects1/microbiome_calculus/smoking_calculus/05-results.backup/sink_predictions_full_sources_10000.txt")
+full_source_results <- fread("./05-results.backup/sink_predictions_full_sources_rarefied_51500.tsv")
 
-reduced_source_results <- fread("./05-results.backup/sink_predictions_reduced_sources_5000.txt")
+# reduced_source_results <- fread("./05-results.backup/sink_predictions_reduced_sources_5000.txt")
+# reduced_source_results <- fread("~/projects1/microbiome_calculus/smoking_calculus/05-results.backup/sink_predictions_reduced_sources_10000.txt")
+
+reduced_source_results <- fread("./05-results.backup/sink_predictions_reduced_sources_rarefied_51500.tsv")
 
 ```
 
@@ -73,7 +78,7 @@ samples_order_reduced <- reduced_source_results %>%
 Plot bar charts
 ```{r}
 
-full_source_results %>%
+st_full_plot_all <- full_source_results %>%
   gather("Sources", "Percent",2:ncol(.)) %>%
   mutate(Sources = fct_relevel(Sources, "modernCalculus","subPlaque","supPlaque","urbanGut","ruralGut","skin","sediment","boneARS","Unknown"),
          SampleID = fct_relevel(SampleID, samples_order_full)) %>%
@@ -86,6 +91,10 @@ full_source_results %>%
          # scale_y_continuous(breaks=scales::pretty_breaks(n=6)) +
          ylab("% attributed to source") +
          ggtitle("Full sources")
+st_full_plot_all
+
+ggsave("~/Desktop/MID_st_full_plot_all.pdf", plot = st_full_plot_all, device = "pdf",
+       scale = 1, width = 16, height = 5, units = c("in"), dpi = 300)
 
 ```
 
@@ -143,7 +152,7 @@ ggplot(malt_pca_values, aes(PC1, PC2, color = Region, shape = Region)) +
 ```
 
 ```{r}
-full_source_results %>%
+mid_ordered <- full_source_results %>%
   filter(str_detect(SampleID, "MID|CMB")) %>%
   gather("Sources", "Percent",2:ncol(.)) %>%
   mutate(Sources = fct_relevel(Sources, "modernCalculus","subPlaque","supPlaque","urbanGut","ruralGut","skin","sediment","boneARS","Unknown"),
@@ -157,6 +166,10 @@ full_source_results %>%
          # scale_y_continuous(breaks=scales::pretty_breaks(n=6)) +
          ylab("% attributed to source") +
          ggtitle("Full sources")
+mid_ordered
+
+ggsave("~/Desktop/MID_st_ordered_plot_mid.pdf", plot = mid_ordered, device = "pdf",
+       scale = 1, width = 10, height = 5, units = c("in"), dpi = 300)
 
 ```
 
@@ -174,14 +187,14 @@ reduced_source_results %>%
                axis.text = element_text(size = 8)) +
          # scale_y_continuous(breaks=scales::pretty_breaks(n=6)) +
          ylab("% attributed to source") +
-         ggtitle("Full sources")
+         ggtitle("Reduced sources")
 
 ```
 
 Let's look at the species going into each source. Start iwth the reduced sources for simplicity
 ```{r}
 
-modernCalc_sources <- fread("~/projects1/microbiome_calculus/smoking_calculus/04-analysis/sourceTracker/shotgun/reduced_sources/shotgun_sourcetracker_table_log_20210120/full_results/sink_predictions_modernCalculus_contributions.txt") %>%
+modernCalc_sources <- fread("~/projects1/microbiome_calculus/smoking_calculus/04-analysis/sourceTracker/shotgun/reduced_sources/high_rare/shotgun_sourcetracker_table_log_20210120/full_results/sink_predictions_modernCalculus_contributions.txt") %>%
   rename(Library_ID = SampleID) %>%
   gather("Species","Percent",2:ncol(.)) %>%
   spread(Library_ID, Percent) %>%
@@ -189,7 +202,7 @@ modernCalc_sources <- fread("~/projects1/microbiome_calculus/smoking_calculus/04
   filter(Total > 0) %>%
   select(-Total)
 
-plaque_sources <- fread("~/projects1/microbiome_calculus/smoking_calculus/04-analysis/sourceTracker/shotgun/reduced_sources/shotgun_sourcetracker_table_log_20210120/full_results/sink_predictions_plaque_contributions.txt") %>%
+plaque_sources <- fread("~/projects1/microbiome_calculus/smoking_calculus/04-analysis/sourceTracker/shotgun/reduced_sources/high_rare/shotgun_sourcetracker_table_log_20210120/full_results/sink_predictions_plaque_contributions.txt") %>%
   rename(Library_ID = SampleID) %>%
   gather("Species","Percent",2:ncol(.)) %>%
   spread(Library_ID, Percent) %>%
@@ -197,7 +210,7 @@ plaque_sources <- fread("~/projects1/microbiome_calculus/smoking_calculus/04-ana
   filter(Total > 0) %>%
   select(-Total)
 
-stool_sources <- fread("~/projects1/microbiome_calculus/smoking_calculus/04-analysis/sourceTracker/shotgun/reduced_sources/shotgun_sourcetracker_table_log_20210120/full_results/sink_predictions_stool_contributions.txt") %>%
+stool_sources <- fread("~/projects1/microbiome_calculus/smoking_calculus/04-analysis/sourceTracker/shotgun/reduced_sources/high_rare/shotgun_sourcetracker_table_log_20210120/full_results/sink_predictions_stool_contributions.txt") %>%
   rename(Library_ID = SampleID) %>%
   gather("Species","Percent",2:ncol(.)) %>%
   spread(Library_ID, Percent) %>%
@@ -205,7 +218,7 @@ stool_sources <- fread("~/projects1/microbiome_calculus/smoking_calculus/04-anal
   filter(Total > 0) %>%
   select(-Total)
 
-skin_sources <- fread("~/projects1/microbiome_calculus/smoking_calculus/04-analysis/sourceTracker/shotgun/reduced_sources/shotgun_sourcetracker_table_log_20210120/full_results/sink_predictions_skin_contributions.txt") %>%
+skin_sources <- fread("~/projects1/microbiome_calculus/smoking_calculus/04-analysis/sourceTracker/shotgun/reduced_sources/high_rare/shotgun_sourcetracker_table_log_20210120/full_results/sink_predictions_skin_contributions.txt") %>%
   rename(Library_ID = SampleID) %>%
   gather("Species","Percent",2:ncol(.)) %>%
   spread(Library_ID, Percent) %>%
@@ -221,7 +234,7 @@ sediment_sources <- fread("~/projects1/microbiome_calculus/smoking_calculus/04-a
   filter(Total > 0) %>%
   select(-Total)
 
-bone_sources <- fread("~/projects1/microbiome_calculus/smoking_calculus/04-analysis/sourceTracker/shotgun/reduced_sources/shotgun_sourcetracker_table_log_20210120/full_results/sink_predictions_bone_contributions.txt") %>%
+bone_sources <- fread("~/projects1/microbiome_calculus/smoking_calculus/04-analysis/sourceTracker/shotgun/reduced_sources/high_rare/shotgun_sourcetracker_table_log_20210120/full_results/sink_predictions_bone_contributions.txt") %>%
   rename(Library_ID = SampleID) %>%
   gather("Species","Percent",2:ncol(.)) %>%
   spread(Library_ID, Percent) %>%
@@ -229,7 +242,7 @@ bone_sources <- fread("~/projects1/microbiome_calculus/smoking_calculus/04-analy
   filter(Total > 0) %>%
   select(-Total)
 
-unknown_sources <- fread("~/projects1/microbiome_calculus/smoking_calculus/04-analysis/sourceTracker/shotgun/reduced_sources/shotgun_sourcetracker_table_log_20210120/full_results/sink_predictions_Unknown_contributions.txt") %>%
+unknown_sources <- fread("~/projects1/microbiome_calculus/smoking_calculus/04-analysis/sourceTracker/shotgun/reduced_sources/high_rare/shotgun_sourcetracker_table_log_20210120/full_results/sink_predictions_Unknown_contributions.txt") %>%
   rename(Library_ID = SampleID) %>%
   gather("Species","Percent",2:ncol(.)) %>%
   spread(Library_ID, Percent) %>%

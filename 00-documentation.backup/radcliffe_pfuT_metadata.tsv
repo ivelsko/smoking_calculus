@@ -46,4 +46,4 @@ Radcliffe	Industrial	England	CS48	CS48	Sample	radcliffe_batch_2	Oxford_calculus	
 Dentin	Dentin	Dentin	CSD	CSD	NA	NA	Oxford_calculus	Oxford_calculus	PRJEB30331	Paired-end	4.01	586899	566610	NA	NA	NA	NA	NA	NA	NA
 Library_blank	Library_blank	Library_blank	CSL	CSL	Control	NA	Oxford_calculus	Oxford_calculus	PRJEB30331	Paired-end	NA	6934389	6624740	NA	NA	NA	NA	NA	NA	NA
 Extraction_blank	Extraction_blank	Extraction_blank	CSN	CSN	Control	NA	Oxford_calculus	Oxford_calculus	PRJEB30331	Paired-end	NA	18200049	17826750	NA	NA	NA	NA	NA	NA	NA
-Soil	Soil	Soil	CSS	CSS	NA	NA	Oxford_calculus	Oxford_calculus	PRJEB30331	Paired-end	31.4	6995023	6498455	NA	NA	NA	NA	NA	NA	NA
+Soil	Soil	Soil	CSS	CSS	Control	NA	Oxford_calculus	Oxford_calculus	PRJEB30331	Paired-end	31.4	6995023	6498455	NA	NA	NA	NA	NA	NA	NA

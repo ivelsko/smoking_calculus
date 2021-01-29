@@ -142,31 +142,45 @@ presabs_table <- all_species_decontam %>%
 all_species_decontam.os <- presabs_table %>%
   adorn_totals(., where = "col", name = "Observed_species") %>%
   select(Observed_species) %>%
-  rownames_to_column("Library_ID")
+  rownames_to_column("Library_ID") %>%
+  filter(!str_detect(Library_ID, "EXB|LIB")) %>%
+  inner_join(., full_metadata)
 
 plot_box_whisker(all_species_decontam.os, "Observed_species", "Site", "Site")
 plot_box_whisker(all_species_decontam.os, "Observed_species", "Region", "Region")
 
-os_plot <-all_species_decontam.os %>%
-  inner_join(full_metadata %>%
-               select(Library_ID, Site, Region, Time_period, Sample_or_Control, 
-                      Periodontal_disease_present, Caries_present, Sex, Age), by = "Library_ID") %>%
-  # remove blanks
-  filter(!str_detect(Library_ID, "EXB|LIB")) %>%
-  ggplot(., aes(x = Site, y = Observed_species, fill = Site)) +
-                         geom_boxplot() +
-                         scale_fill_manual(values = Site_colors) +
-                         theme_minimal(base_size = 18) +
-                         #scale_y_continuous(trans='log10') +
-                         #scale_y_continuous(trans='pseudo_log') +
-                         theme(axis.text.x = element_text(angle = 45, hjust = 1),
-                              text = element_text(size=18)) +
-                         ylab("Number of Species") +
-                         xlab("")
+# os_plot <-all_species_decontam.os %>%
+#   inner_join(full_metadata %>%
+#                select(Library_ID, Site, Region, Time_period, Sample_or_Control, 
+#                       Periodontal_disease_present, Caries_present, Sex, Age), by = "Library_ID") %>%
+# # remove blanks
+# filter(!str_detect(Library_ID, "EXB|LIB")) %>%
+#   ggplot(., aes(x = Site, y = Observed_species, fill = Site)) +
+#                          geom_boxplot() +
+#                          scale_fill_manual(values = Site_colors) +
+#                          theme_minimal(base_size = 18) +
+#                          #scale_y_continuous(trans='log10') +
+#                          #scale_y_continuous(trans='pseudo_log') +
+#                          theme(axis.text.x = element_text(angle = 45, hjust = 1),
+#                               text = element_text(size=18)) +
+#                          ylab("Number of Species") +
+#                          xlab("")
+# os_plot
+
+os_plot <- ggplot(all_species_decontam.os, aes(x = Site, y = Observed_species, fill = Site)) +
+  geom_boxplot(color = "grey30") +
+  geom_point(alpha = 0.5, color = "grey30", position = position_jitterdodge()) +
+  scale_fill_manual(values = Site_colors) +
+  theme_minimal(base_size = 18) +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1),
+        text = element_text(size=20)) +
+  ylab("Observed species") +
+  xlab("Site")
 os_plot
 
-# ggsave("./06-publication/supplemental_figures/SXX5/SXX5_os.pdf", plot = os_plot, device = "pdf",
-#        scale = 1, width = 7, height = 5, units = c("in"), dpi = 300)
+
+ggsave("~/Desktop/MID_os_plot_site.pdf", plot = os_plot, device = "pdf",
+       scale = 1, width = 9, height = 5, units = c("in"), dpi = 300)
 
 # now on filtered tables
 presabs_table_f <- all_species_decontam %>%
@@ -188,12 +202,28 @@ presabs_table_f <- all_species_decontam %>%
 all_species_decontam_filtered.os <- presabs_table_f %>%
   adorn_totals(., where = "col", name = "Observed_species") %>%
   select(Observed_species) %>%
-  rownames_to_column("Library_ID")
+  rownames_to_column("Library_ID")  %>%
+  inner_join(., full_metadata)
 
 plot_box_whisker(all_species_decontam_filtered.os, "Observed_species", "Site", "Site")
 plot_box_whisker(all_species_decontam_filtered.os, "Observed_species", "Time_period", "Region")
 plot_box_whisker(all_species_decontam_filtered.os, "Observed_species", "Region", "Time_period")
 plot_box_whisker(all_species_decontam_filtered.os, "Observed_species", "Time_period", "Time_period")
+
+
+filtered_os <- ggplot(all_species_decontam_filtered.os, aes(x = Site, y = Observed_species, fill = Site)) +
+  geom_boxplot(color = "grey30") +
+  geom_point(alpha = 0.5, color = "grey30", position = position_jitterdodge()) +
+  scale_fill_manual(values = Site_colors) +
+  theme_minimal(base_size = 18) +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1),
+        text = element_text(size=20)) +
+  ylab("Observed species") +
+  xlab("Site")
+filtered_os
+
+ggsave("~/Desktop/MID_os_filtered_plot_site.pdf", plot = filtered_os, device = "pdf",
+       scale = 1, width = 8, height = 5, units = c("in"), dpi = 300)
 
 ```
 
@@ -559,27 +589,40 @@ names(evenness.species_filtered)[1] <- "Pileou_evenness"
 # merge with the metadata file and plot
 all_species_decontam_filtered.alpha <- all_species_decontam_filtered.alpha %>%
   full_join(., evenness.species_filtered %>%
-  rownames_to_column("Library_ID"), by = "Library_ID")
+  rownames_to_column("Library_ID"), by = "Library_ID") %>%
+  inner_join(., full_metadata)
 
 # now plot the observed species
 # plot_box_whisker_mid(all_species_decontam_filtered.alpha, "Observed_species", "Pipenotch", "Pipenotch")
-all_species_decontam_filtered.alpha %>%
-  inner_join(., metadata_nofactors) %>%
-  ggplot(., aes(x = Pipenotch, y = Observed_species, fill = Pipenotch)) +
-       geom_boxplot(color = "grey30") +
-       scale_fill_manual(values = c("#311068","#C83E73")) +
-       theme_minimal(base_size = 18) +
-       #scale_y_continuous(trans='log10') +
-       #scale_y_continuous(trans='pseudo_log') +
-       theme(axis.text.x = element_text(angle = 45, hjust = 1),
-             text = element_text(size=20)) +
-       ylab("Observed_species") +
-       xlab("Pipenotch")
+# all_species_decontam_filtered.alpha %>%
+#   inner_join(., metadata_nofactors) %>%
+#   ggplot(., aes(x = Pipenotch, y = Observed_species, fill = Pipenotch)) +
+#        geom_boxplot(color = "grey30") +
+#        scale_fill_manual(values = c("#311068","#C83E73")) +
+#        theme_minimal(base_size = 18) +
+#        #scale_y_continuous(trans='log10') +
+#        #scale_y_continuous(trans='pseudo_log') +
+#        theme(axis.text.x = element_text(angle = 45, hjust = 1),
+#              text = element_text(size=20)) +
+#        ylab("Observed_species") +
+#        xlab("Pipenotch")
+# 
+
+os_pipenotch <- ggplot(all_species_decontam_filtered.alpha, aes(x = Pipenotch, y = Observed_species, fill = Pipenotch)) +
+  geom_boxplot(color = "grey30") +
+  geom_point(alpha = 0.5, color = "grey30", position = position_jitterdodge()) +
+  scale_fill_manual(values = c("#311068","#C83E73")) +
+  theme_minimal(base_size = 18) +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1),
+        text = element_text(size=20)) +
+  ylab("Observed species") +
+  xlab("Pipe notch(es)")
+os_pipenotch
 
 
+ggsave("~/Desktop/MID_os_pipenotch.pdf", plot = os_pipenotch, device = "pdf",
+       scale = 1, width = 9, height = 5, units = c("in"), dpi = 300)
 
-# ggsave("./06-publication/supplemental_figures/SXX43/panel_parts/Figure_SXX43_pe_sex_cmc_sp.pdf", plot = evenness_sex, device = "pdf",
-#        scale = 1, width = 7, height = 5, units = c("in"), dpi = 300)
 
 # add metadata to the table
 all_species_decontam_filtered.alpha_meta <- all_species_decontam_filtered.alpha %>%
@@ -1506,6 +1549,14 @@ heatmap_base
 ```
 
 
+```{r}
+
+test_file <- all_species_raw %>%
+  select(matches("Species|ELR|IVE")) %>%
+  adorn_totals(where = "col") %>%
+  filter(Total > 0)
+
+```
 
 
 
