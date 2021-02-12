@@ -290,46 +290,7 @@ ln -s /projects1/microbiome_calculus/iberian/03-preprocessing/screening/eager2/s
 
 # remove the extraction and library control blanks
 
-# also can use the MALT tables from the iberian project (or james' project. But better the Iberian project b/c same eager2 parameters)
-# just need to normalize by library size and then do CLR transform
-
-# for 16S mapping run the snakefile. Use the 16S mapping/clustering/otu table of modern data (calculus, plaque, skin?, stool?, soil?) that Zandra prepared for her dental arcade project
-snakemake -s ../../../02-scripts.backup/16S_mapping.Snakefile --cluster 'sbatch --mem 4G -p short  -n {threads}' -j 5 -k --restart-times 3 --max-jobs-per-second 1 --latency-wait 45 -n
-
-
-# map the samples to this database to get just the 16S genes
-### SILVA DB directory containing the FASTA file and associated bwa indexed files
-SILVADB=/projects1/microbiome_sciences/reference_databases/source/silva/release_128_DNA/silva128_thymines.fasta
-
-# run qiime with this:
-#!/usr/bin/env bash
-
-OUTDIR=/projects1/microbiome_calculus/dental_arcade/03-Preprocessing/16S_clustering_moderncalculus
-QIIME=/projects1/tools/qiime-environment/1.9.1/bin
-GREENGENESDB=/projects1/tools/qiime-environment/1.9.1/lib/python2.7/site-packages/qiime_default_reference/gg_13_8_otus
-SCRIPTS=/projects1/microbiome_calculus/dental_arcade/02-Scripts.backup
-
-gunzip "$OUTDIR/silva_16s_reads_concatenated.fna.gz"
-
-sbatch \
--c 16 \
---mem 32000 \
---partition=long \
--o ~/slurm_logs/slurm.%j.out \
--e ~/slurm_logs/slurm.%j.err \
---mail-type=fail \
---mail-type=time_limit \
---mail-user=fagernaes@shh.mpg.de \
--J "QIIME_Pick_OTUs_Closed" \
---wrap="$QIIME/pick_closed_reference_otus.py \
--i $OUTDIR/silva_16s_reads_concatenated.fna \
--o $OUTDIR/otu_picking \
--a \
--O 16 \
--r $GREENGENESDB/rep_set/97_otus.fasta \
--t $GREENGENESDB/taxonomy/97_otu_taxonomy.txt \
--p $SCRIPTS/010-qiime_1_9_1_params_CrefOTUpick.txt"
-
+# Don't bother with 16S mapping, just use shotgun data
 # For shotgun data, take the sources from the DeepEvo table James made
 # Take the metadata sheet from Zandra's modern calculus SourceTracker run
 # Combine DeepEvo sources and the sinks from this project in R
@@ -339,6 +300,23 @@ sbatch \
 # replace Species with '#OTU ID'
 # remove quotes around NA in metadata file perl -p -i -e 's/\"NA\"/NA/g' source_tracker_mappingfile_new.tsv
 
+################################################################
+# GC content and read length estimates
+
+# work here /projects1/microbiome_calculus/smoking_calculus/04-analysis/GC_RL
+# test file abpOther_Group4_extraction.fasta
+# this works on symlinked files
+
+ln -s /projects1/microbiome_calculus/smoking_calculus/03-preprocessing/eager2/eager2_run/samtools/filter/*.gz .
+ln -s /projects1/microbiome_calculus/smoking_calculus/03-preprocessing/kilteasheen/eager2/samtools/filter/*.gz .
+ln -s /projects1/microbiome_calculus/smoking_calculus/03-preprocessing/radcliffe_pfuT/eager2/samtools/filter/*.gz .
+ln -s /projects1/microbiome_calculus/iberian/03-preprocessing/screening/eager2/samtools/filter/ELR*.gz .
+ln -s /projects1/microbiome_calculus/iberian/03-preprocessing/screening/eager2/samtools/filter/IVE*.gz .
+
+
+infoseq -auto -outfile gc_rl_test_out.tsv -only -name -length -pgc abpOther_Group4_extraction.fasta
+
+snakemake -s ../../../02-scripts.backup/gc_rl_calc.Snakefile --cluster 'sbatch --mem 4G -p long -n 4' -j 1 -k --restart-times 3 -n
 
 
 
