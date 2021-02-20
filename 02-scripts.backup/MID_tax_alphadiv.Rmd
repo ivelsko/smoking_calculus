@@ -1558,6 +1558,18 @@ test_file <- all_species_raw %>%
 
 ```
 
+```{r plot_test}
+full_metadata %>%
+  filter(str_detect(Library_ID, "MID")) %>%
+  ggplot(., aes(x = factor(Max_Perio_Score), y = Age, color = Sex, shape = Pipenotch, size = `%AMTL`)) +
+    ggpointgrid::geom_pointrect(scale_x = 0.16, scale_y = 0.18) +
+    theme_minimal() +
+    scale_shape_manual(values = c(15, 7)) +
+    theme(axis.text = element_text(size = 10)) +
+    xlab("Max. periodontitis score") +
+    ylab("Age group")
+
+```
 
 
 

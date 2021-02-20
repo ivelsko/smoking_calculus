@@ -73,37 +73,141 @@ interested in.
 full_metadata <- fread("./00-documentation.backup/kilteasheen_metadata.tsv") %>%
   full_join(., fread("./00-documentation.backup/radcliffe_pfuT_metadata.tsv")) %>%
   full_join(., fread("./00-documentation.backup/iberian_medieval_metadata.tsv")) %>%
-  full_join(., fread("./00-documentation.backup/MID_analysis_metadata.tsv"))
+  full_join(., fread("./00-documentation.backup/MID_analysis_metadata.tsv")) %>%
+  full_join(., fread("./00-documentation.backup/jae_metadata.tsv") %>%
+                       mutate(Sampled_teeth_FDI = as.character(Sampled_teeth_FDI)))
 
 full_metadata <- full_metadata %>%
   as_tibble() %>%
   # remove the MID samples that have no metadata
-  filter(!str_detect(Library_ID, "MID025.A0101|MID033.A0101|MID056.A0101|MID065.A0101|MID068.A0101|MID076.A0101|MID078.A0101")) %>%
+  # filter(!str_detect(Library_ID, "MID025.A0101|MID033.A0101|MID056.A0101|MID065.A0101|MID068.A0101|MID076.A0101|MID078.A0101")) %>%
   mutate(Site = fct_relevel(Site, "Middenbeemster", "CMB", "Radcliffe", "Kilteasheen",
-                                   "ELR", "IVE","Extraction_blank","Library_blank"),
-         Time_period = fct_relevel(Time_period, "Industrial","Medieval","Extraction_blank","Library_blank"),
+                                   "ELR", "IVE","Jaen","Extraction_blank","Library_blank"),
+         Time_period = fct_relevel(Time_period, "Industrial","Medieval","Modern","Extraction_blank","Library_blank"),
          Region = fct_relevel(Region, "Netherlands","Spain","England", "Ireland","Iberia"),
          Periodontal_disease_present = fct_relevel(Periodontal_disease_present, "Yes","No","Unobservable","NR"),
          Caries_present = fct_relevel(Caries_present, "Yes","No","Unobservable","NR"),
          Sample_or_Control = fct_relevel(Sample_or_Control, "Sample","Control"),
-         Sex = fct_relevel(Sex, "Female","Male","Indeterminate","NR"),
+         Sex = fct_relevel(Sex, "Female","Male","Indeterminate","Unknown","NR"),
          Tooth_location = fct_relevel(Tooth_location, "Anterior","Anterior/Posterior","Posterior","Unknown"),
-         alt_tooth_location = fct_relevel(alt_tooth_location, "Anterior","Anterior/Posterior","Posterior","Unknown"))
+         alt_tooth_location = fct_relevel(alt_tooth_location, "Anterior","Anterior/Posterior","Posterior","Unknown"),
+         Pipenotch = fct_relevel(Pipenotch, "Present","Absent"),
+         Soil = fct_relevel(Soil, "clay","clayish sand","sand","NR"))
 
 ```
+
+Load the average GC content and read length information from multiqc from the
+eager runs
+```{r rl_gc_info}
+
+mid_multiqc <- fread("~/projects1/microbiome_calculus/smoking_calculus/03-preprocessing/eager2/eager2_run/multiqc/multiqc_data/multiqc_fastqc_1.txt") %>%
+  mutate(Library_ID = str_trunc(Sample, width = 12, side = "right", ellipsis = "")) %>%
+  select(Library_ID, avg_sequence_length, `%GC`) %>%
+  group_by(Library_ID) %>%
+  summarize(seq_len_avg = mean(avg_sequence_length),
+            gc_avg = mean(`%GC`))
+
+rad_multiqc <- fread("~/projects1/microbiome_calculus/smoking_calculus/03-preprocessing/radcliffe_pfuT/eager2/multiqc/radcliffe_pfuT_tsv_multiqc_report_data/multiqc_general_stats.txt") %>%
+  filter(str_detect(Sample, "unm")) %>%
+  select(matches("Sample|post_adapterremoval-percent_gc|post_adapterremoval-avg_sequence_length")) %>%
+  rename(seq_len_avg = `FastQC (post-AdapterRemoval)_mqc-generalstats-fastqc_post_adapterremoval-avg_sequence_length`,
+         gc_avg = `FastQC (post-AdapterRemoval)_mqc-generalstats-fastqc_post_adapterremoval-percent_gc`) %>%
+  mutate(Sample = str_replace_all(Sample, "_unmapped.clip","")) %>%
+  rename(Library_ID = Sample)
+
+kil_codes <- fread("./00-documentation.backup/kil_codes.tsv")
+kil_multiqc <- fread("~/projects1/microbiome_calculus/smoking_calculus/03-preprocessing/kilteasheen/eager2/multiqc/multiqc_data/multiqc_general_stats.txt") %>%
+  filter(str_detect(Sample, "SRR")) %>%
+  select(matches("Sample|post_adapterremoval-percent_gc|post_adapterremoval-avg_sequence_length")) %>%
+  full_join(., kil_codes) %>%
+  rename(avg_sequence_length = `FastQC (post-AdapterRemoval)_mqc-generalstats-fastqc_post_adapterremoval-avg_sequence_length`,
+         `%GC` = `FastQC (post-AdapterRemoval)_mqc-generalstats-fastqc_post_adapterremoval-percent_gc`) %>%
+  group_by(Library_ID) %>%
+  summarize(seq_len_avg = mean(avg_sequence_length),
+            gc_avg = mean(`%GC`))
+
+ibe_multiqc <- fread("~/projects1/microbiome_calculus/iberian/03-preprocessing/screening/eager2/multiqc/multiqc_data/multiqc_fastqc_1.txt") %>%
+  filter(str_detect(Sample, "ELR|IVE|EXB|LIB|JAE")) %>%
+  mutate(Library_ID = str_trunc(Sample, width = 12, side = "right", ellipsis = "")) %>%
+  select(Library_ID, avg_sequence_length, `%GC`) %>%
+  group_by(Library_ID) %>%
+  summarize(seq_len_avg = mean(avg_sequence_length),
+            gc_avg = mean(`%GC`))
+
+full_rl_gc <- mid_multiqc %>%
+  bind_rows(., rad_multiqc) %>%
+  bind_rows(., kil_multiqc) %>%
+  bind_rows(., ibe_multiqc)
+
+```
+
+Now join the GC and read length data to the full metadata table
+```{r}
+full_metadata <- full_metadata %>%
+  inner_join(., full_rl_gc)
+
+```
+
+Make an additional table for the sub10M and sub75bp multiqc avg read length and avg GC content
+```{r}
+# sub10M
+sub10M_multiqc <- fread("~/projects1/microbiome_calculus/smoking_calculus/03-preprocessing/depth_check/sub10M/FastQC/multiqc_data/multiqc_general_stats.txt") %>%
+  mutate(Library_ID = str_trunc(Sample, width = 12, side = "right", ellipsis = "")) %>%
+  select(Library_ID, `FastQC_mqc-generalstats-fastqc-avg_sequence_length`, `FastQC_mqc-generalstats-fastqc-percent_gc`) %>%
+  group_by(Library_ID) %>%
+  rename(seq_len_avg = `FastQC_mqc-generalstats-fastqc-avg_sequence_length`,
+            gc_avg = `FastQC_mqc-generalstats-fastqc-percent_gc`) %>%
+  mutate(Library_ID = str_replace_all(Library_ID, ".unmappe",""),
+         Library_ID = str_replace_all(Library_ID, ".unm",""))
+
+# sub75bp
+sub75bp_multiqc <- fread("~/projects1/microbiome_calculus/smoking_calculus/03-preprocessing/read_len_check/sub75bp/FastQC/multiqc_data/multiqc_general_stats.txt") %>%
+  mutate(Library_ID = str_trunc(Sample, width = 12, side = "right", ellipsis = "")) %>%
+  select(Library_ID, `FastQC_mqc-generalstats-fastqc-avg_sequence_length`, `FastQC_mqc-generalstats-fastqc-percent_gc`) %>%
+  group_by(Library_ID) %>%
+  rename(seq_len_avg_75bp = `FastQC_mqc-generalstats-fastqc-avg_sequence_length`,
+            gc_avg_75bp = `FastQC_mqc-generalstats-fastqc-percent_gc`) %>%
+  mutate(Library_ID = str_replace_all(Library_ID, ".unmappe",""),
+         Library_ID = str_replace_all(Library_ID, ".unm",""))
+
+
+# now join them together, adding the full data for all samples that were alredy below 10M reads
+# first get the information from the below-10M reads samples
+
+all_sub_rl_gc <- full_rl_gc %>%
+  anti_join(., sub10M_multiqc %>%
+              select(Library_ID)) %>%
+  filter(!str_detect(Library_ID, "EXB|LIB|CSS|CSD|CSL|CSN")) %>%
+  bind_rows(., sub10M_multiqc) %>%
+  arrange(Library_ID) %>%
+  rename(seq_len_avg_10M = seq_len_avg,
+         gc_avg_10M = gc_avg) %>%
+  full_join(., sub75bp_multiqc)
+           
+          
+```
+
+Now join the subsampled GC and read length data to the full metadata table
+```{r}
+full_metadata <- full_metadata %>%
+  full_join(., all_sub_rl_gc) %>%
+  filter(Library_ID != "MID052.A0101") # it has no other metadata, I don't know why
+
+```
+
 
 ```{r colors}
 # lacroix_palette("PeachPear", n = 8, type = "continuous")
 # "#FF3200" "#EF8158" "#E9BD8E" "#CBDDA7" "#38BCAD" "#0B91B5" "#065FA3" "#172869"
 
 Site_colors <- c(Middenbeemster = "#311068", CMB = "#5A167E", Radcliffe = "#C83E73", Kilteasheen = "#E95562", ELR = "#FEA873",
-                      IVE = "#FED395", Extraction_blank = "#252525", Library_blank = "#737373")
-Site_shapes <- c(Middenbeemster = 15, CMB = 16, Radcliffe = 17, Kilteasheen = 18, ELR = 25, IVE = 14, Extraction_blank = 4, Library_blank = 3)
-Site_size <- c(Middenbeemster = 4.5, CMB = 4, Radcliffe = 4, Kilteasheen = 6, ELR = 4, IVE = 4, Extraction_blank = 4, Library_blank = 4)
+                      IVE = "#FED395", "Jaen" = "#41b6c4", Extraction_blank = "#252525", Library_blank = "#737373")
+Site_shapes <- c(Middenbeemster = 15, CMB = 16, Radcliffe = 17, Kilteasheen = 18, ELR = 25, IVE = 14, Jaen = 13, Extraction_blank = 4, Library_blank = 3)
+Site_size <- c(Middenbeemster = 4.5, CMB = 4, Radcliffe = 4, Kilteasheen = 6, ELR = 4, IVE = 4, Jaen = 4, Extraction_blank = 4, Library_blank = 4)
 
-Time_period_colors <- c(Industrial = "#311068", Medieval = "#C83E73", Extraction_blank = "#252525", Library_blank = "#737373")
-Time_period_shapes <- c(Industrial = 19, Medieval = 17, Extraction_blank = 4, Library_blank = 3)
-Time_period_size <- c(Industrial = 4, Medieval = 4,  Extraction_blank = 4, Library_blank = 4)
+Time_period_colors <- c(Industrial = "#311068", Medieval = "#C83E73", Modern = "#41b6c4", Extraction_blank = "#252525", Library_blank = "#737373")
+Time_period_shapes <- c(Industrial = 19, Medieval = 17, Modern = 15, Extraction_blank = 4, Library_blank = 3)
+Time_period_size <- c(Industrial = 4, Medieval = 4, Modern = 4, Extraction_blank = 4, Library_blank = 4)
 
 Region_colors <- c(Netherlands = "#311068", Spain = "#5A167E", England = "#C83E73", Iberia = "#FEA873", Ireland = "#E95562",
                 Extraction_blank = "#252525", Library_blank = "#737373")
@@ -122,7 +226,7 @@ Caries_present_colors <- c(Yes = "#311068", No = "#C83E73", Unobservable = "#737
 Caries_present_shapes <- c(Yes = 19, No = 14, Unobservable = 10, NR = 2)
 Caries_present_size <- c(Yes = 4, No = 4, Unobservable = 4, NR = 4)
 
-Sex_colors <- c(Female = "#311068", Male = "#C83E73", Indeterminate = "#737373", NR = "gray80")
+Sex_colors <- c(Female = "#311068", Male = "#C83E73", Indeterminate = "#737373",Unknown = "grey50", NR = "gray80")
 Sex_shapes <- c(Female = 19, Male = 17, Indeterminate = 8, NR = 2)
 Sex_size <- c(Female = 4, Male = 4, Indeterminate = 4, NR = 4)
 
@@ -150,5 +254,8 @@ save(full_metadata,
      alt_tooth_location_colors,alt_tooth_location_shapes,alt_tooth_location_size,
      file = "./05-results.backup/Metadata_tables.RData")
 
+fwrite(full_metadata, "05-results.backup/full_metadata.tsv")
+
 ```
+
 

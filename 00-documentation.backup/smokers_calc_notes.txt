@@ -314,37 +314,185 @@ ln -s /projects1/microbiome_calculus/iberian/03-preprocessing/screening/eager2/s
 ln -s /projects1/microbiome_calculus/iberian/03-preprocessing/screening/eager2/samtools/filter/IVE*.gz .
 
 
-infoseq -auto -outfile gc_rl_test_out.tsv -only -name -length -pgc abpOther_Group4_extraction.fasta
+infoseq -auto -outfile gc_rl_test_out_gz.tsv -only -name -length -pgc abpOther_Group4_extraction.fasta.gz
+infoseq -auto -outfile gc_rl_LIB_test_out_gz.tsv -only -name -length -pgc ./input/LIB058.A0102.unmapped.fastq
 
-snakemake -s ../../../02-scripts.backup/gc_rl_calc.Snakefile --cluster 'sbatch --mem 4G -p long -n 4' -j 1 -k --restart-times 3 -n
+snakemake -s ../../02-scripts.backup/gc_rl_calc.Snakefile --cluster 'sbatch --mem 4G -p long -n 4' -j 1 -k --restart-times 3 -n
 
-
-
-
-
-
-
-
-
+# Alternately get the lane averages from multiqc here:
+/projects1/microbiome_calculus/smoking_calculus/03-preprocessing/eager2/eager2_run/multiqc/multiqc_data/multiqc_fastqc_1.txt
+/projects1/microbiome_calculus/smoking_calculus/03-preprocessing/radcliffe_pfuT/eager2/multiqc/radcliffe_pfuT_tsv_multiqc_report_data/multiqc_general_stats.txt
+/projects1/microbiome_calculus/smoking_calculus/03-preprocessing/kilteasheen/eager2/multiqc/multiqc_data/multiqc_general_stats.txt
+/projects1/microbiome_calculus/iberian/03-preprocessing/screening/eager2/multiqc/multiqc_data/multiqc_fastqc_1.txt
 
 
 
+################################################################
+# Now we need to run several more cycles of MALT, to test differences in sequencing depth, read length, and paired-end vs single-end sequencing
+# Only the single-end test requires a full eager2 run
+# Make a single input tsv file that has all R1 files of all the sample groups
+# This can be run last, after looking at the sequencing depth and read length changes
+
+# All single-end 
+nextflow run nf-core/eager \
+-r 2.3.1 \
+-profile sdag,ssh,microbiome_screening \
+--outdir /projects1/microbiome_calculus/smokers_calculus/03-preprocessing/single-end/eager2 \
+-work-dir /projects1/microbiome_calculus/smokers_calculus/03-preprocessing/single-end/work \
+--input /projects1/microbiome_calculus/smokers_calculus/00-documentation.backup/single-end_eager2_input.tsv \
+--complexity_filter_poly_g \
+--fasta /projects1/Reference_Genomes/Human/HG19/hg19_complete.fasta \
+--bwa_index /projects1/Reference_Genomes/Human/HG19/ \
+--bwaalnn 0.02 \
+--bwaalnl 1024 \
+--run_bam_filtering \
+--bam_discard_unmapped \
+--bam_unmapped_type fastq \
+--skip_damage_calculation \
+--skip_qualimap \
+--run_metagenomic_screening \
+--metagenomic_tool malt \
+--database /projects1/microbiome_sciences/reference_databases/built/refseq/bacteria_archea_homo_20181122/malt/ \
+--email velsko@shh.mpg.de \
+-name single-end_tsv \
+-with-tower
+
+# get radcliffe info from here--input /projects1/microbiome_sciences/raw_data/external.backup/PaleoBARN/pfu_turbo_libraries/Radcliffe_PFUturbo_eager2_map_human.tsv \
+# need to process the uncollapsed reads as SE - 2 eager2 runs, 1 mapping to the phiX genome, then the 2nd with all samples mapping to the human genome
+# need to get the iberian info from the iberian data folder
+# also add JAE!!
+
+# For the sequencing depth and read length normalization:
+
+# To subsample to same depth use seqtk
+/projects1/microbiome_calculus/smoking_calculus/03-preprocessing/kilteasheen/eager2/samtools/filter/*.gz
+/projects1/microbiome_calculus/smoking_calculus/03-preprocessing/radcliffe_pfuT/eager2/samtools/filter/*.gz
+/projects1/microbiome_calculus/smoking_calculus/03-preprocessing/eager2/eager2_run/samtools/filter/*.gz
+/projects1/microbiome_calculus/iberian/03-preprocessing/screening/eager2/samtools/filter/JAE*.gz
+/projects1/microbiome_calculus/iberian/03-preprocessing/screening/eager2/samtools/filter/ELR*.gz
+/projects1/microbiome_calculus/iberian/03-preprocessing/screening/eager2/samtools/filter/IVE*.gz
+/projects1/microbiome_calculus/iberian/03-preprocessing/screening/eager2/samtools/filter/EXB*.gz
+/projects1/microbiome_calculus/iberian/03-preprocessing/screening/eager2/samtools/filter/LIB*.gz
+
+for f in /projects1/microbiome_calculus/smoking_calculus/03-preprocessing/checks_input/*.gz
+do
+seqtk sample -s10000 $f 10000000 > /projects1/microbiome_calculus/smoking_calculus/03-preprocessing/checks_input/sub10M/$(basename $f .gz).10M.gz
+done
 
 
+# To subsample to have only reads with length <76bp use bioawk
+for f in /projects1/microbiome_calculus/smoking_calculus/03-preprocessing/read_len_check/full_files/*.gz
+do
+bioawk -c fastx '{if (length($seq) < 76){print "@"$name" "$comment"\n"$seq"\n+\n"$qual}}' $f > $(basename $f .gz).75bp.gz
+done
+
+################################################################
+
+# Check the RL and GC content of the mapped vs unmapped reads
+# use scripts for bones/KRA (uses samtools grep RL and GCD)
+
+# for MALT-mapped sam files
+#!/bin/bash
+
+#SBATCH -n 2
+#SBATCH --mem 2G
+#SBATCH --partition=short
+#SBATCH -o /projects1/clusterhomes/velsko/slurm_logs/slurm.%j.out
+#SBATCH -e /projects1/clusterhomes/velsko/slurm_logs/slurm.%j.err
+#SBATCH --mail-type=fail
+#SBATCH --mail-type=time_limit
+#SBATCH --mail-use=velsko@shh.mpg.de
+#SBATCH --export=ALL
+#SBATCH --array=0-334%8
+#SBATCH -J "mappedRL"
+
+SAMPLES=($(find /projects1/microbiome_calculus/smoking_calculus/03-preprocessing/eager2/eager2_run/metagenomic_classification/malt/* -name '*.sam.gz' -type f | rev | cut -d/ -f 1 | rev | cut -d. -f 1,2 | sort | uniq))
+SAMPLENAME=${SAMPLES[$SLURM_ARRAY_TASK_ID]}
+
+samtools stats /projects1/microbiome_calculus/smoking_calculus/03-preprocessing/eager2/eager2_run/metagenomic_classification/malt/"$SAMPLENAME".unmapped.blastn.sam.gz | grep ^RL | cut -f 2- > /projects1/microbiome_calculus/smoking_calculus/04-analysis/RL_GC/full_files/"$SAMPLENAME".malt_mapped_readlength.tsv
+
+# for MALT-unmapped fasta files:
+
+# First get the unmapped reads from the MALT bacteria/archaea/homo output:
+# 1. get a list of all *mapped* reads from the sam.gz output file
+
+#!/bin/bash
+
+#SBATCH -n 4
+#SBATCH --mem 4G
+#SBATCH --partition=long
+#SBATCH -o /projects1/clusterhomes/velsko/slurm_logs/slurm.%j.unmapped.out
+#SBATCH -e /projects1/clusterhomes/velsko/slurm_logs/slurm.%j.unmapped.err
+#SBATCH --mail-type=fail
+#SBATCH --mail-type=time_limit
+#SBATCH --mail-use=velsko@shh.mpg.de
+#SBATCH -J "unmapped"
+
+for f in /projects1/microbiome_misc/smoking_calculus/03-preprocessing/eager2/eager2_run/metagenomic_classification/malt/*.sam.gz
+do
+zcat $f | grep -v "^@" | awk -F"\t" '{print $1}' | sort | uniq > /projects1/microbiome_misc/smoking_calculus/03-preprocessing/eager2/eager2_run/metagenomic_classification/malt/$(basename $f .unmapped.blastn.sam.gz).malt_mapped.tsv
+zcat /projects1/microbiome_misc/smoking_calculus/03-preprocessing/eager2/eager2_run/samtools/filter/$(basename $f .unmapped.blastn.sam.gz).unmapped.fastq.gz | seqkit fq2fa | seqkit grep -v -f /projects1/microbiome_misc/smoking_calculus/03-preprocessing/eager2/eager2_run/metagenomic_classification/malt/$(basename $f .unmapped.blastn.sam.gz).malt_mapped.tsv > /projects1/microbiome_misc/smoking_calculus/03-preprocessing/bones/malt_unmapped_fasta/$(basename $f .unmapped.blastn.sam.gz)_MALT_unmapped.fasta
+pigz -p 4 /projects1/microbiome_misc/smoking_calculus/03-preprocessing/bones/malt_unmapped_fasta/$(basename $f .unmapped.blastn.sam.gz)_MALT_unmapped.fasta
+done
+
+#!/bin/bash
+
+#SBATCH -n 2
+#SBATCH --mem 2G
+#SBATCH --partition=short
+#SBATCH -o /projects1/clusterhomes/velsko/slurm_logs/slurm.%j.out
+#SBATCH -e /projects1/clusterhomes/velsko/slurm_logs/slurm.%j.err
+#SBATCH --mail-type=fail
+#SBATCH --mail-type=time_limit
+#SBATCH --mail-use=velsko@shh.mpg.de
+#SBATCH --export=ALL
+#SBATCH --array=0-334%8
+#SBATCH -J "unmapRLmalt"
+
+SAMPLES=($(find /projects1/microbiome_calculus/smoking_calculus/03-preprocessing/bones/malt_unmapped_fasta/* -name '*.gz' -type f | rev | cut -d/ -f 1 | rev | cut -d_ -f 1 | sort | uniq))
+SAMPLENAME=${SAMPLES[$SLURM_ARRAY_TASK_ID]}
+
+zcat /projects1/microbiome_calculus/smoking_calculus/03-preprocessing/bones/malt_unmapped_fasta/"$SAMPLENAME"_MALT_unmapped.fasta.gz | bioawk -c fastx '{histo[length($seq)]++} END {for (l in histo) print l,histo[l]}' | sort -n > /projects1/microbiome_calculus/smoking_calculus/04-analysis/bone_readlengths/"$SAMPLENAME".malt_unmapped_readlength.tsv
 
 
+# Or use EMBOSS infoseq to make tsv files?
+# Can these be read into R quickly on the SHH network (not at home)?
+# adjust this file
+# need to convert sam files to fasta
+snakemake -s ../../02-scripts.backup/gc_rl_calc.Snakefile --cluster 'sbatch --mem 4G -p long -n 4' -j 1 -k --restart-times 3 -n
+
+# also get the new sequencing depth of sub10M files and sub75bp files
 
 
+rename 's/.fastq.10M.gz/.10M.fastq/' *.fastq.10M.gz
+rename 's/.fastq.75bp.gz/.75bp.fastq/' *.fastq.75bp.gz
+gzip *.gz
 
+# Use FastQC to get average read length and average GC content of 10M and 75bp sub-sampled fastq files
+#!/usr/bin/env bash
 
+#SBATCH -c 4
+#SBATCH --mem=32000
+#SBATCH --partition=short
+#SBATCH -o /projects1/clusterhomes/velsko/slurm_logs/slurm.%j.out
+#SBATCH -e /projects1/clusterhomes/velsko/slurm_logs/slurm.%j.err
+#SBATCH --mail-type=fail
+#SBATCH --mail-type=time_limit
+#SBATCH --mail-use=velsko@shh.mpg.de
+#SBATCH --array=0-47%4
+#SBATCH -J "10M_fastqc"
 
+SAMPLES=( $(find /projects1/microbiome_calculus/smoking_calculus/03-preprocessing/read_len_check/sub75bp/ -name '*.gz' -type f) )
+SAMPLENAME=${SAMPLES[$SLURM_ARRAY_TASK_ID]}
 
+fastqc "${SAMPLENAME}" -o /projects1/microbiome_calculus/smoking_calculus/03-preprocessing/read_len_check/sub75bp/FastQC
 
+# run multiqc in both output folders
+/projects1/microbiome_calculus/smoking_calculus/03-preprocessing/read_len_check/sub75bp/FastQC multiqc .
+/projects1/microbiome_calculus/smoking_calculus/03-preprocessing/depth_check/sub10M/FastQC multiqc .
 
-
-
-
-
+# for the 10M folders, it only looks at the full files, not the sym-linked originals
+# take the avg read length and avg GC content from the original eager2 run for these
 
 
 

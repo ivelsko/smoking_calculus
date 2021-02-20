@@ -26,6 +26,19 @@ and genus, where the species/genera that were identified as contaminants with
 decontam in `Cameroon_taxonomy_decontam.Rmd` are removed. All the column headers
 are cleaned up. 
 
+```{r, eval = F}
+
+jae_table <- fread("~/projects1/microbiome_calculus/iberian/05-results.backup/Iberian_samples-controls_comparison_species.txt") %>%
+  select(matches("Data|JAE")) %>%
+  adorn_totals(where = "col") %>%
+  filter(Total > 0) %>%
+  select(-Total)
+
+fwrite(jae_table, "./05-results.backup/jae_malt_species_raw.tsv")
+
+```
+
+
 Read in the full species and genus tables.
 ```{r load_data}
 # MALT tables
@@ -33,6 +46,7 @@ mid_raw <- fread("./05-results.backup/MID_malt_bactarchhomo2018_comparison-speci
 radcliffe_raw <- fread("./05-results.backup/Radcliffe_pfuT_comparison-species.txt")
 kilteasheen_raw <- fread("./05-results.backup/Kilteasheen_comparison-species.txt")
 iberian_raw <- fread("./05-results.backup/iberian_medieval_malt_species_raw.tsv")
+jae_raw <- fread("./05-results.backup/jae_malt_species_raw.tsv")
 
 # contaminants
 mid_contaminants <- fread("./05-results.backup/contaminant_species_mid.tsv", sep = "\t")
@@ -65,6 +79,13 @@ kilteasheen_species_decontam <- kilteasheen_raw %>%
   anti_join(., iber_contaminants) %>%
   anti_join(., rad_contaminants)
 
+jae_species_decontam <- jae_raw %>%
+  rename(Species = `#Datasets`) %>%
+  anti_join(., mid_contaminants) %>%
+  anti_join(., iber_contaminants) %>%
+  anti_join(., rad_contaminants)
+
+  
 ```
 
 ```{r join_raw_tables}
@@ -72,7 +93,8 @@ kilteasheen_species_decontam <- kilteasheen_raw %>%
 all_species_raw <- mid_raw %>%
   full_join(., radcliffe_raw) %>%
   full_join(., kilteasheen_raw) %>%
-  full_join(., iberian_raw)
+  full_join(., iberian_raw) %>%
+  full_join(., jae_raw)
 
 
 # clean the file names
@@ -80,7 +102,10 @@ all_species_raw <- rename(all_species_raw, Species = `#Datasets`)
 colnames(all_species_raw) <- gsub(".unmapped","", colnames(all_species_raw))
 colnames(all_species_raw) <- gsub("MeganServer::","", colnames(all_species_raw))
 
-
+all_species_raw <- all_species_raw %>%
+  filter(!str_detect(Species, "Homo sapiens|Not assigned")) %>%
+  replace(is.na(.), 0)
+  
 ```
 
 
@@ -88,7 +113,8 @@ colnames(all_species_raw) <- gsub("MeganServer::","", colnames(all_species_raw))
 all_species_decontam <- mid_species_decontam %>%
   full_join(., radcliffe_species_decontam) %>%
   full_join(., kilteasheen_species_decontam) %>%
-  full_join(., iberian_species_decontam)
+  full_join(., iberian_species_decontam) %>%
+  full_join(., jae_species_decontam)
 
 
 # clean the file names
