@@ -1,0 +1,104 @@
+---
+title: "MID/CMB, Radcliffe, Kilteasheen, Iberian medieval calculus read length and GC content differences"
+author: "Irina Velsko"
+date: "`r format(Sys.time(), '%b %d, %Y')`"
+output:
+    github_document:
+        fig_width: 8
+        fig_height: 6
+        toc: true
+---
+
+```{r load_libraries, echo = F, message = F}
+library(knitr)
+library(data.table)
+library(janitor)
+library(tidyverse)
+
+```
+
+```{r setup}
+knitr::opts_knit$set(root.dir = normalizePath(".."))
+```
+
+Load in the coverage information per bam file and put it together into a large data frame
+```{r load_radcliffe}
+# load the standard format output tables
+radcliffe_list <- list.files(path = "./04-analysis/GC_RL/", pattern = "tsv.gz", full.names = T)
+
+test_file <- fread("~/projects1/microbiome_calculus/smoking_calculus/04-analysis/GC_RL/test.tsv")
+elr_test_file <- fread("~/projects1/microbiome_calculus/smoking_calculus/04-analysis/GC_RL/ELR006.A0101.gc_rl.tsv.gz", nrows = 1000000)
+
+rad_gc_rl <- map_dfr(radcliffe_list, function(fn) {
+  fread(fn, sep = "\t", nrows = 2000000) %>%
+  mutate(SampleID = basename(fn))
+}) %>%
+  arrange(SampleID)
+
+rad_gc_rl <- rad_gc_rl %>%
+# remove the end of the file name from the SampleID and the gene from Gene
+  mutate(SampleID = str_replace_all(SampleID, ".gc_rl.tsv.gz",""))
+
+
+```
+
+```{r}
+breaks <- c(30,35,41,47,53,59,65,71,77,83,89,95,101,107,113,119,125,131,137,143,149,155,161,167,173,179,185,191,197,203,209)
+
+tags <- c("(30-35)","(36-41)", "(42-47)", "(48-53)", "(54-59)", "(60-65)","(66-71)", "(72-77)","(78-83)", "(84-89)",
+          "(90-95)","(96-101)", "(102-107)", "(108-113)", "(114-119)", "(120-125)","(126-131)", "(132-137)","(138-143)", "(144-149)",
+          "(150-155)","(156-161)", "(162-167)", "(168-173)", "(174-179)", "(180-185)","(186-191)", "(192-197)","(198-203)", "(204-209)")
+
+group_tags <- cut(elr_test_file$Length, 
+                  breaks=breaks, 
+                  include.lowest=TRUE, 
+                  right=FALSE, 
+                  labels=tags)
+# inspect bins
+summary(group_tags)
+
+# ggplot(data = as_tibble(group_tags), mapping = aes(x=value)) + 
+#   geom_bar(fill="bisque",color="white",alpha=0.7) + 
+#   stat_count(geom="text", aes(label=sprintf("%.4f",..count../length(group_tags))), vjust=-0.5) +
+#   labs(x='mean education per house') +
+#   theme_minimal() 
+
+elr_test_file %>%
+  bind_cols(., group_tags %>% as_data_frame()) %>%
+  rename(RL_bin = value) %>%
+  group_by(RL_bin) %>%
+  summarize(avg_RL = mean(Length),
+            sd_RL = sd(Length),
+            avg_gc = mean(`%GC`),
+            sd_gc = sd(`%GC`)) %>%
+  ggplot(., aes(x = RL_bin, y = avg_gc, color = avg_gc)) +
+  geom_point() +
+  geom_errorbar(aes(ymin=avg_gc-sd_gc, ymax=avg_gc+sd_gc), width = 0.2) +
+  theme_minimal()
+
+elr_test_file %>%
+  bind_cols(., group_tags %>% as_data_frame()) %>%
+  rename(RL_bin = value) %>%
+  ggplot(., aes(x = RL_bin, y = `%GC`)) +
+  geom_violin() +
+  theme_minimal()
+
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

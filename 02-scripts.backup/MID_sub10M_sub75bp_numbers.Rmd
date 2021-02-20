@@ -1,0 +1,561 @@
+---
+title: "MID/CMB, Radcliffe, Kilteasheen, Iberian medieval calculus metadata and colors"
+author: "Irina Velsko"
+date: "`r format(Sys.time(), '%b %d, %Y')`"
+output:
+    github_document:
+        fig_width: 8
+        fig_height: 6
+        toc: true
+---
+
+```{r load_libraries, echo = F, message = F}
+library(knitr)
+library(data.table)
+library(tidyverse)
+
+```
+
+```{r setup}
+knitr::opts_knit$set(root.dir = normalizePath(".."))
+```
+
+
+```{r}
+colors3 <- c("#f5767a", "#63f35e","#8dc6f7") # "#5e63f3")
+shapes3 <- c(21, 23, 24)
+
+```
+
+```{r}
+# load the metadata file
+load("./05-results.backup/Metadata_tables.RData")
+```
+
+Set the sample order for plotting
+```{r}
+sample_order <- full_metadata %>%
+  select(Library_ID, Site) %>%
+  filter(!str_detect(Library_ID, "EXB|LIB|CSS|CSL|CSD|CSN")) %>%
+  mutate(Site= fct_relevel(Site, "Jaen","Radcliffe","CMB","Middenbeemster","ELR","IVE","Kilteasheen")) %>%
+  arrange(Site) %>%
+  pull(Library_ID)
+  
+```
+
+# Sequencing Depth
+```{r seqdepth_groups}
+full_metadata %>%
+  select(Library_ID, No_reads_no_human, No_reads_10M, No_reads_75bp) %>%
+  filter(str_detect(Library_ID, "CMB|MID")) %>%
+  gather("Seq_depth", "Read_counts", 2:ncol(.)) %>%
+  mutate(Seq_depth = fct_relevel(Seq_depth, "No_reads_no_human","No_reads_10M","No_reads_75bp")) %>%
+  ggplot(., aes(x = Library_ID, y = Read_counts, shape = Seq_depth, bg = Seq_depth)) +
+    geom_point(size = 3, color = "grey50") +
+    theme_minimal() +
+    scale_fill_manual(values = colors3) +
+    scale_shape_manual(values = shapes3) +
+    theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5),
+          text = element_text(size=12)) +
+    scale_y_continuous(breaks=scales::pretty_breaks(n=8)) +
+    geom_hline(yintercept = 5000000, linetype = "dotted")
+  
+full_metadata %>%
+  select(Library_ID, No_reads_no_human, No_reads_10M, No_reads_75bp) %>%
+  filter(str_detect(Library_ID, "CS")) %>%
+  filter(!str_detect(Library_ID, "L|D|N|SS")) %>%
+  gather("Seq_depth", "Read_counts", 2:ncol(.)) %>%
+  mutate(Seq_depth = fct_relevel(Seq_depth, "No_reads_no_human","No_reads_10M","No_reads_75bp")) %>%
+  ggplot(., aes(x = Library_ID, y = Read_counts, shape = Seq_depth, bg = Seq_depth)) +
+    geom_point(size = 3, color = "grey50") +
+    theme_minimal() +
+    scale_fill_manual(values = colors3) +
+    scale_shape_manual(values = shapes3) +
+    theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5),
+          text = element_text(size=12)) +
+    scale_y_continuous(breaks=scales::pretty_breaks(n=8)) +
+    geom_hline(yintercept = 5000000, linetype = "dotted") +
+    geom_hline(yintercept = 2500000, linetype = "dotted")
+
+full_metadata %>%
+  select(Library_ID, No_reads_no_human, No_reads_10M, No_reads_75bp) %>%
+  filter(str_detect(Library_ID, "KT")) %>%
+  gather("Seq_depth", "Read_counts", 2:ncol(.)) %>%
+  mutate(Seq_depth = fct_relevel(Seq_depth, "No_reads_no_human","No_reads_10M","No_reads_75bp")) %>%
+  ggplot(., aes(x = Library_ID, y = Read_counts, shape = Seq_depth, bg = Seq_depth)) +
+    geom_point(size = 3, color = "grey50") +
+    theme_minimal() +
+    scale_fill_manual(values = colors3) +
+    scale_shape_manual(values = shapes3) +
+    theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5),
+          text = element_text(size=12)) +
+    scale_y_continuous(breaks=scales::pretty_breaks(n=8)) +
+    geom_hline(yintercept = 5000000, linetype = "dotted") +
+    geom_hline(yintercept = 2500000, linetype = "dotted")
+
+full_metadata %>%
+  select(Library_ID, No_reads_no_human, No_reads_10M, No_reads_75bp) %>%
+  filter(str_detect(Library_ID, "ELR|IVE")) %>%
+  gather("Seq_depth", "Read_counts", 2:ncol(.)) %>%
+  mutate(Seq_depth = fct_relevel(Seq_depth, "No_reads_no_human","No_reads_10M","No_reads_75bp")) %>%
+  ggplot(., aes(x = Library_ID, y = Read_counts, shape = Seq_depth, bg = Seq_depth)) +
+    geom_point(size = 3, color = "grey50") +
+    theme_minimal() +
+    scale_fill_manual(values = colors3) +
+    scale_shape_manual(values = shapes3) +
+    theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5),
+          text = element_text(size=12)) +
+    scale_y_continuous(breaks=scales::pretty_breaks(n=8)) +
+    geom_hline(yintercept = 5000000, linetype = "dotted")
+
+full_metadata %>%
+  select(Library_ID, No_reads_no_human, No_reads_10M, No_reads_75bp) %>%
+  filter(str_detect(Library_ID, "JAE")) %>%
+  gather("Seq_depth", "Read_counts", 2:ncol(.)) %>%
+  mutate(Seq_depth = fct_relevel(Seq_depth, "No_reads_no_human","No_reads_10M","No_reads_75bp")) %>%
+  ggplot(., aes(x = Library_ID, y = Read_counts, shape = Seq_depth, bg = Seq_depth)) +
+    geom_point(size = 3, color = "grey50") +
+    theme_minimal() +
+    scale_fill_manual(values = colors3) +
+    scale_shape_manual(values = shapes3) +
+    theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5),
+          text = element_text(size=12)) +
+    scale_y_continuous(breaks=scales::pretty_breaks(n=8)) +
+    geom_hline(yintercept = 10000000, linetype = "dotted") +
+    geom_hline(yintercept = 20000000, linetype = "dotted")
+
+```
+
+
+```{r seqdepth_subs}
+full_metadata %>%
+  select(Library_ID, Site, No_reads_no_human, No_reads_10M, No_reads_75bp) %>%
+  filter(!str_detect(Library_ID, "EXB|LIB|CSS|CSL|CSD|CSN")) %>%
+  gather("Seq_depth", "Read_counts", 3:ncol(.)) %>%
+  mutate(Seq_depth = fct_relevel(Seq_depth, "No_reads_no_human","No_reads_10M","No_reads_75bp"),
+         Library_ID= fct_relevel(Library_ID, sample_order)) %>%
+  ggplot(., aes(x = Library_ID, y = Read_counts, shape = Seq_depth, bg = Seq_depth)) +
+    geom_point(size = 2, color = "grey50") +
+    theme_minimal() +
+    scale_fill_manual(values = colors3) +
+    scale_shape_manual(values = shapes3) +
+    theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5),
+          text = element_text(size=12)) +
+    scale_y_continuous(breaks=scales::pretty_breaks(n=8)) +
+    geom_hline(yintercept = 5000000, linetype = "dotted") +
+  facet_wrap(~Seq_depth, nrow = 1)
+  
+full_metadata %>%
+  select(Library_ID, No_reads_no_human, No_reads_10M, No_reads_75bp) %>%
+  filter(!str_detect(Library_ID, "EXB|LIB|CSS|CSL|CSD|CSN")) %>%
+  gather("Seq_depth", "Read_counts", 2:ncol(.)) %>%
+  filter(Seq_depth == "No_reads_no_human") %>%  
+  mutate(Library_ID= fct_relevel(Library_ID, sample_order)) %>%
+  ggplot(., aes(x = Library_ID, y = Read_counts, shape = Seq_depth, bg = Seq_depth)) +
+    geom_point(size = 3, color = "grey50") +
+    theme_minimal() +
+    scale_fill_manual(values = colors3[1]) +
+    scale_shape_manual(values = shapes3[1]) +
+    theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5),
+          text = element_text(size=12)) +
+    scale_y_continuous(breaks=scales::pretty_breaks(n=8)) +
+    geom_hline(yintercept = 5000000, linetype = "dotted") +
+  facet_wrap(~Seq_depth, nrow = 1)
+  
+
+full_metadata %>%
+  select(Library_ID, No_reads_no_human, No_reads_10M, No_reads_75bp) %>%
+  filter(!str_detect(Library_ID, "EXB|LIB|CSS|CSL|CSD|CSN")) %>%
+  gather("Seq_depth", "Read_counts", 2:ncol(.)) %>%
+  filter(Seq_depth == "No_reads_10M") %>%  
+  mutate(Library_ID= fct_relevel(Library_ID, sample_order)) %>%
+  ggplot(., aes(x = Library_ID, y = Read_counts, shape = Seq_depth, bg = Seq_depth)) +
+    geom_point(size = 3, color = "grey50") +
+    theme_minimal() +
+    scale_fill_manual(values = colors3[2]) +
+    scale_shape_manual(values = shapes3[2]) +
+    theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5),
+          text = element_text(size=12)) +
+    scale_y_continuous(breaks=scales::pretty_breaks(n=8)) +
+    geom_hline(yintercept = 5000000, linetype = "dotted") +
+  facet_wrap(~Seq_depth, nrow = 1)
+
+full_metadata %>%
+  select(Library_ID, No_reads_no_human, No_reads_10M, No_reads_75bp) %>%
+  filter(!str_detect(Library_ID, "EXB|LIB|CSS|CSL|CSD|CSN")) %>%
+  gather("Seq_depth", "Read_counts", 2:ncol(.)) %>%
+  filter(Seq_depth == "No_reads_75bp") %>%  
+  mutate(Library_ID= fct_relevel(Library_ID, sample_order)) %>%
+  ggplot(., aes(x = Library_ID, y = Read_counts, shape = Seq_depth, bg = Seq_depth)) +
+    geom_point(size = 3, color = "grey50") +
+    theme_minimal() +
+    scale_fill_manual(values = colors3[3]) +
+    scale_shape_manual(values = shapes3[3]) +
+    theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5),
+          text = element_text(size=12)) +
+    scale_y_continuous(breaks=scales::pretty_breaks(n=8)) +
+    geom_hline(yintercept = 5000000, linetype = "dotted") +
+  facet_wrap(~Seq_depth, nrow = 1)
+
+```
+
+# Average Read Length
+```{r rl_groups}
+full_metadata %>%
+  select(Library_ID, seq_len_avg, seq_len_avg_10M, seq_len_avg_75bp) %>%
+  filter(str_detect(Library_ID, "CMB|MID")) %>%
+  gather("Seq_depth", "Read_length", 2:ncol(.)) %>%
+  mutate(Seq_depth = fct_relevel(Seq_depth, "seq_len_avg","seq_len_avg_10M","seq_len_avg_75bp")) %>%
+  ggplot(., aes(x = Library_ID, y = Read_length, shape = Seq_depth, bg = Seq_depth)) +
+    geom_point(size = 3, color = "grey50") +
+    theme_minimal() +
+    scale_fill_manual(values = colors3) +
+    scale_shape_manual(values = shapes3) +
+    theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5),
+          text = element_text(size=12)) +
+    scale_y_continuous(breaks=scales::pretty_breaks(n=8)) +
+    geom_hline(yintercept = 50, linetype = "dotted") +
+    ylab("Avg. read length (bp)") +
+    ggtitle("MID/CMB")
+  
+full_metadata %>%
+  select(Library_ID, seq_len_avg, seq_len_avg_10M, seq_len_avg_75bp) %>%
+  filter(str_detect(Library_ID, "CS")) %>%
+  filter(!str_detect(Library_ID, "L|D|N|SS")) %>%
+  gather("Seq_depth", "Read_length", 2:ncol(.)) %>%
+  mutate(Seq_depth = fct_relevel(Seq_depth, "seq_len_avg","seq_len_avg_10M","seq_len_avg_75bp")) %>%
+  ggplot(., aes(x = Library_ID, y = Read_length, shape = Seq_depth, bg = Seq_depth)) +
+    geom_point(size = 3, color = "grey50") +
+    theme_minimal() +
+    scale_fill_manual(values = colors3) +
+    scale_shape_manual(values = shapes3) +
+    theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5),
+          text = element_text(size=12)) +
+    scale_y_continuous(breaks=scales::pretty_breaks(n=8)) +
+    geom_hline(yintercept = 50, linetype = "dotted") +
+    ylab("Avg. read length (bp)") +
+    ggtitle("Radcliffe")
+
+full_metadata %>%
+  select(Library_ID, seq_len_avg, seq_len_avg_10M, seq_len_avg_75bp) %>%
+  filter(str_detect(Library_ID, "KT")) %>%
+  gather("Seq_depth", "Read_length", 2:ncol(.)) %>%
+  mutate(Seq_depth = fct_relevel(Seq_depth, "seq_len_avg","seq_len_avg_10M","seq_len_avg_75bp")) %>%
+  ggplot(., aes(x = Library_ID, y = Read_length, shape = Seq_depth, bg = Seq_depth)) +
+    geom_point(size = 3, color = "grey50") +
+    theme_minimal() +
+    scale_fill_manual(values = colors3) +
+    scale_shape_manual(values = shapes3) +
+    theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5),
+          text = element_text(size=12)) +
+    scale_y_continuous(breaks=scales::pretty_breaks(n=8)) +
+    geom_hline(yintercept = 50, linetype = "dotted") +
+    ylab("Avg. read length (bp)") +
+    ggtitle("Kilteasheen")
+
+full_metadata %>%
+  select(Library_ID, seq_len_avg, seq_len_avg_10M, seq_len_avg_75bp) %>%
+  filter(str_detect(Library_ID, "ELR|IVE")) %>%
+  gather("Seq_depth", "Read_length", 2:ncol(.)) %>%
+  mutate(Seq_depth = fct_relevel(Seq_depth, "seq_len_avg","seq_len_avg_10M","seq_len_avg_75bp")) %>%
+  ggplot(., aes(x = Library_ID, y = Read_length, shape = Seq_depth, bg = Seq_depth)) +
+    geom_point(size = 3, color = "grey50") +
+    theme_minimal() +
+    scale_fill_manual(values = colors3) +
+    scale_shape_manual(values = shapes3) +
+    theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5),
+          text = element_text(size=12)) +
+    scale_y_continuous(breaks=scales::pretty_breaks(n=8)) +
+    geom_hline(yintercept = 50, linetype = "dotted") +
+    ylab("Avg. read length (bp)") +
+    ggtitle("Iberia")
+
+full_metadata %>%
+  select(Library_ID, seq_len_avg, seq_len_avg_10M, seq_len_avg_75bp) %>%
+  filter(str_detect(Library_ID, "JAE")) %>%
+  gather("Seq_depth", "Read_length", 2:ncol(.)) %>%
+  mutate(Seq_depth = fct_relevel(Seq_depth, "seq_len_avg","seq_len_avg_10M","seq_len_avg_75bp")) %>%
+  ggplot(., aes(x = Library_ID, y = Read_length, shape = Seq_depth, bg = Seq_depth)) +
+    geom_point(size = 3, color = "grey50") +
+    theme_minimal() +
+    scale_fill_manual(values = colors3) +
+    scale_shape_manual(values = shapes3) +
+    theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5),
+          text = element_text(size=12)) +
+    scale_y_continuous(breaks=scales::pretty_breaks(n=8)) +
+    geom_hline(yintercept = 50, linetype = "dotted") +
+    ylab("Avg. read length (bp)") +
+    ggtitle("Modern calculus")
+
+```
+
+
+```{r rl_subs}
+full_metadata %>%
+  select(Library_ID, Site, seq_len_avg, seq_len_avg_10M, seq_len_avg_75bp) %>%
+  filter(!str_detect(Library_ID, "EXB|LIB|CSS|CSL|CSD|CSN")) %>%
+  gather("Seq_depth", "Read_length", 3:ncol(.)) %>%
+  mutate(Seq_depth = fct_relevel(Seq_depth, "seq_len_avg","seq_len_avg_10M","seq_len_avg_75bp"),
+         Library_ID= fct_relevel(Library_ID, sample_order)) %>%
+  ggplot(., aes(x = Library_ID, y = Read_length, shape = Seq_depth, bg = Seq_depth)) +
+    geom_point(size = 2, color = "grey50") +
+    theme_minimal() +
+    scale_fill_manual(values = colors3) +
+    scale_shape_manual(values = shapes3) +
+    theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5),
+          text = element_text(size=12)) +
+    scale_y_continuous(breaks=scales::pretty_breaks(n=8)) +
+    geom_hline(yintercept = 50, linetype = "dotted") +
+    ylab("Avg. read length (bp)") +
+  facet_wrap(~Seq_depth, nrow = 1)
+  
+full_metadata %>%
+  select(Library_ID, seq_len_avg, seq_len_avg_10M, seq_len_avg_75bp) %>%
+  filter(!str_detect(Library_ID, "EXB|LIB|CSS|CSL|CSD|CSN")) %>%
+  gather("Seq_depth", "Read_length", 2:ncol(.)) %>%
+  filter(Seq_depth == "seq_len_avg") %>%  
+  mutate(Library_ID= fct_relevel(Library_ID, sample_order)) %>%
+  ggplot(., aes(x = Library_ID, y = Read_length, shape = Seq_depth, bg = Seq_depth)) +
+    geom_point(size = 3, color = "grey50") +
+    theme_minimal() +
+    scale_fill_manual(values = colors3) +
+    scale_shape_manual(values = shapes3) +
+    theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5),
+          text = element_text(size=12)) +
+    scale_y_continuous(breaks=scales::pretty_breaks(n=8)) +
+    geom_hline(yintercept = 50, linetype = "dotted") +
+    ylab("Avg. read length (bp)")
+  
+
+full_metadata %>%
+  select(Library_ID, seq_len_avg, seq_len_avg_10M, seq_len_avg_75bp) %>%
+  filter(!str_detect(Library_ID, "EXB|LIB|CSS|CSL|CSD|CSN")) %>%
+  gather("Seq_depth", "Read_length", 2:ncol(.)) %>%
+  filter(Seq_depth == "seq_len_avg_10M") %>%  
+  mutate(Library_ID= fct_relevel(Library_ID, sample_order)) %>%
+  ggplot(., aes(x = Library_ID, y = Read_length, shape = Seq_depth, bg = Seq_depth)) +
+    geom_point(size = 3, color = "grey50") +
+    theme_minimal() +
+    scale_fill_manual(values = colors3[2]) +
+    scale_shape_manual(values = shapes3[2]) +
+    theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5),
+          text = element_text(size=12)) +
+    scale_y_continuous(breaks=scales::pretty_breaks(n=8)) +
+    geom_hline(yintercept = 50, linetype = "dotted") +
+    ylab("Avg. read length (bp)")
+
+full_metadata %>%
+  select(Library_ID, seq_len_avg, seq_len_avg_10M, seq_len_avg_75bp) %>%
+  filter(!str_detect(Library_ID, "EXB|LIB|CSS|CSL|CSD|CSN")) %>%
+  gather("Seq_depth", "Read_length", 2:ncol(.)) %>%
+  filter(Seq_depth == "seq_len_avg_75bp") %>%  
+  mutate(Library_ID= fct_relevel(Library_ID, sample_order)) %>%
+  ggplot(., aes(x = Library_ID, y = Read_length, shape = Seq_depth, bg = Seq_depth)) +
+    geom_point(size = 3, color = "grey50") +
+    theme_minimal() +
+    scale_fill_manual(values = colors3[3]) +
+    scale_shape_manual(values = shapes3[3]) +
+    theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5),
+          text = element_text(size=12)) +
+    scale_y_continuous(breaks=scales::pretty_breaks(n=8)) +
+    geom_hline(yintercept = 50, linetype = "dotted")  +
+    ylab("Avg. read length (bp)")
+
+```
+
+# Average %GC 
+```{r gc_groups}
+full_metadata %>%
+  select(Library_ID, gc_avg, gc_avg_10M, gc_avg_75bp) %>%
+  filter(str_detect(Library_ID, "CMB|MID")) %>%
+  gather("Seq_depth", "Read_length", 2:ncol(.)) %>%
+  mutate(Seq_depth = fct_relevel(Seq_depth, "gc_avg","gc_avg_10M","gc_avg_75bp")) %>%
+  ggplot(., aes(x = Library_ID, y = Read_length, shape = Seq_depth, bg = Seq_depth)) +
+    geom_point(size = 3, color = "grey50") +
+    theme_minimal() +
+    scale_fill_manual(values = colors3) +
+    scale_shape_manual(values = shapes3) +
+    theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5),
+          text = element_text(size=12)) +
+    scale_y_continuous(breaks=scales::pretty_breaks(n=8)) +
+    geom_hline(yintercept = 50, linetype = "dotted") +
+    ylab("Avg %GC") +
+    ggtitle("MID/CMB")
+  
+full_metadata %>%
+  select(Library_ID, gc_avg, gc_avg_10M, gc_avg_75bp) %>%
+  filter(str_detect(Library_ID, "CS")) %>%
+  filter(!str_detect(Library_ID, "L|D|N|SS")) %>%
+  gather("Seq_depth", "Read_length", 2:ncol(.)) %>%
+  mutate(Seq_depth = fct_relevel(Seq_depth, "gc_avg","gc_avg_10M","gc_avg_75bp")) %>%
+  ggplot(., aes(x = Library_ID, y = Read_length, shape = Seq_depth, bg = Seq_depth)) +
+    geom_point(size = 3, color = "grey50") +
+    theme_minimal() +
+    scale_fill_manual(values = colors3) +
+    scale_shape_manual(values = shapes3) +
+    theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5),
+          text = element_text(size=12)) +
+    scale_y_continuous(breaks=scales::pretty_breaks(n=8)) +
+    geom_hline(yintercept = 50, linetype = "dotted") +
+    ylab("Avg %GC") +
+    ggtitle("Radcliffe")
+
+full_metadata %>%
+  select(Library_ID, gc_avg, gc_avg_10M, gc_avg_75bp) %>%
+  filter(str_detect(Library_ID, "KT")) %>%
+  gather("Seq_depth", "Read_length", 2:ncol(.)) %>%
+  mutate(Seq_depth = fct_relevel(Seq_depth, "gc_avg","gc_avg_10M","gc_avg_75bp")) %>%
+  ggplot(., aes(x = Library_ID, y = Read_length, shape = Seq_depth, bg = Seq_depth)) +
+    geom_point(size = 3, color = "grey50") +
+    theme_minimal() +
+    scale_fill_manual(values = colors3) +
+    scale_shape_manual(values = shapes3) +
+    theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5),
+          text = element_text(size=12)) +
+    scale_y_continuous(breaks=scales::pretty_breaks(n=8)) +
+    geom_hline(yintercept = 50, linetype = "dotted") +
+    ylab("Avg %GC") +
+    ggtitle("Kilteasheen")
+
+full_metadata %>%
+  select(Library_ID, gc_avg, gc_avg_10M, gc_avg_75bp) %>%
+  filter(str_detect(Library_ID, "ELR|IVE")) %>%
+  gather("Seq_depth", "Read_length", 2:ncol(.)) %>%
+  mutate(Seq_depth = fct_relevel(Seq_depth, "gc_avg","gc_avg_10M","gc_avg_75bp")) %>%
+  ggplot(., aes(x = Library_ID, y = Read_length, shape = Seq_depth, bg = Seq_depth)) +
+    geom_point(size = 3, color = "grey50") +
+    theme_minimal() +
+    scale_fill_manual(values = colors3) +
+    scale_shape_manual(values = shapes3) +
+    theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5),
+          text = element_text(size=12)) +
+    scale_y_continuous(breaks=scales::pretty_breaks(n=8)) +
+    geom_hline(yintercept = 50, linetype = "dotted") +
+    ylab("Avg %GC") +
+    ggtitle("Iberia")
+
+full_metadata %>%
+  select(Library_ID, gc_avg, gc_avg_10M, gc_avg_75bp) %>%
+  filter(str_detect(Library_ID, "JAE")) %>%
+  gather("Seq_depth", "Read_length", 2:ncol(.)) %>%
+  mutate(Seq_depth = fct_relevel(Seq_depth, "gc_avg","gc_avg_10M","gc_avg_75bp")) %>%
+  ggplot(., aes(x = Library_ID, y = Read_length, shape = Seq_depth, bg = Seq_depth)) +
+    geom_point(size = 3, color = "grey50") +
+    theme_minimal() +
+    scale_fill_manual(values = colors3) +
+    scale_shape_manual(values = shapes3) +
+    theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5),
+          text = element_text(size=12)) +
+    scale_y_continuous(breaks=scales::pretty_breaks(n=8)) +
+    geom_hline(yintercept = 50, linetype = "dotted") +
+    ylab("Avg %GC") +
+    ggtitle("Modern calculus")
+
+```
+
+
+```{r gc_subs}
+full_metadata %>%
+  select(Library_ID, Site, gc_avg, gc_avg_10M, gc_avg_75bp) %>%
+  filter(!str_detect(Library_ID, "EXB|LIB|CSS|CSL|CSD|CSN")) %>%
+  gather("Seq_depth", "Read_length", 3:ncol(.)) %>%
+  mutate(Seq_depth = fct_relevel(Seq_depth, "gc_avg","gc_avg_10M","gc_avg_75bp"),
+         Library_ID= fct_relevel(Library_ID, sample_order)) %>%
+  ggplot(., aes(x = Library_ID, y = Read_length, shape = Seq_depth, bg = Seq_depth)) +
+    geom_point(size = 2, color = "grey50") +
+    theme_minimal() +
+    scale_fill_manual(values = colors3) +
+    scale_shape_manual(values = shapes3) +
+    theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5),
+          text = element_text(size=12)) +
+    scale_y_continuous(breaks=scales::pretty_breaks(n=8)) +
+    geom_hline(yintercept = 50, linetype = "dotted") +
+    ylab("Avg %GC") +
+  facet_wrap(~Seq_depth, nrow = 1)
+  
+full_metadata %>%
+  select(Library_ID, gc_avg, gc_avg_10M, gc_avg_75bp) %>%
+  filter(!str_detect(Library_ID, "EXB|LIB|CSS|CSL|CSD|CSN")) %>%
+  gather("Seq_depth", "Read_length", 2:ncol(.)) %>%
+  filter(Seq_depth == "gc_avg") %>%  
+  mutate(Library_ID= fct_relevel(Library_ID, sample_order)) %>%
+  ggplot(., aes(x = Library_ID, y = Read_length, shape = Seq_depth, bg = Seq_depth)) +
+    geom_point(size = 3, color = "grey50") +
+    theme_minimal() +
+    scale_fill_manual(values = colors3) +
+    scale_shape_manual(values = shapes3) +
+    theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5),
+          text = element_text(size=12)) +
+    scale_y_continuous(breaks=scales::pretty_breaks(n=8)) +
+    geom_hline(yintercept = 50, linetype = "dotted") +
+    ylab("Avg %GC")
+  
+
+full_metadata %>%
+  select(Library_ID, gc_avg, gc_avg_10M, gc_avg_75bp) %>%
+  filter(!str_detect(Library_ID, "EXB|LIB|CSS|CSL|CSD|CSN")) %>%
+  gather("Seq_depth", "Read_length", 2:ncol(.)) %>%
+  filter(Seq_depth == "gc_avg_10M") %>%  
+  mutate(Library_ID= fct_relevel(Library_ID, sample_order)) %>%
+  ggplot(., aes(x = Library_ID, y = Read_length, shape = Seq_depth, bg = Seq_depth)) +
+    geom_point(size = 3, color = "grey50") +
+    theme_minimal() +
+    scale_fill_manual(values = colors3[2]) +
+    scale_shape_manual(values = shapes3[2]) +
+    theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5),
+          text = element_text(size=12)) +
+    scale_y_continuous(breaks=scales::pretty_breaks(n=8)) +
+    geom_hline(yintercept = 50, linetype = "dotted") +
+    ylab("Avg %GC")
+
+full_metadata %>%
+  select(Library_ID, gc_avg, gc_avg_10M, gc_avg_75bp) %>%
+  filter(!str_detect(Library_ID, "EXB|LIB|CSS|CSL|CSD|CSN")) %>%
+  gather("Seq_depth", "Read_length", 2:ncol(.)) %>%
+  filter(Seq_depth == "gc_avg_75bp") %>%  
+  mutate(Library_ID= fct_relevel(Library_ID, sample_order)) %>%
+  ggplot(., aes(x = Library_ID, y = Read_length, shape = Seq_depth, bg = Seq_depth)) +
+    geom_point(size = 3, color = "grey50") +
+    theme_minimal() +
+    scale_fill_manual(values = colors3[3]) +
+    scale_shape_manual(values = shapes3[3]) +
+    theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5),
+          text = element_text(size=12)) +
+    scale_y_continuous(breaks=scales::pretty_breaks(n=8)) +
+    geom_hline(yintercept = 50, linetype = "dotted")  +
+    ylab("Avg %GC")
+
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

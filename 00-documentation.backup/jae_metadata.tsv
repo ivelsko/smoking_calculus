@@ -1,0 +1,11 @@
+Site	Time_period	Region	Individual_ID	Library_ID	Sample_or_Control	Extraction_batch	Extraction_protocol	Library_protocol	Study_accession	Sequencing_type	extract_conc_ng/uL	No_reads_total	No_reads_no_human	No_reads_10M	No_reads_75bp	Age	Sex	Tooth_location	Sampled_teeth_FDI	alt_tooth_location	Caries_present	Periodontal_disease_present
+Jaen	Modern	Spain	JAE006	JAE006.A0101	Sample	Ex14_AR_2017-08-28	Jena_calculus	Jena_calculus	PRJEB31185	Paired-end	NA	88613670	87887856	10000000	26238093	40-49	Male	Anterior	32	Anterior	Yes	Yes
+Jaen	Modern	Spain	JAE007	JAE007.A0101	Sample	Ex14_AR_2017-08-28	Jena_calculus	Jena_calculus	PRJEB31185	Paired-end	NA	66728743	66421460	10000000	20218620	40-49	Male	Anterior	43	Anterior	Yes	Yes
+Jaen	Modern	Spain	JAE008	JAE008.A0101	Sample	Ex14_AR_2017-08-28	Jena_calculus	Jena_calculus	PRJEB31185	Paired-end	NA	66717630	65305304	10000000	17971776	30-39	Male	Posterior	16	Posterior	Yes	Yes
+Jaen	Modern	Spain	JAE009	JAE009.A0101	Sample	Ex14_AR_2017-08-28	Jena_calculus	Jena_calculus	PRJEB31185	Paired-end	NA	66584109	66065750	10000000	20067507	18-29	Male	Anterior	31	Anterior	Yes	Yes
+Jaen	Modern	Spain	JAE010	JAE010.A0101	Sample	Ex14_AR_2017-08-28	Jena_calculus	Jena_calculus	PRJEB31185	Paired-end	NA	60316527	60029258	10000000	19882349	40-49	Male	Posterior	26	Posterior	Yes	Yes
+Jaen	Modern	Spain	JAE012	JAE012.A0101	Sample	Ex14_AR_2017-08-28	Jena_calculus	Jena_calculus	PRJEB31185	Paired-end	NA	63543283	62757922	10000000	17302760	40-49	Unknown	Anterior	41	Anterior	Yes	Yes
+Jaen	Modern	Spain	JAE013	JAE013.A0101	Sample	Ex14_AR_2017-08-28	Jena_calculus	Jena_calculus	PRJEB31185	Paired-end	NA	39086563	38955845	10000000	11803776	40-49	Male	Anterior	42	Anterior	Yes	Yes
+Jaen	Modern	Spain	JAE014	JAE014.A0101	Sample	Ex14_AR_2017-08-28	Jena_calculus	Jena_calculus	PRJEB31185	Paired-end	NA	68875543	68623446	10000000	19109824	18-29	Male	Anterior	32	Anterior	Yes	Yes
+Jaen	Modern	Spain	JAE015	JAE015.A0101	Sample	Ex14_AR_2017-08-28	Jena_calculus	Jena_calculus	PRJEB31185	Paired-end	NA	57698550	57514438	10000000	16415656	40-49	Female	Anterior	41	Anterior	Yes	Yes
+Jaen	Modern	Spain	JAE016	JAE016.A0101	Sample	Ex14_AR_2017-08-28	Jena_calculus	Jena_calculus	PRJEB31185	Paired-end	NA	94897020	94567449	10000000	27026379	30-39	Female	Anterior	31	Anterior	Yes	Yes
