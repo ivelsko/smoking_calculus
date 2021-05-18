@@ -439,7 +439,7 @@ done
 
 # Run snakefile to get these
 # Make another file for 10M and 75bp, when their MALT runs are done
-snakemake -s ../../../../../02-scripts.backup/gc_rl_calc_sub_mapped.Snakefile --cluster 'sbatch --mem 8G -p short -n {threads}' -j 8 -k --restart-times 3 -n
+snakemake -s ../../../../../02-scripts.backup/gc_rl_calc_malt_mapped.Snakefile --cluster 'sbatch --mem 8G -p short -n {threads}' -j 8 -k --restart-times 3 -n
 
 
 # then run multiqc in the fastqc folder to get avg RL and GC content of each sample
@@ -486,6 +486,57 @@ fastqc "${SAMPLENAME}" -o /projects1/microbiome_calculus/smoking_calculus/03-pre
 
 # for the 10M folders, it only looks at the full files, not the sym-linked originals
 # take the avg read length and avg GC content from the original eager2 run for these
+
+# Run snakefile to get these
+# Make another file for 10M and 75bp, when their MALT runs are done
+snakemake -s ../../../../02-scripts.backup/gc_rl_calc_sub10M_mapped.Snakefile --cluster 'sbatch --mem 8G -p short -n {threads}' -j 8 -k --restart-times 3 -n
+snakemake -s ../../../../02-scripts.backup/gc_rl_calc_sub75bp_mapped.Snakefile --cluster 'sbatch --mem 8G -p short -n {threads}' -j 8 -k --restart-times 3 -n
+
+
+################################################################
+
+# HHV4/5 investigation
+
+# calculate the ANI of all genomes - are any below 95%?
+/projects1/microbiome_calculus/smoking_calculus/01-data/hhv4/hhv4_ncbi-genomes-2021-03-02
+gunzip *.gz
+ls /projects1/microbiome_calculus/smoking_calculus/01-data/hhv4/hhv4_ncbi-genomes-2021-03-02/*fna > hhv4_query_list.tsv
+ls /projects1/microbiome_calculus/smoking_calculus/01-data/hhv4/hhv4_ncbi-genomes-2021-03-02/*fna > hhv4_reference_list.tsv
+fastANI --ql hhv4_query_list.tsv --rl hhv4_reference_list.tsv --fragLen 1000 -o fastani_hhv4_out.tsv &> fastani.log
+
+# also cat all genomes together for alignment with DECIPHER
+cat *.fna > all_hhv4_genomes.fasta
+
+# use DECIPHER to align and cluster the HHV4 genomes to decide how many to use for mapping
+
+# it runs too slow on my computer to use MID_hhv4_ani
+# use instead the snakemake file
+snakemake -s ../../02-scripts.backup/hhv4_decipher.Snakefile --cluster 'sbatch --mem 8G -p short -n {threads}' -j 1 -k --restart-times 3 -n
+
+# bwa index 1 of the 2 complete genomes (need to re-do with a RefSeq assembly instead of a GenBank assembly)
+
+snakemake -s ../../../02-scripts.backup/007a-bwamap_hhv4.Snakefile --cluster 'sbatch --mem 12G -p short -n {threads}' -j 8 -k --restart-times 3 -n
+snakemake -s ../../../02-scripts.backup/007b-bwamap_hhv5.Snakefile --cluster 'sbatch --mem 12G -p short -n {threads}' -j 8 -k --restart-times 3 -n
+
+
+
+
+rm FastQC/MID084.A0101* FastQC/KT19calc* FastQC/MID092.A0101* FastQC/MID068.A0101* FastQC/KT31calc*
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
