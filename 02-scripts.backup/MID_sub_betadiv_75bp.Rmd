@@ -535,7 +535,7 @@ least 10% of at least 1 group, it will be removed from analysis.
 
 # Determine the prevalence of species in each group
 sub75bp_species_decontam_noblanks_presence_more_10 <- sub75bp_species_decontam %>%
-  select(-matches("EXB|LIB|CSS|CSD|CSN|CSL")) %>%
+  select(-matches("EXB|LIB|CSS|CSD|CSN|CSL|JAE")) %>%
   select(-one_of(outliers)) %>%
   select(-one_of(poor_samples_sub75bp)) %>%
   mutate_if(is.numeric, ~1 * (. > 0)) %>%
@@ -556,7 +556,7 @@ sub75bp_species_decontam_noblanks <- sub75bp_species_decontam %>%
   select(-matches("EXB|LIB|CSS|CSD|CSN|CSL|JAE")) %>%
   select(-one_of(outliers)) %>%
   select(-one_of(poor_samples_sub75bp)) %>%
-  inner_join(., sub75bp_species_decontam_noblanks_presence_more_10, by = "Species") %>%
+  # inner_join(., sub75bp_species_decontam_noblanks_presence_more_10, by = "Species") %>%
   gather("Library_ID","Counts",2:ncol(.)) %>%
   mutate(Counts = Counts +1) %>%
   spread(Species,Counts) %>%
@@ -887,15 +887,15 @@ malt_species_decontam_filtered_noblanks.pca.varmet %>%
 Make biplots of the top 10 loading species in positive and negative directions
 of PC1 and PC2, using the abundance filter.
 ```{r biplot_noblanks}
-# remove the Yanomami samples from the input table
+# remove the modern samples from the input table
 sub75bp_species_decontam_filtered_noblanks <- sub75bp_species_decontam %>%
-  select(-matches("EXB|LIB|CSS|CSD|CSN|CSL")) %>%
+  select(-matches("EXB|LIB|CSS|CSD|CSN|CSL|JAE")) %>%
   select(-one_of(outliers)) %>%
   select(-one_of(poor_samples_sub75bp)) %>%
-  adorn_totals(where = "col", name = "Sum_species") %>%
-  mutate(Percent = Sum_species/sum(Sum_species)*100) %>%
-  filter(Percent > 0.001) %>%
-  select(-one_of(c("Sum_species","Percent"))) %>%
+  # adorn_totals(where = "col", name = "Sum_species") %>%
+  # mutate(Percent = Sum_species/sum(Sum_species)*100) %>%
+  # filter(Percent > 0.001) %>%
+  # select(-one_of(c("Sum_species","Percent"))) %>%
   gather("Library_ID","Counts",2:ncol(.)) %>% 
   mutate(Counts = Counts +1) %>%
   spread(Species,Counts) %>%
@@ -977,11 +977,11 @@ Filter the species table by % abundance
 sub75bp_species_decontam_filtered_mid <- sub75bp_species_decontam %>%
   select(-one_of(outliers)) %>%
   select(-one_of(poor_samples_sub75bp)) %>%
-  select(matches("Species|MID")) %>%
+  select(matches("Species|MID|CMB")) %>%
   # adorn_totals(where = "col", name = "Sum_species") %>%
   # mutate(Percent = Sum_species/sum(Sum_species)*100) %>%
   # filter(Percent > 0.001) %>%
-  select(-one_of(c("Sum_species","Percent"))) %>%
+  # select(-one_of(c("Sum_species","Percent"))) %>%
   gather("Library_ID","Counts",2:ncol(.)) %>% 
   mutate(Counts = Counts +1) %>%
   spread(Species,Counts) %>%
