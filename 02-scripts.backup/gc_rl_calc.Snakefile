@@ -12,7 +12,7 @@ workdir: "/projects1/microbiome_calculus/smoking_calculus/04-analysis/GC_RL"
 
 #### SAMPLES ###################################################################
 SAMPLES = {}
-for sample in glob("/projects1/microbiome_calculus/smoking_calculus/04-analysis/GC_RL/input/*.gz"):
+for sample in glob("/projects1/microbiome_calculus/smoking_calculus/04-analysis/GC_RL/input/*.fastq"):
 	SAMPLES[os.path.basename(sample).split(".u")[0]] = sample
 ################################################################################
 
@@ -24,16 +24,17 @@ rule all:
     input: 
         expand("{sample}.gc_rl.tsv.gz", sample=SAMPLES.keys())
 
-rule paladin_upsp:
+rule gc_rl:
     output:
-        "{sample}.gc_rl.tsv"
+        "{sample}.gc_rl.tsv.gz"
     message: "Run emboss infoseq on {wildcards.sample}"
     group: "infoseq"
     params: 
         fasta = lambda wildcards: SAMPLES[wildcards.sample]
     shell:
         """
-        infoseq -auto -outfile {wildcards.sample}.gc_rl.tsv -only -name -length -pgc {params.reffa}
+        infoseq -auto -outfile {wildcards.sample}.gc_rl.tsv -only -name -length -pgc {params.fasta}
         pigz -p 8 {wildcards.sample}.gc_rl.tsv
+        pigz -p 8 /projects1/microbiome_calculus/smoking_calculus/04-analysis/GC_RL/input/{wildcards.sample}.unmapped.fastq
         """
         

@@ -22,7 +22,9 @@ if not os.path.isdir("snakemake_tmp"):
 
 rule all:
     input: 
-        expand("{sample}.gc_rl.tsv.gz", sample=SAMPLES.keys())
+        expand("{sample}.malt_mapped_readlength.tsv", sample=SAMPLES.keys()),
+        expand("{sample}.malt_mapped_gc.tsv", sample=SAMPLES.keys()),
+        expand("FastQC/{sample}_MALT_unmapped_fastqc.html", sample=SAMPLES.keys())
 
 rule malt_map_rl:
     output:
@@ -33,12 +35,12 @@ rule malt_map_rl:
         sam = lambda wildcards: SAMPLES[wildcards.sample]
     shell:
         """
-        samtools stats {params.sam}.unmapped.blastn.sam.gz | grep ^RL | cut -f 2- > {output}
+        samtools stats {params.sam} | grep ^RL | cut -f 2- > {output}
         """
 
 rule malt_map_gc:
     input:
-        "{sample}.unmapped.blastn.sam.gz"
+        "/projects1/microbiome_calculus/smoking_calculus/04-analysis/gc_rl_sub_mapped/input/{sample}.unmapped.blastn.sam.gz"
     output:
         "{sample}.malt_mapped_gc.tsv"
     message: "Run samtools stats GC on {wildcards.sample}"
@@ -52,56 +54,32 @@ rule malt_map_gc:
 
 rule malt_ummap_rl:
     input:
-        "{sample}.malt_mapped_gc.tsv"
+        "/projects1/microbiome_calculus/smoking_calculus/04-analysis/gc_rl_sub_mapped/input/{sample}.unmapped.blastn.sam.gz"
     output:
-        "./unmapped_fasta/{sample}_MALT_unmapped.fasta.gz"
-    message: "Run emboss infoseq on {wildcards.sample}"
-    group: "infoseq"
+        "unmapped_fastq/{sample}_MALT_unmapped.fastq.gz"
+    message: "Run samtools stats RL on {wildcards.sample}"
+    group: "gc_rl"
     params: 
-        rl = lambda wildcards: SAMPLES[wildcards.sample]
-        fastq = /projects1/microbiome_calculus/smoking_calculus/04-analysis/GC_RL/input/{sample}.unmapped.fastq.gz
+        fastq = "/projects1/microbiome_calculus/smoking_calculus/04-analysis/GC_RL/input/{sample}.unmapped.fastq.gz"
     shell:
         """
-        zcat {input} | grep -v "^@" | awk -F"\t" '{print $1}' | sort | uniq > {wildcards.sample}.malt_mapped.tsv
-        zcat {params.fastq} | seqkit fq2fa | seqkit grep -v -f {wildcards.sample}.malt_mapped.tsv > {wildcards.sample}_MALT_unmapped.fasta
-        pigz -p 4 {wildcards.sample}_MALT_unmapped.fasta
+        zcat {input} | grep -v "^@" | awk -F"\t" '{{print $1}}' | sort | uniq > {wildcards.sample}.malt_mapped.tsv
+        seqkit grep -v -f {wildcards.sample}.malt_mapped.tsv {params.fastq} > unmapped_fastq/{wildcards.sample}_MALT_unmapped.fastq
+        pigz -p 8 unmapped_fastq/{wildcards.sample}_MALT_unmapped.fastq
         """
 
 rule malt_ummap_fastqc:
     input:
-        "./unmapped_fasta/{sample}_MALT_unmapped.fasta.gz"
+        "unmapped_fastq/{sample}_MALT_unmapped.fastq.gz"
     output:
-        "./FastQC/{sample}.html"
-    message: "Run emboss infoseq on {wildcards.sample}"
-    group: "infoseq"
+        "FastQC/{sample}_MALT_unmapped_fastqc.html"
+    message: "Run FastQC on unmapped {wildcards.sample}"
+    group: "gc_rl"
     params: 
-        rl = lambda wildcards: SAMPLES[wildcards.sample]
-        fastq = /projects1/microbiome_calculus/smoking_calculus/04-analysis/GC_RL/input/{sample}.unmapped.fastq.gz
+    threads: 4
     shell:
         """
-        fastqc {input} -o ./FastQC
-        """
-      
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
+        fastqc {input} -t {threads} -o FastQC
+        """    
         
         
