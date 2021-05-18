@@ -1,0 +1,126 @@
+---
+title: "MID/CMB MALT species prevalence/abundance"
+author: "Irina Velsko"
+date: "`r format(Sys.time(), '%b %d, %Y')`"
+output:
+    github_document:
+        fig_width: 8
+        fig_height: 6
+        toc: true
+---
+
+
+```{r load_libraries, echo = F, message = F}
+library(knitr)
+library(data.table)
+library(janitor)
+library(tidyverse)
+library(gplots)
+library(viridis)
+library(cowplot)
+opts_chunk$set(echo=F, warning=F, message=F, dpi=150)
+```
+
+Set the working directory of the notebook to the parent directory of the 
+notebook itself.  
+
+```{r setup}
+knitr::opts_knit$set(root.dir = normalizePath(".."))
+```
+
+# MALT read stats
+
+```{r load_data}
+
+# load the taxonomy tables that have been decontaminated and the column headers are cleaned up
+load("./05-results.backup/Taxonomy_tables.RData")
+
+
+# load the metadata file
+load("./05-results.backup/Metadata_tables.RData")
+
+full_metadata <- full_metadata %>%
+  mutate(`DNA_molecules_per_library_x10^6_log` = log10(`DNA_molecules_per_library_x10^6`))
+
+# sourcetracker results for 5000 rarefaction
+full_source_results <- fread("./05-results.backup/sink_predictions_full_sources_rarefied_51500.tsv")
+
+reduced_source_results <- fread("./05-results.backup/sink_predictions_reduced_sources_rarefied_51500.tsv")
+
+
+```
+ 
+ 
+```{r}
+
+full_metadata %>%
+  select(Library_ID, No_reads_total) %>%
+  filter(No_reads_total < 10000000) %>%
+  filter(!str_detect(Library_ID, "CSS|CSD|CSN|CSL|EXB|LIB"))
+
+full_metadata %>%
+  select(Library_ID, seq_len_avg) %>%
+  filter(seq_len_avg > 70) 
+# %>%
+#   filter(str_detect(Library_ID, "CS"))
+# only CS samples need to be sub-sampled to have only reads with avg RL < 75bp
+# there are 7 CS samples that don't need this 
+# CS14, CS23, CS24, CS33, CS34, CS36, CS40
+
+```
+
+
+List the outliers from the plot in `MID_CMB_Rad_Kil_Iber_decontam.Rmd`. 
+```{r outliers}
+outliers <- c("EXB059.A2501","LIB058.A0103","LIB058.A0106","CSS","CSD", "CS14","CS27","CS48") # the lat 3 Radcliffe samples have very few reads
+poor_samples <- fread("./05-results.backup/cuperdec_poor_samples.tsv") %>%
+  pull(Sample)
+
+outliersF <- str_c(outliers, collapse = "|")
+
+```
+
+
+# Species prevalence
+
+Find taxa that are in all samples
+```{r prevalence}
+
+prev_sp_df <- all_species_decontam %>%
+  select(matches("Species|MID")) %>%
+  select(-one_of(outliers)) %>%
+  select(-one_of(poor_samples)) %>%
+  gather("Library_ID","Counts",2:ncol(.)) %>%
+  mutate(Counts = ifelse(Counts > 0, 1, 0)) %>%
+  spread(Library_ID,Counts) %>%
+  adorn_totals(where = "col") %>%
+  filter(Total >= 63) %>%
+  select(Species, Total)
+
+
+prev_sp <- prev_sp_df %>%
+  arrange(desc(Total, Species)) %>%
+  pull(Species)
+  
+```
+
+```{r abundance}
+
+abund_sp <- all_species_decontam %>%
+  select(matches("Species|MID")) %>%
+  select(-one_of(outliers)) %>%
+  select(-one_of(poor_samples)) %>%
+  adorn_totals(where = "col") %>%
+  arrange(desc(Total)) %>%
+  select(Species, Total) %>%
+  filter(Species %in% prev_sp)
+
+
+```
+
+
+
+
+
+
+
