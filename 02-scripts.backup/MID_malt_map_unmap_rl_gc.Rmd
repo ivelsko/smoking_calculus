@@ -1,0 +1,1467 @@
+---
+title: "MID/CMB, Radcliffe, Kilteasheen, Iberian medieval calculus metadata and colors"
+author: "Irina Velsko"
+date: "`r format(Sys.time(), '%b %d, %Y')`"
+output:
+    github_document:
+        fig_width: 8
+        fig_height: 6
+        toc: true
+---
+
+```{r load_libraries, echo = F, message = F}
+library(knitr)
+library(data.table)
+library(tidyverse)
+
+```
+
+```{r setup}
+knitr::opts_knit$set(root.dir = normalizePath(".."))
+```
+
+
+```{r}
+colors3 <- c("#f5767a", "#63f35e","#8dc6f7") # "#5e63f3")
+shapes3 <- c(21, 23, 24)
+
+```
+
+```{r}
+# load the metadata file
+load("./05-results.backup/Metadata_tables.RData")
+```
+
+Set the sample order for plotting
+```{r}
+sample_order <- full_metadata %>%
+  select(Library_ID, Site) %>%
+  filter(!str_detect(Library_ID, "EXB|LIB|CSS|CSL|CSD|CSN")) %>%
+  mutate(Site= fct_relevel(Site, "Jaen","Radcliffe","CMB","Middenbeemster","ELR","IVE","Kilteasheen")) %>%
+  arrange(Site) %>%
+  pull(Library_ID)
+  
+```
+
+# Load data
+Full data
+```{r full_malt_mapped}
+# load the read length distribution tables of the reads mapped by MALT
+# comes from the sam files output by MALT
+
+maltmappedGC_list <- list.files(path = "~/projects1/microbiome_calculus/smoking_calculus/04-analysis/gc_rl_sub_mapped/output/", pattern = "gc.tsv", full.names = T)
+
+maltmappedGC <- map_dfr(maltmappedGC_list, function(fn) {
+  fread(fn, col.names = c("gc_pct", "No_reads"), sep = "\t") %>%
+  mutate(Library_ID = basename(fn))
+}) %>%
+  arrange(Library_ID) %>%
+  mutate(Library_ID = str_replace(Library_ID, ".malt_mapped_gc.tsv",""),
+         mapping = "Malt_mapped_GC", 
+         Site = str_trunc(Library_ID, 3, side = "right", ellipsis = ""))
+
+
+maluntmappedRL_list <- list.files(path = "~/projects1/microbiome_calculus/smoking_calculus/04-analysis/gc_rl_sub_mapped/output/", pattern = "readlength.tsv", full.names = T)
+
+maltmappedRL <- map_dfr(maluntmappedRL_list, function(fn) {
+  fread(fn, col.names = c("read_length", "No_reads"), sep = "\t") %>%
+  mutate(Library_ID = basename(fn))
+}) %>%
+  arrange(Library_ID) %>%
+  mutate(Library_ID = str_replace(Library_ID, ".malt_mapped_readlength.tsv",""),
+         mapping = "Malt_mapped_RL",
+         Site = str_trunc(Library_ID, 3, side = "right", ellipsis = ""))
+  # mutate(SampleID = str_replace_all(SampleID, ".gc_rl.tsv.gz",""))
+
+
+```
+
+```{r full_RL_avg}
+mapped_rl_gc <- maltmappedGC %>%
+  bind_rows(maltmappedRL %>%
+              rename(gc_pct = read_length)) %>%
+  group_by(Site, mapping, Library_ID) %>%
+  summarize(Avg = (sum(gc_pct * No_reads))/sum(No_reads)) %>%
+  ungroup() %>%
+  spread(mapping, Avg) %>%
+  rename(avg_rl_map = Malt_mapped_RL,
+         avg_gc_map = Malt_mapped_GC) %>%
+  filter(!str_detect(Library_ID, "EXB|LIB|CSS|CSD|CSL|CSN")) %>%
+  select(-Site)
+
+```
+
+```{r full_malt_unmapped}
+# load the read length distribution tables of the reads unmapped by MALT
+# comes from the fastq files of reads not mapped by malt (grep -v from a list of mapped reads with seqtk)
+# run FastQC on the unmapped read fastq files
+# run multiqc on the FastQC output
+# load the multiqc output
+
+unmapped_rl_gc <- fread("~/projects1/microbiome_calculus/smoking_calculus/04-analysis/gc_rl_sub_mapped/output/FastQC/multiqc_data/multiqc_general_stats.txt") %>%
+  select(Sample, `FastQC_mqc-generalstats-fastqc-percent_gc`,`FastQC_mqc-generalstats-fastqc-avg_sequence_length`) %>%
+  mutate(Sample = str_replace_all(Sample, "_MALT_unmapped","")) %>%
+  rename(Library_ID = Sample,
+         avg_rl_unmap = `FastQC_mqc-generalstats-fastqc-avg_sequence_length`,
+         avg_gc_unmap = `FastQC_mqc-generalstats-fastqc-percent_gc`) %>%
+  filter(!str_detect(Library_ID, "EXB|LIB|CSS|CSD|CSL|CSN"))
+
+```
+
+```{r combime_full}
+rl_gc_full_data <- mapped_rl_gc %>%
+  full_join(., unmapped_rl_gc, by = "Library_ID") %>%
+  filter(!str_detect(Library_ID, "MID052")) %>%
+  inner_join(., full_metadata %>% 
+               select(Library_ID, Site), by = "Library_ID") %>%
+  select(Library_ID, Site, everything())
+  # mutate(Site = str_replace_all(Site, "CS0","Radcliffe"),
+  #        Site = str_replace_all(Site, "CS1","Radcliffe"),
+  #        Site = str_replace_all(Site, "CS2","Radcliffe"),
+  #        Site = str_replace_all(Site, "CS3","Radcliffe"),
+  #        Site = str_replace_all(Site, "CS4","Radcliffe"),
+  #        Site = str_replace_all(Site, "KT0","Kilteasheen"),
+  #        Site = str_replace_all(Site, "KT1","Kilteasheen"),
+  #        Site = str_replace_all(Site, "KT2","Kilteasheen"),
+  #        Site = str_replace_all(Site, "KT3","Kilteasheen"),
+  #        Site = str_replace_all(Site, "KT4","Kilteasheen"))
+
+```
+
+Sub10M data
+```{r sub10M_malt_unmapped}
+# load the read length distribution tables of the reads unmapped by MALT
+# comes from the fastq files of reads not mapped by malt (grep -v from a list of mapped reads with seqtk)
+# run FastQC on the unmapped read fastq files
+# run multiqc on the FastQC output
+# load the multiqc output
+
+rl_gc_10M <- fread("~/projects1/microbiome_calculus/smoking_calculus/04-analysis/malt_checks/sub10M/gc_rl/FastQC/multiqc_data/multiqc_general_stats.txt") %>%
+  select(Sample, `FastQC_mqc-generalstats-fastqc-percent_gc`,`FastQC_mqc-generalstats-fastqc-avg_sequence_length`) %>%
+  separate(Sample, into = c("Sample","malt","Mapped"), extra = "merge", sep = "_") %>%
+  select(-malt) %>%
+  mutate(Mapped = str_replace_all(Mapped, ".10M","_10M")) %>%
+  rename(Library_ID = Sample,
+         avg_rl = `FastQC_mqc-generalstats-fastqc-avg_sequence_length`,
+         avg_gc = `FastQC_mqc-generalstats-fastqc-percent_gc`) %>%
+  filter(!str_detect(Library_ID, "EXB|LIB|CSS|CSD|CSL|CSN"))
+
+```
+
+```{r combine_sub10M}
+rl_gc_all_data <- rl_gc_full_data %>%
+  select(-Site) %>%
+  full_join(., rl_gc_10M %>%
+              filter(Mapped == "mapped_10M") %>%
+              rename(avg_rl_map_10M = avg_rl,
+                     avg_gc_map_10M = avg_gc) %>%
+              select(-Mapped), by = "Library_ID") %>%
+  full_join(., rl_gc_10M %>%
+              filter(Mapped == "unmapped_10M") %>%
+              rename(avg_rl_unmap_10M = avg_rl,
+                     avg_gc_unmap_10M = avg_gc) %>%
+              select(-Mapped), by = "Library_ID") %>%
+  filter(!str_detect(Library_ID, "MID052")) %>%
+  mutate(avg_gc_map_10M = coalesce(avg_gc_map_10M,avg_gc_map),
+         avg_rl_map_10M = coalesce(avg_rl_map_10M,avg_rl_map),
+         avg_gc_unmap_10M = coalesce(avg_gc_unmap_10M,avg_gc_unmap),
+         avg_rl_unmap_10M = coalesce(avg_rl_unmap_10M,avg_rl_unmap))
+
+```
+
+Sub75bp data
+```{r sub10M_malt_unmapped}
+# load the read length distribution tables of the reads unmapped by MALT
+# comes from the fastq files of reads not mapped by malt (grep -v from a list of mapped reads with seqtk)
+# run FastQC on the unmapped read fastq files
+# run multiqc on the FastQC output
+# load the multiqc output
+
+rl_gc_75bp <- fread("~/projects1/microbiome_calculus/smoking_calculus/04-analysis/malt_checks/sub75bp/gc_rl/FastQC/multiqc_data/multiqc_general_stats.txt") %>%
+  select(Sample, `FastQC_mqc-generalstats-fastqc-percent_gc`,`FastQC_mqc-generalstats-fastqc-avg_sequence_length`) %>%
+  separate(Sample, into = c("Sample","malt","Mapped"), extra = "merge", sep = "_") %>%
+  select(-malt) %>%
+  mutate(Mapped = str_replace_all(Mapped, ".75bp","_75bp")) %>%
+  rename(Library_ID = Sample,
+         avg_rl = `FastQC_mqc-generalstats-fastqc-avg_sequence_length`,
+         avg_gc = `FastQC_mqc-generalstats-fastqc-percent_gc`) %>%
+  filter(!str_detect(Library_ID, "EXB|LIB|CSS|CSD|CSL|CSN"))
+
+```
+
+```{r combine_sub75bp}
+rl_gc_all_data <- rl_gc_all_data %>%
+  full_join(., rl_gc_75bp %>%
+              filter(Mapped == "mapped_75bp") %>%
+              rename(avg_rl_map_75bp = avg_rl,
+                     avg_gc_map_75bp = avg_gc) %>%
+              select(-Mapped), by = "Library_ID") %>%
+  full_join(., rl_gc_75bp %>%
+              filter(Mapped == "unmapped_75bp") %>%
+              rename(avg_rl_unmap_75bp = avg_rl,
+                     avg_gc_unmap_75bp = avg_gc) %>%
+              select(-Mapped), by = "Library_ID") %>%
+  filter(!str_detect(Library_ID, "MID052")) %>%
+  mutate(avg_gc_map_75bp = coalesce(avg_gc_map_75bp,avg_gc_map),
+         avg_rl_map_75bp = coalesce(avg_rl_map_75bp,avg_rl_map),
+         avg_gc_unmap_75bp = coalesce(avg_gc_unmap_75bp,avg_gc_unmap),
+         avg_rl_unmap_75bp = coalesce(avg_rl_unmap_75bp,avg_rl_unmap)) %>%
+  inner_join(., full_metadata %>% 
+               select(Library_ID, Site), by = "Library_ID") %>%
+  select(Site, Library_ID, everything())
+
+fwrite(rl_gc_all_data, "./05-results.backup/rl_gc_sub_data.tsv", quote = F, sep = "\t")
+
+```
+
+
+# Full data set
+## Average Read Length
+```{r rl_groups}
+rl_gc_full_data %>%
+  select(Library_ID, avg_rl_map, avg_rl_unmap) %>%
+  filter(str_detect(Library_ID, "CMB|MID")) %>%
+  gather("Mapping", "Read_length", 2:ncol(.)) %>%
+  mutate(Mapping = fct_relevel(Mapping, "avg_rl_map", "avg_rl_unmap")) %>%
+  ggplot(., aes(x = Library_ID, y = Read_length, shape = Mapping, bg = Mapping)) +
+    geom_point(size = 3, color = "grey50") +
+    theme_minimal() +
+    scale_fill_manual(values = colors3) +
+    scale_shape_manual(values = shapes3) +
+    theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5),
+          text = element_text(size=12)) +
+    scale_y_continuous(breaks=scales::pretty_breaks(n=8)) +
+    geom_hline(yintercept = 50, linetype = "dotted") +
+    ylab("Avg. read length (bp)") +
+    ggtitle("MID/CMB")
+  
+rl_gc_full_data %>%
+  select(Library_ID, avg_rl_map, avg_rl_unmap) %>%
+  filter(str_detect(Library_ID, "CS")) %>%
+  filter(!str_detect(Library_ID, "L|D|N|SS")) %>%
+  gather("Mapping", "Read_length", 2:ncol(.)) %>%
+  mutate(Mapping = fct_relevel(Mapping, "avg_rl_map", "avg_rl_unmap")) %>%
+  ggplot(., aes(x = Library_ID, y = Read_length, shape = Mapping, bg = Mapping)) +
+    geom_point(size = 3, color = "grey50") +
+    theme_minimal() +
+    scale_fill_manual(values = colors3) +
+    scale_shape_manual(values = shapes3) +
+    theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5),
+          text = element_text(size=12)) +
+    scale_y_continuous(breaks=scales::pretty_breaks(n=8)) +
+    geom_hline(yintercept = 50, linetype = "dotted") +
+    ylab("Avg. read length (bp)") +
+    ggtitle("Radcliffe")
+
+rl_gc_full_data %>%
+  select(Library_ID, avg_rl_map, avg_rl_unmap) %>%
+  filter(str_detect(Library_ID, "KT")) %>%
+  gather("Mapping", "Read_length", 2:ncol(.)) %>%
+  mutate(Mapping = fct_relevel(Mapping, "avg_rl_map", "avg_rl_unmap")) %>%
+  ggplot(., aes(x = Library_ID, y = Read_length, shape = Mapping, bg = Mapping)) +
+    geom_point(size = 3, color = "grey50") +
+    theme_minimal() +
+    scale_fill_manual(values = colors3) +
+    scale_shape_manual(values = shapes3) +
+    theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5),
+          text = element_text(size=12)) +
+    scale_y_continuous(breaks=scales::pretty_breaks(n=8)) +
+    geom_hline(yintercept = 50, linetype = "dotted") +
+    ylab("Avg. read length (bp)") +
+    ggtitle("Kilteasheen")
+
+rl_gc_full_data %>%
+  select(Library_ID, avg_rl_map, avg_rl_unmap) %>%
+  filter(str_detect(Library_ID, "ELR|IVE")) %>%
+  gather("Mapping", "Read_length", 2:ncol(.)) %>%
+  mutate(Mapping = fct_relevel(Mapping, "avg_rl_map", "avg_rl_unmap")) %>%
+  ggplot(., aes(x = Library_ID, y = Read_length, shape = Mapping, bg = Mapping)) +
+    geom_point(size = 3, color = "grey50") +
+    theme_minimal() +
+    scale_fill_manual(values = colors3) +
+    scale_shape_manual(values = shapes3) +
+    theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5),
+          text = element_text(size=12)) +
+    scale_y_continuous(breaks=scales::pretty_breaks(n=8)) +
+    geom_hline(yintercept = 50, linetype = "dotted") +
+    ylab("Avg. read length (bp)") +
+    ggtitle("Iberia")
+
+rl_gc_full_data %>%
+  select(Library_ID, avg_rl_map, avg_rl_unmap) %>%
+  filter(str_detect(Library_ID, "JAE")) %>%
+  gather("Mapping", "Read_length", 2:ncol(.)) %>%
+  mutate(Mapping = fct_relevel(Mapping, "avg_rl_map", "avg_rl_unmap")) %>%
+  ggplot(., aes(x = Library_ID, y = Read_length, shape = Mapping, bg = Mapping)) +
+    geom_point(size = 3, color = "grey50") +
+    theme_minimal() +
+    scale_fill_manual(values = colors3) +
+    scale_shape_manual(values = shapes3) +
+    theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5),
+          text = element_text(size=12)) +
+    scale_y_continuous(breaks=scales::pretty_breaks(n=8)) +
+    geom_hline(yintercept = 50, linetype = "dotted") +
+    ylab("Avg. read length (bp)") +
+    ggtitle("Modern calculus")
+
+```
+
+
+```{r rl_subs}
+rl_gc_full_data %>%
+  select(Library_ID, Site, avg_rl_map, avg_rl_unmap) %>%
+  filter(!str_detect(Library_ID, "EXB|LIB|CSS|CSL|CSD|CSN")) %>%
+  gather("Mapping", "Read_length", 3:ncol(.)) %>%
+  mutate(Mapping = fct_relevel(Mapping, "avg_rl_map", "avg_rl_unmap"),
+         Library_ID= fct_relevel(Library_ID, sample_order)) %>%
+  ggplot(., aes(x = Library_ID, y = Read_length, shape = Mapping, bg = Mapping)) +
+    geom_point(size = 2, color = "grey50") +
+    theme_minimal() +
+    scale_fill_manual(values = colors3) +
+    scale_shape_manual(values = shapes3) +
+    theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5),
+          text = element_text(size=12)) +
+    scale_y_continuous(breaks=scales::pretty_breaks(n=8)) +
+    geom_hline(yintercept = 50, linetype = "dotted") +
+    ylab("Avg. read length (bp)") +
+  facet_wrap(~Mapping, nrow = 1)
+  
+rl_gc_full_data %>%
+  select(Library_ID, avg_rl_map, avg_rl_unmap) %>%
+  filter(!str_detect(Library_ID, "EXB|LIB|CSS|CSL|CSD|CSN")) %>%
+  gather("Mapping", "Read_length", 2:ncol(.)) %>%
+  filter(Mapping == "avg_rl_map") %>%  
+  mutate(Library_ID= fct_relevel(Library_ID, sample_order)) %>%
+  ggplot(., aes(x = Library_ID, y = Read_length, shape = Mapping, bg = Mapping)) +
+    geom_point(size = 3, color = "grey50") +
+    theme_minimal() +
+    scale_fill_manual(values = colors3) +
+    scale_shape_manual(values = shapes3) +
+    theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5),
+          text = element_text(size=12)) +
+    scale_y_continuous(breaks=scales::pretty_breaks(n=8)) +
+    geom_hline(yintercept = 50, linetype = "dotted") +
+    ylab("Avg. read length (bp)")
+  
+
+rl_gc_full_data %>%
+  select(Library_ID, avg_rl_map, avg_rl_unmap) %>%
+  filter(!str_detect(Library_ID, "EXB|LIB|CSS|CSL|CSD|CSN")) %>%
+  gather("Mapping", "Read_length", 2:ncol(.)) %>%
+  filter(Mapping == "avg_rl_unmap") %>%  
+  mutate(Library_ID= fct_relevel(Library_ID, sample_order)) %>%
+  ggplot(., aes(x = Library_ID, y = Read_length, shape = Mapping, bg = Mapping)) +
+    geom_point(size = 3, color = "grey50") +
+    theme_minimal() +
+    scale_fill_manual(values = colors3[2]) +
+    scale_shape_manual(values = shapes3[2]) +
+    theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5),
+          text = element_text(size=12)) +
+    scale_y_continuous(breaks=scales::pretty_breaks(n=8)) +
+    geom_hline(yintercept = 50, linetype = "dotted") +
+    ylab("Avg. read length (bp)")
+
+
+```
+
+Summary box plots
+```{r rl_box}
+rl_gc_full_data %>%
+  select(Library_ID, Site, avg_rl_map, avg_rl_unmap) %>%
+  filter(!str_detect(Library_ID, "EXB|LIB|CSS|CSL|CSD|CSN")) %>%
+  gather("Mapping", "Read_counts", 3:ncol(.)) %>%
+  mutate(Mapping = fct_relevel(Mapping, "avg_rl_map", "avg_rl_unmap"),
+         Site = fct_relevel(Site, "JAE","MID","CMB","Radcliffe","Kilteasheen","ELR","IVE")) %>%
+  ggplot(., aes(x = Site, y = Read_counts, fill = Mapping)) +
+    geom_boxplot() +
+    geom_jitter(alpha = 0.3, position = position_jitterdodge(jitter.width = 0.1), size = 1) +
+    theme_minimal() +
+    scale_fill_manual(values = colors3) +
+    theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5),
+          text = element_text(size=12)) +
+    scale_y_continuous(breaks=scales::pretty_breaks(n=8)) +
+    geom_hline(yintercept = 50, linetype = "dotted") +
+    ylab("Avg. read length (bp)")
+
+```
+
+## Average %GC 
+```{r gc_groups}
+rl_gc_full_data %>%
+  select(Library_ID, avg_gc_map, avg_gc_unmap) %>%
+  filter(str_detect(Library_ID, "CMB|MID")) %>%
+  gather("GC", "Read_length", 2:ncol(.)) %>%
+  mutate(GC = fct_relevel(GC, "avg_gc_map", "avg_gc_unmap")) %>%
+  ggplot(., aes(x = Library_ID, y = Read_length, shape = GC, bg = GC)) +
+    geom_point(size = 3, color = "grey50") +
+    theme_minimal() +
+    scale_fill_manual(values = colors3) +
+    scale_shape_manual(values = shapes3) +
+    theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5),
+          text = element_text(size=12)) +
+    scale_y_continuous(breaks=scales::pretty_breaks(n=8)) +
+    geom_hline(yintercept = 50, linetype = "dotted") +
+    ylab("Avg %GC") +
+    ggtitle("MID/CMB")
+  
+rl_gc_full_data %>%
+  select(Library_ID, avg_gc_map, avg_gc_unmap) %>%
+  filter(str_detect(Library_ID, "CS")) %>%
+  filter(!str_detect(Library_ID, "L|D|N|SS")) %>%
+  gather("GC", "Read_length", 2:ncol(.)) %>%
+  mutate(GC = fct_relevel(GC, "avg_gc_map", "avg_gc_unmap")) %>%
+  ggplot(., aes(x = Library_ID, y = Read_length, shape = GC, bg = GC)) +
+    geom_point(size = 3, color = "grey50") +
+    theme_minimal() +
+    scale_fill_manual(values = colors3) +
+    scale_shape_manual(values = shapes3) +
+    theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5),
+          text = element_text(size=12)) +
+    scale_y_continuous(breaks=scales::pretty_breaks(n=8)) +
+    geom_hline(yintercept = 50, linetype = "dotted") +
+    ylab("Avg %GC") +
+    ggtitle("Radcliffe")
+
+rl_gc_full_data %>%
+  select(Library_ID, avg_gc_map, avg_gc_unmap) %>%
+  filter(str_detect(Library_ID, "KT")) %>%
+  gather("GC", "Read_length", 2:ncol(.)) %>%
+  mutate(GC = fct_relevel(GC, "avg_gc_map", "avg_gc_unmap")) %>%
+  ggplot(., aes(x = Library_ID, y = Read_length, shape = GC, bg = GC)) +
+    geom_point(size = 3, color = "grey50") +
+    theme_minimal() +
+    scale_fill_manual(values = colors3) +
+    scale_shape_manual(values = shapes3) +
+    theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5),
+          text = element_text(size=12)) +
+    scale_y_continuous(breaks=scales::pretty_breaks(n=8)) +
+    geom_hline(yintercept = 50, linetype = "dotted") +
+    ylab("Avg %GC") +
+    ggtitle("Kilteasheen")
+
+rl_gc_full_data %>%
+  select(Library_ID, avg_gc_map, avg_gc_unmap) %>%
+  filter(str_detect(Library_ID, "ELR|IVE")) %>%
+  gather("GC", "Read_length", 2:ncol(.)) %>%
+  mutate(GC = fct_relevel(GC, "avg_gc_map", "avg_gc_unmap")) %>%
+  ggplot(., aes(x = Library_ID, y = Read_length, shape = GC, bg = GC)) +
+    geom_point(size = 3, color = "grey50") +
+    theme_minimal() +
+    scale_fill_manual(values = colors3) +
+    scale_shape_manual(values = shapes3) +
+    theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5),
+          text = element_text(size=12)) +
+    scale_y_continuous(breaks=scales::pretty_breaks(n=8)) +
+    geom_hline(yintercept = 50, linetype = "dotted") +
+    ylab("Avg %GC") +
+    ggtitle("Iberia")
+
+rl_gc_full_data %>%
+  select(Library_ID, avg_gc_map, avg_gc_unmap) %>%
+  filter(str_detect(Library_ID, "JAE")) %>%
+  gather("GC", "Read_length", 2:ncol(.)) %>%
+  mutate(GC = fct_relevel(GC, "avg_gc_map", "avg_gc_unmap")) %>%
+  ggplot(., aes(x = Library_ID, y = Read_length, shape = GC, bg = GC)) +
+    geom_point(size = 3, color = "grey50") +
+    theme_minimal() +
+    scale_fill_manual(values = colors3) +
+    scale_shape_manual(values = shapes3) +
+    theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5),
+          text = element_text(size=12)) +
+    scale_y_continuous(breaks=scales::pretty_breaks(n=8)) +
+    geom_hline(yintercept = 50, linetype = "dotted") +
+    ylab("Avg %GC") +
+    ggtitle("Modern calculus")
+
+```
+
+
+```{r gc_subs}
+rl_gc_full_data %>%
+  select(Library_ID, Site, avg_gc_map, avg_gc_unmap) %>%
+  filter(!str_detect(Library_ID, "EXB|LIB|CSS|CSL|CSD|CSN")) %>%
+  gather("GC", "Read_length", 3:ncol(.)) %>%
+  mutate(GC = fct_relevel(GC, "avg_gc_map", "avg_gc_unmap"),
+         Library_ID= fct_relevel(Library_ID, sample_order)) %>%
+  ggplot(., aes(x = Library_ID, y = Read_length, shape = GC, bg = GC)) +
+    geom_point(size = 2, color = "grey50") +
+    theme_minimal() +
+    scale_fill_manual(values = colors3) +
+    scale_shape_manual(values = shapes3) +
+    theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5),
+          text = element_text(size=12)) +
+    scale_y_continuous(breaks=scales::pretty_breaks(n=8)) +
+    geom_hline(yintercept = 50, linetype = "dotted") +
+    ylab("Avg %GC") +
+  facet_wrap(~GC, nrow = 1)
+  
+rl_gc_full_data %>%
+  select(Library_ID, avg_gc_map, avg_gc_unmap) %>%
+  filter(!str_detect(Library_ID, "EXB|LIB|CSS|CSL|CSD|CSN")) %>%
+  gather("GC", "Read_length", 2:ncol(.)) %>%
+  filter(GC == "avg_gc_map") %>%  
+  mutate(Library_ID= fct_relevel(Library_ID, sample_order)) %>%
+  ggplot(., aes(x = Library_ID, y = Read_length, shape = GC, bg = GC)) +
+    geom_point(size = 3, color = "grey50") +
+    theme_minimal() +
+    scale_fill_manual(values = colors3) +
+    scale_shape_manual(values = shapes3) +
+    theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5),
+          text = element_text(size=12)) +
+    scale_y_continuous(breaks=scales::pretty_breaks(n=8)) +
+    geom_hline(yintercept = 50, linetype = "dotted") +
+    ylab("Avg %GC")
+  
+
+rl_gc_full_data %>%
+  select(Library_ID, avg_gc_map, avg_gc_unmap) %>%
+  filter(!str_detect(Library_ID, "EXB|LIB|CSS|CSL|CSD|CSN")) %>%
+  gather("GC", "Read_length", 2:ncol(.)) %>%
+  filter(GC == "avg_gc_unmap") %>%  
+  mutate(Library_ID= fct_relevel(Library_ID, sample_order)) %>%
+  ggplot(., aes(x = Library_ID, y = Read_length, shape = GC, bg = GC)) +
+    geom_point(size = 3, color = "grey50") +
+    theme_minimal() +
+    scale_fill_manual(values = colors3[2]) +
+    scale_shape_manual(values = shapes3[2]) +
+    theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5),
+          text = element_text(size=12)) +
+    scale_y_continuous(breaks=scales::pretty_breaks(n=8)) +
+    geom_hline(yintercept = 50, linetype = "dotted") +
+    ylab("Avg %GC")
+
+
+```
+
+```{r}
+rl_gc_full_data %>%
+  select(-Site) %>%
+  inner_join(., full_metadata %>%
+               select(Library_ID, Site, Region, Time_period), by = "Library_ID") %>%
+  ggplot(., aes(x = avg_rl_map, y = avg_gc_map, shape = Site, color = Site)) +
+    geom_point(size = 2) +
+    theme_minimal() +
+    scale_color_manual(values = Site_colors) +
+    scale_shape_manual(values = Site_shapes) +
+    theme(axis.text.x = element_text(angle = 0, hjust = 0.5, vjust = 0.5),
+          text = element_text(size=12)) +
+    scale_y_continuous(breaks=scales::pretty_breaks(n=8)) +
+    # geom_hline(yintercept = 50, linetype = "dotted") +
+    ylab("Avg %GC") +
+    xlab("Avg read length (bp)")
+
+rl_gc_full_data %>%
+  select(-Site) %>%
+  inner_join(., full_metadata %>%
+               select(Library_ID, Site, Region, Time_period), by = "Library_ID") %>%
+  ggplot(., aes(x = avg_rl_unmap, y = avg_gc_unmap, shape = Site, color = Site)) +
+    geom_point(size = 2) +
+    theme_minimal() +
+    scale_color_manual(values = Site_colors) +
+    scale_shape_manual(values = Site_shapes) +
+    theme(axis.text.x = element_text(angle = 0, hjust = 0.5, vjust = 0.5),
+          text = element_text(size=12)) +
+    scale_y_continuous(breaks=scales::pretty_breaks(n=8)) +
+    # geom_hline(yintercept = 50, linetype = "dotted") +
+    ylab("Avg %GC") +
+    xlab("Avg read length (bp)")
+
+
+```
+
+
+Summary box plots
+```{r gc_box}
+rl_gc_full_data %>%
+  select(Library_ID, Site, avg_gc_map, avg_gc_unmap) %>%
+  filter(!str_detect(Library_ID, "EXB|LIB|CSS|CSL|CSD|CSN")) %>%
+  gather("GC", "Read_counts", 3:ncol(.)) %>%
+  mutate(GC = fct_relevel(GC, "avg_gc_map", "avg_gc_unmap"),
+         Site = fct_relevel(Site, "Jaen","Middenbeemster","CMB","Radcliffe","Kilteasheen","ELR","IVE")) %>%
+  ggplot(., aes(x = Site, y = Read_counts, fill = GC)) +
+    geom_boxplot() +
+    geom_jitter(alpha = 0.3, position = position_jitterdodge(jitter.width = 0.25), size = 1) +
+    theme_minimal() +
+    scale_fill_manual(values = colors3) +
+    theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5),
+          text = element_text(size=12)) +
+    scale_y_continuous(breaks=scales::pretty_breaks(n=8)) +
+    geom_hline(yintercept = 50, linetype = "dotted") +
+    ylab("Avg. %GC")
+
+```
+
+
+# 10M subsampled data set
+## Average Read Length
+```{r rl_groups}
+rl_gc_all_data %>%
+  select(Library_ID, avg_rl_map_10M, avg_rl_unmap_10M) %>%
+  filter(str_detect(Library_ID, "CMB|MID")) %>%
+  gather("Mapping", "Read_length", 2:ncol(.)) %>%
+  mutate(Mapping = fct_relevel(Mapping, "avg_rl_map_10M", "avg_rl_unmap_10M")) %>%
+  ggplot(., aes(x = Library_ID, y = Read_length, shape = Mapping, bg = Mapping)) +
+    geom_point(size = 3, color = "grey50") +
+    theme_minimal() +
+    scale_fill_manual(values = colors3) +
+    scale_shape_manual(values = shapes3) +
+    theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5),
+          text = element_text(size=12)) +
+    scale_y_continuous(breaks=scales::pretty_breaks(n=8)) +
+    geom_hline(yintercept = 50, linetype = "dotted") +
+    ylab("Avg. read length (bp)") +
+    ggtitle("MID/CMB")
+  
+rl_gc_all_data %>%
+  select(Library_ID, avg_rl_map_10M, avg_rl_unmap_10M) %>%
+  filter(str_detect(Library_ID, "CS")) %>%
+  filter(!str_detect(Library_ID, "L|D|N|SS")) %>%
+  gather("Mapping", "Read_length", 2:ncol(.)) %>%
+  mutate(Mapping = fct_relevel(Mapping, "avg_rl_map_10M", "avg_rl_unmap_10M")) %>%
+  ggplot(., aes(x = Library_ID, y = Read_length, shape = Mapping, bg = Mapping)) +
+    geom_point(size = 3, color = "grey50") +
+    theme_minimal() +
+    scale_fill_manual(values = colors3) +
+    scale_shape_manual(values = shapes3) +
+    theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5),
+          text = element_text(size=12)) +
+    scale_y_continuous(breaks=scales::pretty_breaks(n=8)) +
+    geom_hline(yintercept = 50, linetype = "dotted") +
+    ylab("Avg. read length (bp)") +
+    ggtitle("Radcliffe")
+
+rl_gc_all_data %>%
+  select(Library_ID, avg_rl_map_10M, avg_rl_unmap_10M) %>%
+  filter(str_detect(Library_ID, "KT")) %>%
+  gather("Mapping", "Read_length", 2:ncol(.)) %>%
+  mutate(Mapping = fct_relevel(Mapping, "avg_rl_map_10M", "avg_rl_unmap_10M")) %>%
+  ggplot(., aes(x = Library_ID, y = Read_length, shape = Mapping, bg = Mapping)) +
+    geom_point(size = 3, color = "grey50") +
+    theme_minimal() +
+    scale_fill_manual(values = colors3) +
+    scale_shape_manual(values = shapes3) +
+    theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5),
+          text = element_text(size=12)) +
+    scale_y_continuous(breaks=scales::pretty_breaks(n=8)) +
+    geom_hline(yintercept = 50, linetype = "dotted") +
+    ylab("Avg. read length (bp)") +
+    ggtitle("Kilteasheen")
+
+rl_gc_all_data %>%
+  select(Library_ID, avg_rl_map_10M, avg_rl_unmap_10M) %>%
+  filter(str_detect(Library_ID, "ELR|IVE")) %>%
+  gather("Mapping", "Read_length", 2:ncol(.)) %>%
+  mutate(Mapping = fct_relevel(Mapping, "avg_rl_map_10M", "avg_rl_unmap_10M")) %>%
+  ggplot(., aes(x = Library_ID, y = Read_length, shape = Mapping, bg = Mapping)) +
+    geom_point(size = 3, color = "grey50") +
+    theme_minimal() +
+    scale_fill_manual(values = colors3) +
+    scale_shape_manual(values = shapes3) +
+    theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5),
+          text = element_text(size=12)) +
+    scale_y_continuous(breaks=scales::pretty_breaks(n=8)) +
+    geom_hline(yintercept = 50, linetype = "dotted") +
+    ylab("Avg. read length (bp)") +
+    ggtitle("Iberia")
+
+rl_gc_all_data %>%
+  select(Library_ID, avg_rl_map_10M, avg_rl_unmap_10M) %>%
+  filter(str_detect(Library_ID, "JAE")) %>%
+  gather("Mapping", "Read_length", 2:ncol(.)) %>%
+  mutate(Mapping = fct_relevel(Mapping, "avg_rl_map_10M", "avg_rl_unmap_10M")) %>%
+  ggplot(., aes(x = Library_ID, y = Read_length, shape = Mapping, bg = Mapping)) +
+    geom_point(size = 3, color = "grey50") +
+    theme_minimal() +
+    scale_fill_manual(values = colors3) +
+    scale_shape_manual(values = shapes3) +
+    theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5),
+          text = element_text(size=12)) +
+    scale_y_continuous(breaks=scales::pretty_breaks(n=8)) +
+    geom_hline(yintercept = 50, linetype = "dotted") +
+    ylab("Avg. read length (bp)") +
+    ggtitle("Modern calculus")
+
+```
+
+
+```{r rl_subs}
+rl_gc_all_data %>%
+  select(Library_ID, Site, avg_rl_map_10M, avg_rl_unmap_10M) %>%
+  filter(!str_detect(Library_ID, "EXB|LIB|CSS|CSL|CSD|CSN")) %>%
+  gather("Mapping", "Read_length", 3:ncol(.)) %>%
+  mutate(Mapping = fct_relevel(Mapping, "avg_rl_map_10M", "avg_rl_unmap_10M"),
+         Library_ID= fct_relevel(Library_ID, sample_order)) %>%
+  ggplot(., aes(x = Library_ID, y = Read_length, shape = Mapping, bg = Mapping)) +
+    geom_point(size = 2, color = "grey50") +
+    theme_minimal() +
+    scale_fill_manual(values = colors3) +
+    scale_shape_manual(values = shapes3) +
+    theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5),
+          text = element_text(size=12)) +
+    scale_y_continuous(breaks=scales::pretty_breaks(n=8)) +
+    geom_hline(yintercept = 50, linetype = "dotted") +
+    ylab("Avg. read length (bp)") +
+  facet_wrap(~Mapping, nrow = 1)
+  
+rl_gc_all_data %>%
+  select(Library_ID, avg_rl_map_10M, avg_rl_unmap_10M) %>%
+  filter(!str_detect(Library_ID, "EXB|LIB|CSS|CSL|CSD|CSN")) %>%
+  gather("Mapping", "Read_length", 2:ncol(.)) %>%
+  filter(Mapping == "avg_rl_map_10M") %>%  
+  mutate(Library_ID= fct_relevel(Library_ID, sample_order)) %>%
+  ggplot(., aes(x = Library_ID, y = Read_length, shape = Mapping, bg = Mapping)) +
+    geom_point(size = 3, color = "grey50") +
+    theme_minimal() +
+    scale_fill_manual(values = colors3) +
+    scale_shape_manual(values = shapes3) +
+    theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5),
+          text = element_text(size=12)) +
+    scale_y_continuous(breaks=scales::pretty_breaks(n=8)) +
+    geom_hline(yintercept = 50, linetype = "dotted") +
+    ylab("Avg. read length (bp)")
+  
+
+rl_gc_all_data %>%
+  select(Library_ID, avg_rl_map_10M, avg_rl_unmap_10M) %>%
+  filter(!str_detect(Library_ID, "EXB|LIB|CSS|CSL|CSD|CSN")) %>%
+  gather("Mapping", "Read_length", 2:ncol(.)) %>%
+  filter(Mapping == "avg_rl_unmap_10M") %>%  
+  mutate(Library_ID= fct_relevel(Library_ID, sample_order)) %>%
+  ggplot(., aes(x = Library_ID, y = Read_length, shape = Mapping, bg = Mapping)) +
+    geom_point(size = 3, color = "grey50") +
+    theme_minimal() +
+    scale_fill_manual(values = colors3[2]) +
+    scale_shape_manual(values = shapes3[2]) +
+    theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5),
+          text = element_text(size=12)) +
+    scale_y_continuous(breaks=scales::pretty_breaks(n=8)) +
+    geom_hline(yintercept = 50, linetype = "dotted") +
+    ylab("Avg. read length (bp)")
+
+
+```
+
+Summary box plots
+```{r rl_box}
+rl_gc_all_data %>%
+  select(Library_ID, Site, avg_rl_map_10M, avg_rl_unmap_10M) %>%
+  filter(!str_detect(Library_ID, "EXB|LIB|CSS|CSL|CSD|CSN")) %>%
+  gather("Mapping", "Read_counts", 3:ncol(.)) %>%
+  mutate(Mapping = fct_relevel(Mapping, "avg_rl_map_10M", "avg_rl_unmap_10M"),
+         Site = fct_relevel(Site, "JAE","MID","CMB","Radcliffe","Kilteasheen","ELR","IVE")) %>%
+  ggplot(., aes(x = Site, y = Read_counts, fill = Mapping)) +
+    geom_boxplot() +
+    geom_jitter(alpha = 0.3, position = position_jitterdodge(jitter.width = 0.1), size = 1) +
+    theme_minimal() +
+    scale_fill_manual(values = colors3) +
+    theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5),
+          text = element_text(size=12)) +
+    scale_y_continuous(breaks=scales::pretty_breaks(n=8)) +
+    geom_hline(yintercept = 50, linetype = "dotted") +
+    ylab("Avg. read length (bp)")
+
+```
+
+## Average %GC 
+```{r gc_groups}
+rl_gc_all_data %>%
+  select(Library_ID, avg_gc_map_10M, avg_gc_unmap_10M) %>%
+  filter(str_detect(Library_ID, "CMB|MID")) %>%
+  gather("GC", "Read_length", 2:ncol(.)) %>%
+  mutate(GC = fct_relevel(GC, "avg_gc_map_10M", "avg_gc_unmap_10M")) %>%
+  ggplot(., aes(x = Library_ID, y = Read_length, shape = GC, bg = GC)) +
+    geom_point(size = 3, color = "grey50") +
+    theme_minimal() +
+    scale_fill_manual(values = colors3) +
+    scale_shape_manual(values = shapes3) +
+    theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5),
+          text = element_text(size=12)) +
+    scale_y_continuous(breaks=scales::pretty_breaks(n=8)) +
+    geom_hline(yintercept = 50, linetype = "dotted") +
+    ylab("Avg %GC") +
+    ggtitle("MID/CMB")
+  
+rl_gc_all_data %>%
+  select(Library_ID, avg_gc_map_10M, avg_gc_unmap_10M) %>%
+  filter(str_detect(Library_ID, "CS")) %>%
+  filter(!str_detect(Library_ID, "L|D|N|SS")) %>%
+  gather("GC", "Read_length", 2:ncol(.)) %>%
+  mutate(GC = fct_relevel(GC, "avg_gc_map_10M", "avg_gc_unmap_10M")) %>%
+  ggplot(., aes(x = Library_ID, y = Read_length, shape = GC, bg = GC)) +
+    geom_point(size = 3, color = "grey50") +
+    theme_minimal() +
+    scale_fill_manual(values = colors3) +
+    scale_shape_manual(values = shapes3) +
+    theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5),
+          text = element_text(size=12)) +
+    scale_y_continuous(breaks=scales::pretty_breaks(n=8)) +
+    geom_hline(yintercept = 50, linetype = "dotted") +
+    ylab("Avg %GC") +
+    ggtitle("Radcliffe")
+
+rl_gc_all_data %>%
+  select(Library_ID, avg_gc_map_10M, avg_gc_unmap_10M) %>%
+  filter(str_detect(Library_ID, "KT")) %>%
+  gather("GC", "Read_length", 2:ncol(.)) %>%
+  mutate(GC = fct_relevel(GC, "avg_gc_map_10M", "avg_gc_unmap_10M")) %>%
+  ggplot(., aes(x = Library_ID, y = Read_length, shape = GC, bg = GC)) +
+    geom_point(size = 3, color = "grey50") +
+    theme_minimal() +
+    scale_fill_manual(values = colors3) +
+    scale_shape_manual(values = shapes3) +
+    theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5),
+          text = element_text(size=12)) +
+    scale_y_continuous(breaks=scales::pretty_breaks(n=8)) +
+    geom_hline(yintercept = 50, linetype = "dotted") +
+    ylab("Avg %GC") +
+    ggtitle("Kilteasheen")
+
+rl_gc_all_data %>%
+  select(Library_ID, avg_gc_map_10M, avg_gc_unmap_10M) %>%
+  filter(str_detect(Library_ID, "ELR|IVE")) %>%
+  gather("GC", "Read_length", 2:ncol(.)) %>%
+  mutate(GC = fct_relevel(GC, "avg_gc_map_10M", "avg_gc_unmap_10M")) %>%
+  ggplot(., aes(x = Library_ID, y = Read_length, shape = GC, bg = GC)) +
+    geom_point(size = 3, color = "grey50") +
+    theme_minimal() +
+    scale_fill_manual(values = colors3) +
+    scale_shape_manual(values = shapes3) +
+    theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5),
+          text = element_text(size=12)) +
+    scale_y_continuous(breaks=scales::pretty_breaks(n=8)) +
+    geom_hline(yintercept = 50, linetype = "dotted") +
+    ylab("Avg %GC") +
+    ggtitle("Iberia")
+
+rl_gc_all_data %>%
+  select(Library_ID, avg_gc_map_10M, avg_gc_unmap_10M) %>%
+  filter(str_detect(Library_ID, "JAE")) %>%
+  gather("GC", "Read_length", 2:ncol(.)) %>%
+  mutate(GC = fct_relevel(GC, "avg_gc_map_10M", "avg_gc_unmap_10M")) %>%
+  ggplot(., aes(x = Library_ID, y = Read_length, shape = GC, bg = GC)) +
+    geom_point(size = 3, color = "grey50") +
+    theme_minimal() +
+    scale_fill_manual(values = colors3) +
+    scale_shape_manual(values = shapes3) +
+    theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5),
+          text = element_text(size=12)) +
+    scale_y_continuous(breaks=scales::pretty_breaks(n=8)) +
+    geom_hline(yintercept = 50, linetype = "dotted") +
+    ylab("Avg %GC") +
+    ggtitle("Modern calculus")
+
+```
+
+
+```{r gc_subs}
+rl_gc_all_data %>%
+  select(Library_ID, Site, avg_gc_map_10M, avg_gc_unmap_10M) %>%
+  filter(!str_detect(Library_ID, "EXB|LIB|CSS|CSL|CSD|CSN")) %>%
+  gather("GC", "Read_length", 3:ncol(.)) %>%
+  mutate(GC = fct_relevel(GC, "avg_gc_map_10M", "avg_gc_unmap_10M"),
+         Library_ID= fct_relevel(Library_ID, sample_order)) %>%
+  ggplot(., aes(x = Library_ID, y = Read_length, shape = GC, bg = GC)) +
+    geom_point(size = 2, color = "grey50") +
+    theme_minimal() +
+    scale_fill_manual(values = colors3) +
+    scale_shape_manual(values = shapes3) +
+    theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5),
+          text = element_text(size=12)) +
+    scale_y_continuous(breaks=scales::pretty_breaks(n=8)) +
+    geom_hline(yintercept = 50, linetype = "dotted") +
+    ylab("Avg %GC") +
+  facet_wrap(~GC, nrow = 1)
+  
+rl_gc_all_data %>%
+  select(Library_ID, avg_gc_map_10M, avg_gc_unmap_10M) %>%
+  filter(!str_detect(Library_ID, "EXB|LIB|CSS|CSL|CSD|CSN")) %>%
+  gather("GC", "Read_length", 2:ncol(.)) %>%
+  filter(GC == "avg_gc_map_10M") %>%  
+  mutate(Library_ID= fct_relevel(Library_ID, sample_order)) %>%
+  ggplot(., aes(x = Library_ID, y = Read_length, shape = GC, bg = GC)) +
+    geom_point(size = 3, color = "grey50") +
+    theme_minimal() +
+    scale_fill_manual(values = colors3) +
+    scale_shape_manual(values = shapes3) +
+    theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5),
+          text = element_text(size=12)) +
+    scale_y_continuous(breaks=scales::pretty_breaks(n=8)) +
+    geom_hline(yintercept = 50, linetype = "dotted") +
+    ylab("Avg %GC")
+  
+
+rl_gc_all_data %>%
+  select(Library_ID, avg_gc_map_10M, avg_gc_unmap_10M) %>%
+  filter(!str_detect(Library_ID, "EXB|LIB|CSS|CSL|CSD|CSN")) %>%
+  gather("GC", "Read_length", 2:ncol(.)) %>%
+  filter(GC == "avg_gc_unmap_10M") %>%  
+  mutate(Library_ID= fct_relevel(Library_ID, sample_order)) %>%
+  ggplot(., aes(x = Library_ID, y = Read_length, shape = GC, bg = GC)) +
+    geom_point(size = 3, color = "grey50") +
+    theme_minimal() +
+    scale_fill_manual(values = colors3[2]) +
+    scale_shape_manual(values = shapes3[2]) +
+    theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5),
+          text = element_text(size=12)) +
+    scale_y_continuous(breaks=scales::pretty_breaks(n=8)) +
+    geom_hline(yintercept = 50, linetype = "dotted") +
+    ylab("Avg %GC")
+
+
+```
+
+Summary box plots
+```{r gc_box}
+rl_gc_all_data %>%
+  select(Library_ID, Site, avg_gc_map_10M, avg_gc_unmap_10M) %>%
+  filter(!str_detect(Library_ID, "EXB|LIB|CSS|CSL|CSD|CSN")) %>%
+  gather("GC", "Read_counts", 3:ncol(.)) %>%
+  mutate(GC = fct_relevel(GC, "avg_gc_map_10M", "avg_gc_unmap_10M"),
+         Site = fct_relevel(Site, "Jaen","Middenbeemster","CMB","Radcliffe","Kilteasheen","ELR","IVE")) %>%
+  ggplot(., aes(x = Site, y = Read_counts, fill = GC)) +
+    geom_boxplot() +
+    geom_jitter(alpha = 0.3, position = position_jitterdodge(jitter.width = 0.25), size = 1) +
+    theme_minimal() +
+    scale_fill_manual(values = colors3) +
+    theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5),
+          text = element_text(size=12)) +
+    scale_y_continuous(breaks=scales::pretty_breaks(n=8)) +
+    geom_hline(yintercept = 50, linetype = "dotted") +
+    ylab("Avg. %GC")
+
+```
+
+# 75bp subsampled data set
+## Average Read Length
+```{r rl_groups}
+rl_gc_all_data %>%
+  select(Library_ID, avg_rl_map_75bp, avg_rl_unmap_75bp) %>%
+  filter(str_detect(Library_ID, "CMB|MID")) %>%
+  gather("Mapping", "Read_length", 2:ncol(.)) %>%
+  mutate(Mapping = fct_relevel(Mapping, "avg_rl_map_75bp", "avg_rl_unmap_75bp")) %>%
+  ggplot(., aes(x = Library_ID, y = Read_length, shape = Mapping, bg = Mapping)) +
+    geom_point(size = 3, color = "grey50") +
+    theme_minimal() +
+    scale_fill_manual(values = colors3) +
+    scale_shape_manual(values = shapes3) +
+    theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5),
+          text = element_text(size=12)) +
+    scale_y_continuous(breaks=scales::pretty_breaks(n=8)) +
+    geom_hline(yintercept = 50, linetype = "dotted") +
+    ylab("Avg. read length (bp)") +
+    ggtitle("MID/CMB")
+  
+rl_gc_all_data %>%
+  select(Library_ID, avg_rl_map_75bp, avg_rl_unmap_75bp) %>%
+  filter(str_detect(Library_ID, "CS")) %>%
+  filter(!str_detect(Library_ID, "L|D|N|SS")) %>%
+  gather("Mapping", "Read_length", 2:ncol(.)) %>%
+  mutate(Mapping = fct_relevel(Mapping, "avg_rl_map_75bp", "avg_rl_unmap_75bp")) %>%
+  ggplot(., aes(x = Library_ID, y = Read_length, shape = Mapping, bg = Mapping)) +
+    geom_point(size = 3, color = "grey50") +
+    theme_minimal() +
+    scale_fill_manual(values = colors3) +
+    scale_shape_manual(values = shapes3) +
+    theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5),
+          text = element_text(size=12)) +
+    scale_y_continuous(breaks=scales::pretty_breaks(n=8)) +
+    geom_hline(yintercept = 50, linetype = "dotted") +
+    ylab("Avg. read length (bp)") +
+    ggtitle("Radcliffe")
+
+rl_gc_all_data %>%
+  select(Library_ID, avg_rl_map_75bp, avg_rl_unmap_75bp) %>%
+  filter(str_detect(Library_ID, "KT")) %>%
+  gather("Mapping", "Read_length", 2:ncol(.)) %>%
+  mutate(Mapping = fct_relevel(Mapping, "avg_rl_map_75bp", "avg_rl_unmap_75bp")) %>%
+  ggplot(., aes(x = Library_ID, y = Read_length, shape = Mapping, bg = Mapping)) +
+    geom_point(size = 3, color = "grey50") +
+    theme_minimal() +
+    scale_fill_manual(values = colors3) +
+    scale_shape_manual(values = shapes3) +
+    theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5),
+          text = element_text(size=12)) +
+    scale_y_continuous(breaks=scales::pretty_breaks(n=8)) +
+    geom_hline(yintercept = 50, linetype = "dotted") +
+    ylab("Avg. read length (bp)") +
+    ggtitle("Kilteasheen")
+
+rl_gc_all_data %>%
+  select(Library_ID, avg_rl_map_75bp, avg_rl_unmap_75bp) %>%
+  filter(str_detect(Library_ID, "ELR|IVE")) %>%
+  gather("Mapping", "Read_length", 2:ncol(.)) %>%
+  mutate(Mapping = fct_relevel(Mapping, "avg_rl_map_75bp", "avg_rl_unmap_75bp")) %>%
+  ggplot(., aes(x = Library_ID, y = Read_length, shape = Mapping, bg = Mapping)) +
+    geom_point(size = 3, color = "grey50") +
+    theme_minimal() +
+    scale_fill_manual(values = colors3) +
+    scale_shape_manual(values = shapes3) +
+    theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5),
+          text = element_text(size=12)) +
+    scale_y_continuous(breaks=scales::pretty_breaks(n=8)) +
+    geom_hline(yintercept = 50, linetype = "dotted") +
+    ylab("Avg. read length (bp)") +
+    ggtitle("Iberia")
+
+rl_gc_all_data %>%
+  select(Library_ID, avg_rl_map_75bp, avg_rl_unmap_75bp) %>%
+  filter(str_detect(Library_ID, "JAE")) %>%
+  gather("Mapping", "Read_length", 2:ncol(.)) %>%
+  mutate(Mapping = fct_relevel(Mapping, "avg_rl_map_75bp", "avg_rl_unmap_75bp")) %>%
+  ggplot(., aes(x = Library_ID, y = Read_length, shape = Mapping, bg = Mapping)) +
+    geom_point(size = 3, color = "grey50") +
+    theme_minimal() +
+    scale_fill_manual(values = colors3) +
+    scale_shape_manual(values = shapes3) +
+    theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5),
+          text = element_text(size=12)) +
+    scale_y_continuous(breaks=scales::pretty_breaks(n=8)) +
+    geom_hline(yintercept = 50, linetype = "dotted") +
+    ylab("Avg. read length (bp)") +
+    ggtitle("Modern calculus")
+
+```
+
+
+```{r rl_subs}
+rl_gc_all_data %>%
+  select(Library_ID, Site, avg_rl_map_75bp, avg_rl_unmap_75bp) %>%
+  filter(!str_detect(Library_ID, "EXB|LIB|CSS|CSL|CSD|CSN")) %>%
+  gather("Mapping", "Read_length", 3:ncol(.)) %>%
+  mutate(Mapping = fct_relevel(Mapping, "avg_rl_map_75bp", "avg_rl_unmap_75bp"),
+         Library_ID= fct_relevel(Library_ID, sample_order)) %>%
+  ggplot(., aes(x = Library_ID, y = Read_length, shape = Mapping, bg = Mapping)) +
+    geom_point(size = 2, color = "grey50") +
+    theme_minimal() +
+    scale_fill_manual(values = colors3) +
+    scale_shape_manual(values = shapes3) +
+    theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5),
+          text = element_text(size=12)) +
+    scale_y_continuous(breaks=scales::pretty_breaks(n=8)) +
+    geom_hline(yintercept = 50, linetype = "dotted") +
+    ylab("Avg. read length (bp)") +
+  facet_wrap(~Mapping, nrow = 1)
+  
+rl_gc_all_data %>%
+  select(Library_ID, avg_rl_map_75bp, avg_rl_unmap_75bp) %>%
+  filter(!str_detect(Library_ID, "EXB|LIB|CSS|CSL|CSD|CSN")) %>%
+  gather("Mapping", "Read_length", 2:ncol(.)) %>%
+  filter(Mapping == "avg_rl_map_75bp") %>%  
+  mutate(Library_ID= fct_relevel(Library_ID, sample_order)) %>%
+  ggplot(., aes(x = Library_ID, y = Read_length, shape = Mapping, bg = Mapping)) +
+    geom_point(size = 3, color = "grey50") +
+    theme_minimal() +
+    scale_fill_manual(values = colors3) +
+    scale_shape_manual(values = shapes3) +
+    theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5),
+          text = element_text(size=12)) +
+    scale_y_continuous(breaks=scales::pretty_breaks(n=8)) +
+    geom_hline(yintercept = 50, linetype = "dotted") +
+    ylab("Avg. read length (bp)")
+  
+
+rl_gc_all_data %>%
+  select(Library_ID, avg_rl_map_75bp, avg_rl_unmap_75bp) %>%
+  filter(!str_detect(Library_ID, "EXB|LIB|CSS|CSL|CSD|CSN")) %>%
+  gather("Mapping", "Read_length", 2:ncol(.)) %>%
+  filter(Mapping == "avg_rl_unmap_75bp") %>%  
+  mutate(Library_ID= fct_relevel(Library_ID, sample_order)) %>%
+  ggplot(., aes(x = Library_ID, y = Read_length, shape = Mapping, bg = Mapping)) +
+    geom_point(size = 3, color = "grey50") +
+    theme_minimal() +
+    scale_fill_manual(values = colors3[2]) +
+    scale_shape_manual(values = shapes3[2]) +
+    theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5),
+          text = element_text(size=12)) +
+    scale_y_continuous(breaks=scales::pretty_breaks(n=8)) +
+    geom_hline(yintercept = 50, linetype = "dotted") +
+    ylab("Avg. read length (bp)")
+
+
+```
+
+Summary box plots
+```{r rl_box}
+rl_gc_all_data %>%
+  select(Library_ID, Site, avg_rl_map_75bp, avg_rl_unmap_75bp) %>%
+  filter(!str_detect(Library_ID, "EXB|LIB|CSS|CSL|CSD|CSN")) %>%
+  gather("Mapping", "Read_counts", 3:ncol(.)) %>%
+  mutate(Mapping = fct_relevel(Mapping, "avg_rl_map_75bp", "avg_rl_unmap_75bp"),
+         Site = fct_relevel(Site, "Jaen","Middenbeemster","CMB","Radcliffe","Kilteasheen","ELR","IVE")) %>%
+  ggplot(., aes(x = Site, y = Read_counts, fill = Mapping)) +
+    geom_boxplot() +
+    geom_jitter(alpha = 0.3, position = position_jitterdodge(jitter.width = 0.1), size = 1) +
+    theme_minimal() +
+    scale_fill_manual(values = colors3) +
+    theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5),
+          text = element_text(size=12)) +
+    scale_y_continuous(breaks=scales::pretty_breaks(n=8)) +
+    geom_hline(yintercept = 50, linetype = "dotted") +
+    ylab("Avg. read length (bp)")
+
+```
+
+## Average %GC 
+```{r gc_groups}
+rl_gc_all_data %>%
+  select(Library_ID, avg_gc_map_75bp, avg_gc_unmap_75bp) %>%
+  filter(str_detect(Library_ID, "CMB|MID")) %>%
+  gather("GC", "Read_length", 2:ncol(.)) %>%
+  mutate(GC = fct_relevel(GC, "avg_gc_map_75bp", "avg_gc_unmap_75bp")) %>%
+  ggplot(., aes(x = Library_ID, y = Read_length, shape = GC, bg = GC)) +
+    geom_point(size = 3, color = "grey50") +
+    theme_minimal() +
+    scale_fill_manual(values = colors3) +
+    scale_shape_manual(values = shapes3) +
+    theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5),
+          text = element_text(size=12)) +
+    scale_y_continuous(breaks=scales::pretty_breaks(n=8)) +
+    geom_hline(yintercept = 50, linetype = "dotted") +
+    ylab("Avg %GC") +
+    ggtitle("MID/CMB")
+  
+rl_gc_all_data %>%
+  select(Library_ID, avg_gc_map_75bp, avg_gc_unmap_75bp) %>%
+  filter(str_detect(Library_ID, "CS")) %>%
+  filter(!str_detect(Library_ID, "L|D|N|SS")) %>%
+  gather("GC", "Read_length", 2:ncol(.)) %>%
+  mutate(GC = fct_relevel(GC, "avg_gc_map_75bp", "avg_gc_unmap_75bp")) %>%
+  ggplot(., aes(x = Library_ID, y = Read_length, shape = GC, bg = GC)) +
+    geom_point(size = 3, color = "grey50") +
+    theme_minimal() +
+    scale_fill_manual(values = colors3) +
+    scale_shape_manual(values = shapes3) +
+    theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5),
+          text = element_text(size=12)) +
+    scale_y_continuous(breaks=scales::pretty_breaks(n=8)) +
+    geom_hline(yintercept = 50, linetype = "dotted") +
+    ylab("Avg %GC") +
+    ggtitle("Radcliffe")
+
+rl_gc_all_data %>%
+  select(Library_ID, avg_gc_map_75bp, avg_gc_unmap_75bp) %>%
+  filter(str_detect(Library_ID, "KT")) %>%
+  gather("GC", "Read_length", 2:ncol(.)) %>%
+  mutate(GC = fct_relevel(GC, "avg_gc_map_75bp", "avg_gc_unmap_75bp")) %>%
+  ggplot(., aes(x = Library_ID, y = Read_length, shape = GC, bg = GC)) +
+    geom_point(size = 3, color = "grey50") +
+    theme_minimal() +
+    scale_fill_manual(values = colors3) +
+    scale_shape_manual(values = shapes3) +
+    theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5),
+          text = element_text(size=12)) +
+    scale_y_continuous(breaks=scales::pretty_breaks(n=8)) +
+    geom_hline(yintercept = 50, linetype = "dotted") +
+    ylab("Avg %GC") +
+    ggtitle("Kilteasheen")
+
+rl_gc_all_data %>%
+  select(Library_ID, avg_gc_map_75bp, avg_gc_unmap_75bp) %>%
+  filter(str_detect(Library_ID, "ELR|IVE")) %>%
+  gather("GC", "Read_length", 2:ncol(.)) %>%
+  mutate(GC = fct_relevel(GC, "avg_gc_map_75bp", "avg_gc_unmap_75bp")) %>%
+  ggplot(., aes(x = Library_ID, y = Read_length, shape = GC, bg = GC)) +
+    geom_point(size = 3, color = "grey50") +
+    theme_minimal() +
+    scale_fill_manual(values = colors3) +
+    scale_shape_manual(values = shapes3) +
+    theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5),
+          text = element_text(size=12)) +
+    scale_y_continuous(breaks=scales::pretty_breaks(n=8)) +
+    geom_hline(yintercept = 50, linetype = "dotted") +
+    ylab("Avg %GC") +
+    ggtitle("Iberia")
+
+rl_gc_all_data %>%
+  select(Library_ID, avg_gc_map_75bp, avg_gc_unmap_75bp) %>%
+  filter(str_detect(Library_ID, "JAE")) %>%
+  gather("GC", "Read_length", 2:ncol(.)) %>%
+  mutate(GC = fct_relevel(GC, "avg_gc_map_75bp", "avg_gc_unmap_75bp")) %>%
+  ggplot(., aes(x = Library_ID, y = Read_length, shape = GC, bg = GC)) +
+    geom_point(size = 3, color = "grey50") +
+    theme_minimal() +
+    scale_fill_manual(values = colors3) +
+    scale_shape_manual(values = shapes3) +
+    theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5),
+          text = element_text(size=12)) +
+    scale_y_continuous(breaks=scales::pretty_breaks(n=8)) +
+    geom_hline(yintercept = 50, linetype = "dotted") +
+    ylab("Avg %GC") +
+    ggtitle("Modern calculus")
+
+```
+
+
+```{r gc_subs}
+rl_gc_all_data %>%
+  select(Library_ID, Site, avg_gc_map_75bp, avg_gc_unmap_75bp) %>%
+  filter(!str_detect(Library_ID, "EXB|LIB|CSS|CSL|CSD|CSN")) %>%
+  gather("GC", "Read_length", 3:ncol(.)) %>%
+  mutate(GC = fct_relevel(GC, "avg_gc_map_75bp", "avg_gc_unmap_75bp"),
+         Library_ID= fct_relevel(Library_ID, sample_order)) %>%
+  ggplot(., aes(x = Library_ID, y = Read_length, shape = GC, bg = GC)) +
+    geom_point(size = 2, color = "grey50") +
+    theme_minimal() +
+    scale_fill_manual(values = colors3) +
+    scale_shape_manual(values = shapes3) +
+    theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5),
+          text = element_text(size=12)) +
+    scale_y_continuous(breaks=scales::pretty_breaks(n=8)) +
+    geom_hline(yintercept = 50, linetype = "dotted") +
+    ylab("Avg %GC") +
+  facet_wrap(~GC, nrow = 1)
+  
+rl_gc_all_data %>%
+  select(Library_ID, avg_gc_map_75bp, avg_gc_unmap_75bp) %>%
+  filter(!str_detect(Library_ID, "EXB|LIB|CSS|CSL|CSD|CSN")) %>%
+  gather("GC", "Read_length", 2:ncol(.)) %>%
+  filter(GC == "avg_gc_map_75bp") %>%  
+  mutate(Library_ID= fct_relevel(Library_ID, sample_order)) %>%
+  ggplot(., aes(x = Library_ID, y = Read_length, shape = GC, bg = GC)) +
+    geom_point(size = 3, color = "grey50") +
+    theme_minimal() +
+    scale_fill_manual(values = colors3) +
+    scale_shape_manual(values = shapes3) +
+    theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5),
+          text = element_text(size=12)) +
+    scale_y_continuous(breaks=scales::pretty_breaks(n=8)) +
+    geom_hline(yintercept = 50, linetype = "dotted") +
+    ylab("Avg %GC")
+  
+
+rl_gc_all_data %>%
+  select(Library_ID, avg_gc_map_75bp, avg_gc_unmap_75bp) %>%
+  filter(!str_detect(Library_ID, "EXB|LIB|CSS|CSL|CSD|CSN")) %>%
+  gather("GC", "Read_length", 2:ncol(.)) %>%
+  filter(GC == "avg_gc_unmap_75bp") %>%  
+  mutate(Library_ID= fct_relevel(Library_ID, sample_order)) %>%
+  ggplot(., aes(x = Library_ID, y = Read_length, shape = GC, bg = GC)) +
+    geom_point(size = 3, color = "grey50") +
+    theme_minimal() +
+    scale_fill_manual(values = colors3[2]) +
+    scale_shape_manual(values = shapes3[2]) +
+    theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5),
+          text = element_text(size=12)) +
+    scale_y_continuous(breaks=scales::pretty_breaks(n=8)) +
+    geom_hline(yintercept = 50, linetype = "dotted") +
+    ylab("Avg %GC")
+
+
+```
+
+Summary box plots
+```{r gc_box}
+rl_gc_all_data %>%
+  select(Library_ID, Site, avg_gc_map_75bp, avg_gc_unmap_75bp) %>%
+  filter(!str_detect(Library_ID, "EXB|LIB|CSS|CSL|CSD|CSN")) %>%
+  gather("GC", "Read_counts", 3:ncol(.)) %>%
+  mutate(GC = fct_relevel(GC, "avg_gc_map_75bp", "avg_gc_unmap_75bp"),
+         Site = fct_relevel(Site, "Jaen","Middenbeemster","CMB","Radcliffe","Kilteasheen","ELR","IVE")) %>%
+  ggplot(., aes(x = Site, y = Read_counts, fill = GC)) +
+    geom_boxplot() +
+    geom_jitter(alpha = 0.3, position = position_jitterdodge(jitter.width = 0.25), size = 1) +
+    theme_minimal() +
+    scale_fill_manual(values = colors3) +
+    theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5),
+          text = element_text(size=12)) +
+    scale_y_continuous(breaks=scales::pretty_breaks(n=8)) +
+    geom_hline(yintercept = 50, linetype = "dotted") +
+    ylab("Avg. %GC")
+
+```
+
+
+
+Test for significant differences between groups?
+
+# All data groups boxplots
+Read length
+```{r rl_box}
+rl_gc_all_data %>%
+  filter(!str_detect(Library_ID, "EXB|LIB|CSS|CSL|CSD|CSN")) %>%
+  gather("Mapping", "Read_counts", 3:ncol(.)) %>%
+  filter(str_detect(Mapping, "rl")) %>%
+  mutate(Site = fct_relevel(Site, "Jaen","Middenbeemster","CMB","Radcliffe","Kilteasheen","ELR","IVE")) %>%
+  ggplot(., aes(x = Site, y = Read_counts, fill = Mapping)) +
+    geom_boxplot() +
+    geom_jitter(alpha = 0.3, position = position_jitterdodge(jitter.width = 0.1), size = 1) +
+    theme_minimal() +
+    # scale_fill_manual(values = colors3) +
+    theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5),
+          text = element_text(size=12)) +
+    scale_y_continuous(breaks=scales::pretty_breaks(n=8)) +
+    geom_hline(yintercept = 50, linetype = "dotted") +
+    ylab("Avg. read length (bp)")
+
+```
+
+GC content
+```{r gc_box}
+rl_gc_all_data %>%
+  filter(!str_detect(Library_ID, "EXB|LIB|CSS|CSL|CSD|CSN")) %>%
+  gather("GC", "Read_counts", 3:ncol(.)) %>%
+  filter(str_detect(GC, "gc")) %>%
+  mutate(Site = fct_relevel(Site, "JAE","MID","CMB","Radcliffe","Kilteasheen","ELR","IVE")) %>%
+  ggplot(., aes(x = Site, y = Read_counts, fill = GC)) +
+    geom_boxplot() +
+    geom_jitter(alpha = 0.3, position = position_jitterdodge(jitter.width = 0.25), size = 1) +
+    theme_minimal() +
+    # scale_fill_manual(values = colors3) +
+    theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5),
+          text = element_text(size=12)) +
+    scale_y_continuous(breaks=scales::pretty_breaks(n=8)) +
+    geom_hline(yintercept = 50, linetype = "dotted") +
+    ylab("Avg. %GC")
+
+```
+
+```{r}
+rl_gc_all_long_data <- rl_gc_all_data %>%
+  select(Library_ID, avg_rl_map) %>%
+  gather("Mapped","avg_rl",2:ncol(.)) %>%
+  mutate(Mapped = str_replace_all(Mapped, "avg_rl_map","mapped")) %>%
+  bind_rows(., rl_gc_all_data %>%
+            select(Library_ID, avg_rl_unmap) %>%
+            gather("Mapped","avg_rl",2:ncol(.)) %>%
+            mutate(Mapped = str_replace_all(Mapped, "avg_rl_unmap","unmapped"))) %>%
+  full_join(., rl_gc_all_data %>%
+            select(Library_ID, avg_gc_map) %>%
+            gather("Mapped","avg_gc",2:ncol(.)) %>%
+            mutate(Mapped = str_replace_all(Mapped, "avg_gc_map","mapped")) %>%
+            bind_rows(., rl_gc_all_data %>%
+                      select(Library_ID, avg_gc_unmap) %>%
+                      gather("Mapped","avg_gc",2:ncol(.)) %>%
+                      mutate(Mapped = str_replace_all(Mapped, "avg_gc_unmap","unmapped")))) %>%
+  select(Library_ID, Mapped, avg_gc, avg_rl) %>%
+  inner_join(., full_metadata %>%
+               select(Library_ID, Site), by = "Library_ID")
+
+```
+
+
+```{r}
+rl_gc_all_data %>%
+  select(-Site) %>%
+  inner_join(., full_metadata %>%
+               select(Library_ID, Site, Region, Time_period), by = "Library_ID") %>%
+  ggplot(., aes(x = avg_rl_map_10M, y = avg_gc_map_10M, shape = Site, color = Site)) +
+    geom_point(size = 2) +
+    theme_minimal() +
+    scale_color_manual(values = Site_colors) +
+    scale_shape_manual(values = Site_shapes) +
+    theme(axis.text.x = element_text(angle = 0, hjust = 0.5, vjust = 0.5),
+          text = element_text(size=12)) +
+    scale_y_continuous(breaks=scales::pretty_breaks(n=8)) +
+    # geom_hline(yintercept = 50, linetype = "dotted") +
+    ylab("Avg %GC") +
+    xlab("Avg read length (bp)") +
+    ggtitle("MALT mapped")
+
+rl_gc_all_data %>%
+  select(-Site) %>%
+  inner_join(., full_metadata %>%
+               select(Library_ID, Site, Region, Time_period), by = "Library_ID") %>%
+  ggplot(., aes(x = avg_rl_unmap_10M, y = avg_gc_unmap_10M, shape = Site, color = Site)) +
+    geom_point(size = 2) +
+    theme_minimal() +
+    scale_color_manual(values = Site_colors) +
+    scale_shape_manual(values = Site_shapes) +
+    theme(axis.text.x = element_text(angle = 0, hjust = 0.5, vjust = 0.5),
+          text = element_text(size=12)) +
+    scale_y_continuous(breaks=scales::pretty_breaks(n=8)) +
+    scale_x_continuous(breaks=scales::pretty_breaks(n=8)) +
+   # geom_hline(yintercept = 50, linetype = "dotted") +
+    ylab("Avg %GC") +
+    xlab("Avg read length (bp)") +
+    ggtitle("MALT unmapped")
+
+rl_gc_all_long_data %>%
+  filter(!str_detect(Library_ID, "JAE|IVE|ELR")) %>%
+  ggplot(., aes(x = avg_rl, y = avg_gc, shape = Mapped, color = Site)) +
+    geom_point(size = 1.5) +
+    theme_minimal() +
+    scale_color_manual(values = Site_colors) +
+    scale_shape_manual(values = c(19,13)) +
+    theme(axis.text.x = element_text(angle = 0, hjust = 0.5, vjust = 0.5),
+          text = element_text(size=12)) +
+    scale_y_continuous(breaks=scales::pretty_breaks(n=8)) +
+    scale_x_continuous(breaks=scales::pretty_breaks(n=8)) +
+    ylim(35,70) +
+    xlim(40,120) +
+   # geom_hline(yintercept = 50, linetype = "dotted") +
+    ylab("Avg %GC") +
+    xlab("Avg read length (bp)") +
+    ggtitle("Full")
+
+rl_gc_10M %>%
+  # add data from the full files that were already under 10M reads
+  bind_rows(., rl_gc_all_long_data %>%
+              filter(str_detect(Library_ID, "KT|CMB")) %>%
+              filter(!str_detect(Library_ID, "KT01")) %>%
+              select(-Site)) %>%
+  inner_join(., full_metadata %>%
+               select(Library_ID, Site), by = "Library_ID") %>%
+  mutate(Mapped = str_replace_all(Mapped, "_10M","")) %>%
+  ggplot(., aes(x = avg_rl, y = avg_gc, shape = Mapped, color = Site)) +
+    geom_point(size = 1.5) +
+    theme_minimal() +
+    scale_color_manual(values = Site_colors) +
+    scale_shape_manual(values = c(19,13)) +
+    theme(axis.text.x = element_text(angle = 0, hjust = 0.5, vjust = 0.5),
+          text = element_text(size=12)) +
+    scale_y_continuous(breaks=scales::pretty_breaks(n=8)) +
+    scale_x_continuous(breaks=scales::pretty_breaks(n=8)) +
+    ylim(35,70) +
+    xlim(40,120) +
+   # geom_hline(yintercept = 50, linetype = "dotted") +
+    ylab("Avg %GC") +
+    xlab("Avg read length (bp)") +
+    ggtitle("10M")
+
+rl_gc_75bp %>%
+  inner_join(., full_metadata %>%
+               select(Library_ID, Site), by = "Library_ID") %>%
+  ggplot(., aes(x = avg_rl, y = avg_gc, shape = Mapped, color = Site)) +
+    geom_point(size = 1.5) +
+    theme_minimal() +
+    scale_color_manual(values = Site_colors) +
+    scale_shape_manual(values = c(19,13)) +
+    theme(axis.text.x = element_text(angle = 0, hjust = 0.5, vjust = 0.5),
+          text = element_text(size=12)) +
+    scale_y_continuous(breaks=scales::pretty_breaks(n=8)) +
+    scale_x_continuous(breaks=scales::pretty_breaks(n=8)) +
+    ylim(35,70) +
+    xlim(40,120) +
+   # geom_hline(yintercept = 50, linetype = "dotted") +
+    ylab("Avg %GC") +
+    xlab("Avg read length (bp)") +
+    ggtitle("75bp")
+  
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
