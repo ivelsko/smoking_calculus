@@ -1,0 +1,137 @@
+---
+title: "Smokers calculus horseshoe investigation"
+author: "Irina Velsko"
+date: "`r format(Sys.time(), '%b %d, %Y')`"
+output: html_notebook
+---
+
+```{r load_libraries, echo = F, message = F}
+library(knitr)
+library(data.table)
+library(sf)
+library(rnaturalearth)
+library(rnaturalearthdata)
+library(rgeos)
+library(maps)
+library(tidyverse)
+library(cowplot)
+```
+
+Set the working directory of the notebook to the parent directory of the 
+notebook itself.  
+
+```{r setup}
+knitr::opts_knit$set(root.dir = normalizePath(".."))
+```
+
+
+##Install packages
+```{r, eval = F}
+install.packages(c("cowplot", "googleway", "ggplot2", "ggrepel", 
+"ggspatial", "libwgeom", "sf", "rnaturalearth", "rnaturalearthdata", "rgeos", "maps"))
+```
+
+##Load packages
+```{r, eval = F}
+library("ggplot2")
+theme_set(theme_bw())
+library("sf")
+library("rnaturalearth")
+library("rnaturalearthdata")
+library("rgeos")
+library("maps")
+library("dplyr")
+```
+
+##pull country data
+```{r}
+world <- ne_countries(scale = "medium", returnclass = "sf")
+#class(world)
+```
+
+##get country info
+```{r}
+some.eu.countries <- c(
+  "Portugal", "Spain", "France", "Switzerland", "Germany",
+  "Austria", "Belgium", "UK", "Netherlands",
+  "Denmark", "Poland", "Italy", 
+  "Croatia", "Slovenia", "Hungary", "Slovakia",
+  "Czech republic","Ireland"
+)
+```
+
+## Retrievethe map data
+```{r}
+some.eu.maps <- map_data("world", region = some.eu.countries)
+```
+
+
+# Compute the centroid as the mean longitude and lattitude
+# Used as label coordinate for country's names
+```{r}
+region.lab.data <- some.eu.maps %>%
+  group_by(region) %>%
+  summarise(long = mean(long), lat = mean(lat))
+```
+
+
+
+##add coordinates to data frame
+```{r}
+smoking_sites <- data.frame(longitude = c(4.9168030, -2.9804059,-1.257), latitude = c(52.5519900, 43.2805735,51.752), Site = c("MID","CMB","Radcliffe"), Data = c("New","New","Published"))
+
+non_smoking_sites <- data.frame(longitude = c(-8.2023080,-0.8088890,-2.8622220), latitude = c(54.0068400,38.2486110,38.6963890), Site = c("Kilteasheen","ELR","IVE"), Data = c("Published","New","New"))
+
+```
+
+##add coordinates to map 
+```{r}
+sampling_sites_europe <- ggplot(data = world) +
+  geom_sf(colour = "#ffffff", fill = "#bbbbbb", linetype = "dotted") +
+  #for grey map with white lines
+  geom_sf(fill = "#f7fcf5") +
+  geom_point(data = non_smoking_sites, aes(x = longitude, y = latitude, color = Data), size = 4,
+        shape = 17) +
+  geom_point(data = smoking_sites, aes(x = longitude, y = latitude, color = Data), size = 4,
+        shape = 19) +
+  coord_sf(xlim = c(-12, 20), ylim = c(35, 60), expand = FALSE) +
+  theme_void() +
+  scale_color_manual(values = c("black","grey50"))
+sampling_sites_europe
+
+ggsave("~/Desktop/mid_sampling_map_europe.pdf", plot = sampling_sites_europe, device = "pdf",
+       scale = 1, width = 5, height = 5, units = c("in"), dpi = 300)
+
+```
+
+###add coordinates to map with names of countries
+```{r, eval = F}
+sampling_sites_country_names <- ggplot(data = some.eu.maps, aes(x = long, y = lat)) +
+##fill everything based on country grouping
+  geom_polygon(aes( group = group, color = region, fill = region))+
+##fill all countries separately
+  scale_fill_manual(values=c("#cdc9c9","#cdc9c9","#cdc9c9","#cdc9c9","#cdc9c9","#cdc9c9","#cdc9c9","#cdc9c9","#cdc9c9","#cdc9c9","#cdc9c9","#cdc9c9","#cdc9c9","#cdc9c9","#cdc9c9","#cdc9c9","#cdc9c9","#cdc9c9")) +
+##fill all borders separately
+  scale_color_manual(values=c("white","white","white","white","white","white","white","white","white","white","white","white","white","white","white","white","white","white")) +
+##add country names
+  geom_text(aeslabel = region), data = region.lab.data %>% filter(str_detect(region, "Spain|Netherlands|UK|Ireland")),  size = 4, hjust = 0)+
+##coordinate grid on/off
+  theme_void()+
+##remove legend
+  theme(legend.position = "none") +
+##add sites by coordinates
+  geom_point(data = sites, aes(x = longitude, y = latitude), 
+             size = 4, shape = 21, fill = "#20a0c5") +
+##change size of map
+coord_sf(xlim = c(-12, 25), ylim = c(35, 60), expand = FALSE)+
+  ggtitle("Sampling sites")+
+##add title (centered) and axis labels
+  theme(plot.title = element_text(hjust = 0.5))+
+  labs(y= "Latitude", x = "Longitude")
+
+sampling_sites_country_names
+
+# ggsave("T:/Wet Lab/Samples/Lena/01_Master Thesis/R/sampling_map_europe_with_country_names.pdf", plot = sampling_sites_country_names, device = "pdf",
+#        scale = 1, width = 7, height = 5, units = c("in"), dpi = 300)
+
+```
