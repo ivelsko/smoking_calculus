@@ -28,13 +28,16 @@ are cleaned up.
 
 ```{r, eval = F}
 
-jae_table <- fread("~/projects1/microbiome_calculus/iberian/05-results.backup/Iberian_samples-controls_comparison_species.txt") %>%
-  select(matches("Data|JAE")) %>%
+mod_table <- fread("~/projects1/microbiome_calculus/iberian/05-results.backup/Iberian_samples-controls_comparison_species.txt") %>%
+  select(matches("Data|JAE|VLC|EXB015.A2301|LIB007.A0119|EXB015.A2901|LIB007.A0124")) %>%
   adorn_totals(where = "col") %>%
   filter(Total > 0) %>%
   select(-Total)
 
-fwrite(jae_table, "./05-results.backup/jae_malt_species_raw.tsv")
+colnames(mod_table) <- gsub(".unmapped","", colnames(mod_table))
+
+
+fwrite(mod_table, "./05-results.backup/mod_malt_species_raw.tsv")
 
 ```
 
@@ -46,46 +49,64 @@ mid_raw <- fread("./05-results.backup/MID_malt_bactarchhomo2018_comparison-speci
 radcliffe_raw <- fread("./05-results.backup/Radcliffe_pfuT_comparison-species.txt")
 kilteasheen_raw <- fread("./05-results.backup/Kilteasheen_comparison-species.txt")
 iberian_raw <- fread("./05-results.backup/iberian_medieval_malt_species_raw.tsv")
-jae_raw <- fread("./05-results.backup/jae_malt_species_raw.tsv")
+mod_raw <- fread("./05-results.backup/mod_malt_species_raw.tsv")
 
 # contaminants
 mid_contaminants <- fread("./05-results.backup/contaminant_species_mid.tsv", sep = "\t")
 iber_contaminants <- fread("./05-results.backup/contaminant_species_iber.tsv", sep = "\t")
 rad_contaminants <- fread("./05-results.backup/contaminant_species_rad.tsv", sep = "\t")
 
+mid_contaminants_freq <- fread("./05-results.backup/contaminant_species_freq_mid.tsv", sep = "\t")
+iber_contaminants_freq <- fread("./05-results.backup/contaminant_species_freq_iber.tsv", sep = "\t")
+kil_contaminants_freq <- fread("./05-results.backup/contaminant_species_freq_kil.tsv", sep = "\t")
+mod_contaminants_freq <- fread("./05-results.backup/contaminant_species_freq_jae.tsv", sep = "\t")
+
 ```
 
-```{r clean_tables}
+```{r clean_tables_prev}
 # remove contaminant species from MID/CMD
-mid_species_decontam <- mid_raw %>%
+mid_species_decontam_prev <- mid_raw %>%
   rename(Species = `#Datasets`) %>%
   anti_join(., mid_contaminants)
 
 # remove contaminant species from Iberian medieval samples
-iberian_species_decontam <- iberian_raw %>%
+iberian_species_decontam_prev <- iberian_raw %>%
   rename(Species = `#Datasets`) %>%
   anti_join(., iber_contaminants)
 
 # remove contaminant species from Iberian medieval samples
-radcliffe_species_decontam <- radcliffe_raw %>%
+radcliffe_species_decontam_prev <- radcliffe_raw %>%
   rename(Species = `#Datasets`) %>%
   anti_join(., rad_contaminants)
 
-# remove contaminant species from both MID/CMD and Iberian from Kilteasheen
-# because I don't know what else to do
-kilteasheen_species_decontam <- kilteasheen_raw %>%
+# remove contaminant species from JAE/VLC
+mod_species_decontam_prev <- mod_raw %>%
   rename(Species = `#Datasets`) %>%
-  anti_join(., mid_contaminants) %>%
-  anti_join(., iber_contaminants) %>%
   anti_join(., rad_contaminants)
 
-jae_species_decontam <- jae_raw %>%
-  rename(Species = `#Datasets`) %>%
-  anti_join(., mid_contaminants) %>%
-  anti_join(., iber_contaminants) %>%
-  anti_join(., rad_contaminants)
+```
 
-  
+```{r clean_tables_freq}
+# remove contaminant species from MID/CMD
+mid_species_decontam_freq <- mid_raw %>%
+  rename(Species = `#Datasets`) %>%
+  anti_join(., mid_contaminants_freq)
+
+# remove contaminant species from Iberian medieval samples
+iberian_species_decontam_freq <- iberian_raw %>%
+  rename(Species = `#Datasets`) %>%
+  anti_join(., iber_contaminants_freq)
+
+# remove contaminant species from Kilteasheen
+kilteasheen_species_decontam_freq <- kilteasheen_raw %>%
+  rename(Species = `#Datasets`) %>%
+  anti_join(., kil_contaminants_freq)
+
+# remove contaminant species from both JAE and VLC modern
+mod_species_decontam_freq <- mod_raw %>%
+  rename(Species = `#Datasets`) %>%
+  anti_join(., mod_contaminants_freq)
+
 ```
 
 ```{r join_raw_tables}
@@ -94,7 +115,7 @@ all_species_raw <- mid_raw %>%
   full_join(., radcliffe_raw) %>%
   full_join(., kilteasheen_raw) %>%
   full_join(., iberian_raw) %>%
-  full_join(., jae_raw)
+  full_join(., mod_raw)
 
 
 # clean the file names
@@ -109,20 +130,20 @@ all_species_raw <- all_species_raw %>%
 ```
 
 
-```{r join_decontam_tables}
-all_species_decontam <- mid_species_decontam %>%
-  full_join(., radcliffe_species_decontam) %>%
-  full_join(., kilteasheen_species_decontam) %>%
-  full_join(., iberian_species_decontam) %>%
-  full_join(., jae_species_decontam)
+```{r join_decontam_tables_prev}
+all_species_decontam_prev <- mid_species_decontam_prev %>%
+  full_join(., radcliffe_species_decontam_prev) %>%
+  full_join(., kilteasheen_species_decontam_freq) %>%
+  full_join(., iberian_species_decontam_prev) %>%
+  full_join(., mod_species_decontam_prev)
 
 
 # clean the file names
-colnames(all_species_decontam) <- gsub(".unmapped","", colnames(all_species_decontam))
-colnames(all_species_decontam) <- gsub("MeganServer::","", colnames(all_species_decontam))
+colnames(all_species_decontam_prev) <- gsub(".unmapped","", colnames(all_species_decontam_prev))
+colnames(all_species_decontam_prev) <- gsub("MeganServer::","", colnames(all_species_decontam_prev))
 
 # remove human and unassigned reads, convert NA to 0, and remove the 8 MID samples with no metadata
-all_species_decontam <- all_species_decontam %>% 
+all_species_decontam_prev <- all_species_decontam_prev %>% 
   filter(!str_detect(Species, "Homo sapiens|Not assigned")) %>%
   replace(is.na(.), 0) %>%
   # these samples have no metadata
@@ -138,10 +159,39 @@ all_species_decontam <- all_species_decontam %>%
 
 ```
 
+```{r join_decontam_tables_freq}
+all_species_decontam_freq <- mid_species_decontam_freq %>%
+  full_join(., radcliffe_species_decontam_prev) %>%
+  full_join(., kilteasheen_species_decontam_freq) %>%
+  full_join(., iberian_species_decontam_freq) %>%
+  full_join(., mod_species_decontam_freq)
+
+
+# clean the file names
+colnames(all_species_decontam_freq) <- gsub(".unmapped","", colnames(all_species_decontam_freq))
+colnames(all_species_decontam_freq) <- gsub("MeganServer::","", colnames(all_species_decontam_freq))
+
+# remove human and unassigned reads, convert NA to 0, and remove the 8 MID samples with no metadata
+all_species_decontam_freq <- all_species_decontam_freq %>% 
+  filter(!str_detect(Species, "Homo sapiens|Not assigned")) %>%
+  replace(is.na(.), 0) %>%
+  # these samples have no metadata
+  select(-c("MID025.A0101","MID033.A0101","MID052.A0101","MID056.A0101","MID065.A0101","MID068.A0101","MID076.A0101","MID078.A0101")) %>%
+  # remove Radcliffe soil and dentin
+  select(-c("CSS","CSD")) %>%
+  # remove any taxa that are not present in the remaining samples
+  adorn_totals(where = "col") %>%
+  filter(Total > 0) %>%
+  select(-Total) %>%
+  arrange(Species)
+
+
+```
 
 ```{r save_data}
 save(all_species_raw,
-     all_species_decontam,
+     all_species_decontam_prev,
+     all_species_decontam_freq,
      file = "./05-results.backup/Taxonomy_tables.RData")
 
 ```

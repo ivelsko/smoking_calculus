@@ -45,8 +45,6 @@ load("./05-results.backup/Metadata_tables.RData")
 ```
 
 ```{r load_sourcetracker_out}
-# full_source_results <- fread("./05-results.backup/full_results/sink_predictions_full_sources_5000.txt")
-# full_source_results <- fread("~/projects1/microbiome_calculus/smoking_calculus/05-results.backup/full_results/sink_predictions_full_sources_10000.txt")
 full_source_results <- fread("./05-results.backup/sink_predictions_full_sources_rarefied_51500.tsv")
 
 reduced_source_results <- fread("./05-results.backup/sink_predictions_reduced_sources_rarefied_51500.tsv")
@@ -84,24 +82,29 @@ Plot bar charts
 ```{r}
 
 st_full_plot_all <- full_source_results %>%
+  filter(!str_detect(SampleID, outliers %>% str_c(collapse = "|"))) %>%
+  filter(!str_detect(SampleID, poor_samples %>% str_c(collapse = "|"))) %>%
   gather("Sources", "Percent",2:ncol(.)) %>%
+  mutate(Percent = Percent * 100) %>%
   mutate(Sources = fct_relevel(Sources, "Unknown","boneARS","sediment","skin","urbanGut","ruralGut","subPlaque","supPlaque","modernCalculus"),
          SampleID = fct_relevel(SampleID, samples_order_full)) %>%
+  
+  filter(!str_detect(SampleID, "CMB")) %>%
   ggplot(., aes(x = SampleID, y = Percent, fill = Sources)) +
          geom_bar(stat = "identity") + # , color = "black"
          theme_minimal(base_size = 14) +
          scale_fill_manual(values = full_colors) +
          theme(axis.text.x = element_text(angle = 90, hjust = 1),
                axis.text = element_text(size = 8)) +
-         geom_hline(yintercept=0.75, linetype="dotted") +
-         geom_hline(yintercept=0.9, linetype="dotted", color = "gray50") +
+         geom_hline(yintercept=75, linetype="dotted") +
+         geom_hline(yintercept=90, linetype="dotted", color = "gray50") +
          # scale_y_continuous(breaks=scales::pretty_breaks(n=6)) +
          ylab("% attributed to source") +
          ggtitle("Full sources")
 st_full_plot_all
 
-# ggsave("~/Desktop/MID_st_full_plot_all.pdf", plot = st_full_plot_all, device = "pdf",
-#        scale = 1, width = 16, height = 5, units = c("in"), dpi = 300)
+ggsave("~/Desktop/MID_st_full_plot_all.pdf", plot = st_full_plot_all, device = "pdf",
+       scale = 1, width = 16, height = 5, units = c("in"), dpi = 300)
 
 ```
 
@@ -135,7 +138,7 @@ poor_samples <- fread("./05-results.backup/cuperdec_poor_samples.tsv") %>%
   pull(Sample)
 
 malt_otu_pca_table <- all_species_decontam %>%
-  select(matches("Species|MID|CMB")) %>%
+  select(matches("Species|MID")) %>%
   select(-one_of(outliers)) %>%
   select(-one_of(poor_samples)) %>%
   gather("Library_ID","Counts",2:ncol(.)) %>%
@@ -162,11 +165,15 @@ ggplot(malt_pca_values, aes(PC1, PC2, color = Region, shape = Region)) +
 
 ```{r}
 mid_ordered <- full_source_results %>%
-  filter(str_detect(SampleID, "MID|CMB")) %>%
+  filter(!str_detect(SampleID, outliers %>% str_c(collapse = "|"))) %>%
+  filter(!str_detect(SampleID, poor_samples %>% str_c(collapse = "|"))) %>%
+  filter(str_detect(SampleID, "MID")) %>%
   gather("Sources", "Percent",2:ncol(.)) %>%
+  mutate(Percent = Percent * 100) %>%
   mutate(Sources = fct_relevel(Sources, "Unknown","boneARS","sediment","skin","urbanGut","ruralGut","subPlaque","supPlaque","modernCalculus"),
-         SampleID = fct_relevel(SampleID, mid_pc1_sample_order)) %>%
-  ggplot(., aes(x = SampleID, y = Percent, fill = Sources)) +
+         SampleID = fct_relevel(SampleID, sample_order)) %>% # mid_pc1_sample_order
+  arrange(SampleID) %>%
+    ggplot(., aes(x = SampleID, y = Percent, fill = Sources)) +
          geom_bar(stat = "identity") + # , color = "black"
          theme_minimal(base_size = 14) +
          scale_fill_manual(values = full_colors) +
@@ -177,8 +184,8 @@ mid_ordered <- full_source_results %>%
          ggtitle("Full sources")
 mid_ordered
 
-# ggsave("~/Desktop/MID_st_ordered_plot_mid.pdf", plot = mid_ordered, device = "pdf",
-#        scale = 1, width = 10, height = 5, units = c("in"), dpi = 300)
+ggsave("~/Desktop/MID_st_ordered_plot_mid.pdf", plot = mid_ordered, device = "pdf",
+       scale = 1, width = 10, height = 5, units = c("in"), dpi = 300)
 
 ```
 

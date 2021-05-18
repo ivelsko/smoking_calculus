@@ -167,7 +167,9 @@ plot_box_whisker(all_species_decontam.os, "Observed_species", "Region", "Region"
 #                          xlab("")
 # os_plot
 
-os_plot <- ggplot(all_species_decontam.os, aes(x = Site, y = Observed_species, fill = Site)) +
+os_plot <- all_species_decontam.os %>%
+  filter(!str_detect(Library_ID, "JAE|CMB")) %>%
+  ggplot(., aes(x = Site, y = Observed_species, fill = Site)) +
   geom_boxplot(color = "grey30") +
   geom_point(alpha = 0.5, color = "grey30", position = position_jitterdodge()) +
   scale_fill_manual(values = Site_colors) +
@@ -222,8 +224,8 @@ filtered_os <- ggplot(all_species_decontam_filtered.os, aes(x = Site, y = Observ
   xlab("Site")
 filtered_os
 
-ggsave("~/Desktop/MID_os_filtered_plot_site.pdf", plot = filtered_os, device = "pdf",
-       scale = 1, width = 8, height = 5, units = c("in"), dpi = 300)
+# ggsave("~/Desktop/MID_os_filtered_plot_site.pdf", plot = filtered_os, device = "pdf",
+#        scale = 1, width = 8, height = 5, units = c("in"), dpi = 300)
 
 ```
 
@@ -621,7 +623,7 @@ os_pipenotch
 
 
 ggsave("~/Desktop/MID_os_pipenotch.pdf", plot = os_pipenotch, device = "pdf",
-       scale = 1, width = 9, height = 5, units = c("in"), dpi = 300)
+       scale = 1, width = 6, height = 5, units = c("in"), dpi = 300)
 
 
 # add metadata to the table

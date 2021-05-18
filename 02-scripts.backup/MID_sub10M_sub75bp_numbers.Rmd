@@ -37,7 +37,7 @@ Set the sample order for plotting
 sample_order <- full_metadata %>%
   select(Library_ID, Site) %>%
   filter(!str_detect(Library_ID, "EXB|LIB|CSS|CSL|CSD|CSN")) %>%
-  mutate(Site= fct_relevel(Site, "Jaen","Radcliffe","CMB","Middenbeemster","ELR","IVE","Kilteasheen")) %>%
+  mutate(Site= fct_relevel(Site, "Jaen","VLC","Radcliffe","CMB","Middenbeemster","ELR","IVE","Kilteasheen")) %>%
   arrange(Site) %>%
   pull(Library_ID)
   

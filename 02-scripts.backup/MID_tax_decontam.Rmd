@@ -30,12 +30,14 @@ mid_raw <- fread("./05-results.backup/MID_malt_bactarchhomo2018_comparison-speci
 radcliffe_raw <- fread("./05-results.backup/Radcliffe_pfuT_comparison-species.txt")
 kilteasheen_raw <- fread("./05-results.backup/Kilteasheen_comparison-species.txt")
 iberian_raw <- fread("./05-results.backup/iberian_medieval_malt_species_raw.tsv")
+mod_raw <- fread("./05-results.backup/mod_malt_species_raw.tsv")
 
 
 all_raw <- mid_raw %>%
   full_join(., radcliffe_raw) %>%
   full_join(., kilteasheen_raw) %>%
-  full_join(., iberian_raw)
+  full_join(., iberian_raw) %>%
+  full_join(., mod_raw)
 
 
 # clean the file names
@@ -61,13 +63,15 @@ all_raw <- all_raw %>%
 
 ```{r}
 metadata <- fread("00-documentation.backup/MID_analysis_metadata.tsv") %>%
-  select(Site, Library_ID, Sample_or_Control) %>%
+  select(Site, Library_ID, Sample_or_Control, `DNA_molecules_per_library_x10^6`) %>%
   full_join(., fread("./00-documentation.backup/radcliffe_pfuT_metadata.tsv") %>%
             select(Site, Library_ID, Sample_or_Control)) %>%
   full_join(., fread("./00-documentation.backup/kilteasheen_metadata.tsv") %>%
-            select(Site, Library_ID, Sample_or_Control)) %>%
+            select(Site, Library_ID, Sample_or_Control, `DNA_molecules_per_library_x10^6`)) %>%
   full_join(., fread("./00-documentation.backup/iberian_medieval_metadata.tsv") %>%
-            select(Site, Library_ID, Sample_or_Control))
+            select(Site, Library_ID, Sample_or_Control, `DNA_molecules_per_library_x10^6`)) %>%
+  full_join(., fread("./00-documentation.backup/mod_metadata.tsv") %>%
+            select(Site, Library_ID, Sample_or_Control, `DNA_molecules_per_library_x10^6`))
 
 #set the columns of interest to factors
 metadata <- metadata %>%
@@ -197,6 +201,7 @@ Before running decontam, let's plot the samples in a PCA to see if there are any
 ```{r raw_plot}
 
 malt_species_raw <- all_raw %>%
+  # select(matches("Species|MID")) %>%
   gather("Library_ID","Counts",2:ncol(.)) %>%
   mutate(Counts = Counts + 1) %>%
   spread(Species,Counts) %>%
@@ -223,7 +228,8 @@ plot_pca_names(malt_species.pca,  "PC1", "PC2", "Sample_or_Control")
 ```{r outliers}
 # these are the 3 blanks that "passed" the cuperdec cut-off
 # and we can see they plot with samples in the PCA above
-outliers <- c("EXB059.A2501","LIB058.A0103","LIB058.A0106","CSS","CSD")
+# the MID samples don't have metadata so won't be included
+outliers <- c("EXB059.A2501","LIB058.A0103","LIB058.A0106","CSS","CSD") 
 poor_samples <- fread("./05-results.backup/cuperdec_poor_samples.tsv") %>%
   pull(Sample)
 
@@ -257,7 +263,7 @@ ars_samples <- deep_evo_metadata %>%
   
 ```
 
-# Decontamination with Decontam
+# Decontamination with Decontam Prevalence Method (CMB, MID, IVE, ELR, JAE, Radcliffe; Kilteasheen has to be frequency)
 We want to know if there are any species that can be removed b/c they appear to
 be contaminants. Use the package decontam to determine which species may be
 contaminants. Prepare the matrix for decontam.
@@ -332,11 +338,15 @@ ggplot(contam.prev.species, aes(x=p)) +
 # list out the samples that have all 0 or NA values to remove from the input matrix
 # NA_filter_list <- metadata %>% filter((is.na(SumLibraryConcentration_copies_ul) | SumLibraryConcentration_copies_ul <= 0)) %>% select(Library_ID)
 
+colnames(mid_raw) <- gsub(".unmapped","", colnames(mid_raw))
+colnames(mid_raw) <- gsub("MeganServer::","", colnames(mid_raw))
+
 # remove NA value samples from the input data frame
 malt_species_mid.dataframe <- mid_raw %>%
   rename(Species = `#Datasets`) %>%
   select(-one_of(outliers)) %>%
   select(-one_of(poor_samples)) %>%
+  select(-c("MID025.A0101","MID033.A0101","MID052.A0101","MID056.A0101","MID065.A0101","MID068.A0101","MID076.A0101","MID078.A0101","EXB034.A2701")) %>% # no metadata
   full_join(., ars_bone_sp) %>%
   replace(is.na(.), 0) %>%
   filter(!str_detect(Species, "Not assigned|Homo sapiens")) %>%
@@ -355,12 +365,15 @@ metadata_mid.decontam <- metadata %>%
   # anti_join(., NA_filter_list, by = "Library_ID") %>%
   filter(!str_detect(Library_ID, outliers %>% str_c(collapse = "|"))) %>%
   filter(str_detect(Library_ID, "MID|CMB|EXB059|LIB058")) %>%
-  filter(Library_ID != "LIB058.A0101") %>% # this sample is not in the metadata
+  # filter(!str_detect(Library_ID, "LIB058.A0101|EXB034.A2701") %>% # these samples are not in the metadata
+  filter(!str_detect(Library_ID, "MID025.A0101|MID033.A0101|MID052.A0101|MID056.A0101|MID065.A0101|MID068.A0101|MID076.A0101|MID078.A0101|LIB058.A0101|EXB034.A2701")) %>%
   arrange(Library_ID) %>%
   distinct() %>%
   bind_rows(., deep_evo_metadata %>%
               mutate(Site = "Bone") %>%
-              select(Site, Library_ID, Sample_or_Control)) %>%
+              select(Site, Library_ID, Sample_or_Control, SumLibraryConcentration_copies_ul) %>%
+              mutate(`DNA_molecules_per_library_x10^6` = SumLibraryConcentration_copies_ul / 1000000) %>%
+              select(-SumLibraryConcentration_copies_ul)) %>%
   arrange(Site)
 
 # metadata.decontam %>% select(Library_ID) %>%
@@ -463,6 +476,8 @@ ggplot(contam_rad.prev.species, aes(x=p)) +
 # list out the samples that have all 0 or NA values to remove from the input matrix
 # NA_filter_list <- metadata %>% filter((is.na(SumLibraryConcentration_copies_ul) | SumLibraryConcentration_copies_ul <= 0)) %>% select(Library_ID)
 
+colnames(iberian_raw) <- gsub(".unmapped","", colnames(iberian_raw))
+
 # remove NA value samples from the input data frame
 malt_species_iber.dataframe <- iberian_raw %>%
   rename(Species = `#Datasets`) %>%
@@ -490,8 +505,11 @@ metadata_iber.decontam <- metadata %>%
   distinct() %>%
   bind_rows(., deep_evo_metadata %>%
               mutate(Site = "Bone") %>%
-              select(Site, Library_ID, Sample_or_Control)) %>%
-  arrange(Site)
+              select(Site, Library_ID, Sample_or_Control, SumLibraryConcentration_copies_ul) %>%
+              mutate(`DNA_molecules_per_library_x10^6` = SumLibraryConcentration_copies_ul / 1000000) %>%
+              select(-SumLibraryConcentration_copies_ul)) %>%
+  arrange(Site) %>%
+  filter(Site != "Jaen")
 
 # metadata.decontam %>% select(Library_ID) %>%
 #   anti_join(., malt_species.dataframe %>% select(Library_ID))
@@ -522,8 +540,148 @@ ggplot(contam_iber.prev.species, aes(x=p)) +
 
 ```
 
+
+## JAE/VLC modern
+The contaminant species here are always still oral taxa, so we won't remove any
+as contaminants with decontam. We'll do it during analyses with abundance
+filtering to remove low abundance species.
+```{r decontam_data_prep}
+# list out the samples that have all 0 or NA values to remove from the input matrix
+# NA_filter_list <- metadata %>% filter((is.na(SumLibraryConcentration_copies_ul) | SumLibraryConcentration_copies_ul <= 0)) %>% select(Library_ID)
+
+colnames(mod_raw) <- gsub(".unmapped","", colnames(mod_raw))
+
+# remove NA value samples from the input data frame
+malt_species_mod.dataframe <- mod_raw %>%
+  rename(Species = `#Datasets`) %>%
+  select(-one_of(outliers)) %>%
+  select(-one_of(poor_samples)) %>%
+  full_join(., ars_bone_sp) %>%
+  replace(is.na(.), 0) %>%
+  filter(!str_detect(Species, "Not assigned|Homo sapiens")) %>%
+  gather("Library_ID","Counts", 2:ncol(.)) %>%
+  spread(Species,Counts) 
+# %>%
+#   anti_join(., NA_filter_list)
+
+# make a matrix for decontam
+malt_species_mod.matrix <- data.matrix(malt_species_mod.dataframe[2:ncol(malt_species_mod.dataframe)])
+rownames(malt_species_mod.matrix) <- malt_species_mod.dataframe$Library_ID
+
+# make a metadata dataframe with the same NA-containing samples removed
+metadata_mod.decontam <- metadata %>%
+  filter(!str_detect(Library_ID, poor_samples %>% str_c(collapse = "|"))) %>%
+  # anti_join(., NA_filter_list, by = "Library_ID") %>%
+  filter(!str_detect(Library_ID, outliers %>% str_c(collapse = "|"))) %>%
+  filter(str_detect(Library_ID, "JAE|VLC|EXB015.A2301|LIB007.A0119|EXB015.A2901|LIB007.A0124")) %>%
+  arrange(Library_ID) %>%
+  distinct() %>%
+  bind_rows(., deep_evo_metadata %>%
+              mutate(Site = "Bone") %>%
+              select(Site, Library_ID, Sample_or_Control, SumLibraryConcentration_copies_ul) %>%
+              mutate(`DNA_molecules_per_library_x10^6` = SumLibraryConcentration_copies_ul / 1000000) %>%
+              select(-SumLibraryConcentration_copies_ul)) %>%
+  arrange(Site)
+
+# metadata.decontam %>% select(Library_ID) %>%
+#   anti_join(., malt_species.dataframe %>% select(Library_ID))
+
+```
+
+```{r decontam_prevalence}
+# Assign sample-type status to identify control samples
+metadata_mod.decontam$is.control <- metadata_mod.decontam$Sample_or_Control=="Control"
+
+#Try changing the probability threshold cut-off to see how many more or less are ID'd as contaminants
+contam_mod.prev.species <- isContaminant(malt_species_mod.matrix, method="prevalence", 
+                                 neg=metadata_mod.decontam$is.control, 
+                                 threshold = 0.1)
+
+# Check number of contaminants
+table(contam_mod.prev.species$contaminant)
+
+# List of contaminants
+cont_prev_species_list_mod <- contam_mod.prev.species[which(contam_mod.prev.species$contaminant=="TRUE"), ]
+
+# Look at the histogram - does the probability threshold need to be changed?
+ggplot(contam_mod.prev.species, aes(x=p)) +
+  geom_histogram(bins=100) +
+  scale_y_log10() +
+  ggtitle('Prevalence - Species')
+
+
+```
+
+
 ## Kilteasheen
 ?? No controls available
+Modified from Lena's file `02_Kilteasheen_decontam.Rmd`
+```{r decontam_data_prep}
+# list out the samples that have all 0 or NA values to remove from the input matrix
+# NA_filter_list <- metadata_cuperdec_cleaned %>% 
+#   filter((is.na(SumLibraryConcentration_copies_ul) | SumLibraryConcentration_copies_ul <= 0)) %>% 
+#   select("#SampleID")
+
+colnames(kilteasheen_raw) <- gsub(".unmapped","", colnames(kilteasheen_raw))
+
+# remove NA value samples from the input data frame
+malt_species_kil.dataframe <- kilteasheen_raw %>%
+  rename(Species = `#Datasets`) %>%
+  select(-one_of(outliers)) %>%
+  select(-one_of(poor_samples)) %>%
+  full_join(., ars_bone_sp) %>%
+  replace(is.na(.), 0) %>%
+  filter(!str_detect(Species, "Not assigned|Homo sapiens")) %>%
+  gather("Library_ID","Counts", 2:ncol(.)) %>%
+  spread(Species,Counts) 
+
+# make a matrix for decontam
+malt_species_kil.matrix <- data.matrix(malt_species_kil.dataframe[2:ncol(malt_species_kil.dataframe)])
+rownames(malt_species_kil.matrix) <- malt_species_kil.dataframe$Library_ID
+
+# make a metadata dataframe with the same NA-containing samples removed
+metadata_kil <- fread("./00-documentation.backup/kilteasheen_metadata.tsv") %>%
+            select(Site, Library_ID, Sample_or_Control, `DNA_molecules_per_library_x10^6`)
+
+metadata_kil.decontam <- metadata_kil %>%
+  filter(!str_detect(Library_ID, poor_samples %>% str_c(collapse = "|"))) %>%
+  # anti_join(., NA_filter_list, by = "Library_ID") %>%
+  filter(!str_detect(Library_ID, outliers %>% str_c(collapse = "|"))) %>%
+  filter(str_detect(Library_ID, "KT")) %>%
+  arrange(Library_ID) %>%
+  distinct() %>%
+  bind_rows(., deep_evo_metadata %>%
+              mutate(Site = "Bone") %>%
+              select(Site, Library_ID, Sample_or_Control, SumLibraryConcentration_copies_ul) %>%
+              mutate(`DNA_molecules_per_library_x10^6` = SumLibraryConcentration_copies_ul / 1000000) %>%
+              select(-SumLibraryConcentration_copies_ul)) %>%
+  arrange(Site)
+
+```
+
+Frequency method
+```{r decontam_frequency_kil}
+# Check for contamination by frequency
+contam_kil.freq.species <- isContaminant(malt_species_kil.matrix, method="frequency", 
+                                 conc=metadata_kil.decontam$`DNA_molecules_per_library_x10^6`, 
+                                 threshold = 0.7)
+
+# Print the # of species identified as contaminants by frequency
+# Check number of contaminants
+table(contam_kil.freq.species$contaminant)
+
+# List of contaminants
+cont_freq_species_list_kil <- contam_kil.freq.species[which(contam_kil.freq.species$contaminant=="TRUE"), ]
+
+# Make a histogram to look at the distribution of the p-value (probability for classifying contaminants)
+
+ggplot(contam_kil.freq.species, aes(x=p)) +
+  geom_histogram(bins=100) +
+  scale_y_log10() +
+  ggtitle('Frequency - Species')
+
+```
+
 
 ## Overlapping contaminant species
 ```{r}
@@ -550,12 +708,9 @@ cont_prev_species_list_mid %>% rownames_to_column("Species") %>%
 ```
 
 
-Most of the species in the Radcliffe contaminants list are oral taxa, no matter
-how low the cut-off is set. We won't use decontam to remove any taxa from
-Radcliffe because of this. The Kileasheen samples have no associated blank
-samples, so they'll be cleaned up by an abundance cut-off. The MID/CMB and
-Iberian medieval samples will have contaminants removed based on the prevalence
-method.
+The Kileasheen samples have no associated blank samples, so they'll be cleaned
+up by the frequency method. The MID/CMB and Iberian medieval samples will have
+contaminants removed based on the prevalence method.
 ```{r contaminants, eval = F}
 contaminant_species_mid <- cont_prev_species_list_mid %>% rownames_to_column("Species") %>% select(Species)
 fwrite(contaminant_species_mid, file = "./05-results.backup/contaminant_species_mid.tsv", sep="\t", quote=F)
@@ -566,30 +721,123 @@ fwrite(contaminant_species_rad, file = "./05-results.backup/contaminant_species_
 contaminant_species_iber <- cont_prev_species_list_iber %>% rownames_to_column("Species") %>% select(Species)
 fwrite(contaminant_species_iber, file = "./05-results.backup/contaminant_species_iber.tsv", sep="\t", quote=F)
 
+contaminant_species_freq_kil <- cont_freq_species_list_kil %>% rownames_to_column("Species") %>% select(Species)
+fwrite(contaminant_species_freq_kil, file = "./05-results.backup/contaminant_species_freq_kil.tsv", sep="\t", quote=F)
+
+contaminant_species_mod <- cont_prev_species_list_mod %>% rownames_to_column("Species") %>% select(Species)
+fwrite(contaminant_species_mod, file = "./05-results.backup/contaminant_species_mod.tsv", sep="\t", quote=F)
+
 ```
 
-## Not used
+# Decontamination with Decontam Frequency Method (CMB, MID, IVE, ELR, JAE, Kilteasheen; Radcliffe has to be prevalence)
 
-Now we're ready to run Decontam. Start with the frequency method. 
-```{r decontam_frequency, eval = F}
+## MID, CMB
+```{r decontam_frequency_mid}
 # Check for contamination by fequency
-contam.freq.species <- isContaminant(malt_species.matrix, method="frequency", 
-                                 conc=metadata.decontam$SumLibraryConcentration_copies_ul, 
+contam_mid.freq.species <- isContaminant(malt_species_mid.matrix, method="frequency", 
+                                 conc=metadata_mid.decontam$`DNA_molecules_per_library_x10^6`, 
                                  threshold = 0.9)
 
 # Print the # of species identified as contaminants by frequency
-table(contam.freq.species$contaminant)
+table(contam_mid.freq.species$contaminant)
 
-cont_freq_species_list <- contam.freq.species[which(contam.freq.species$contaminant=="TRUE"), ]
+cont_freq_species_list_mid <- contam_mid.freq.species[which(contam_mid.freq.species$contaminant=="TRUE"), ]
 
 # Make a histogram to look at the distribution of the p-value (probability for classifying contaminants)
 
-ggplot(contam.freq.species, aes(x=p)) +
+ggplot(contam_mid.freq.species, aes(x=p)) +
   geom_histogram(bins=100) +
   scale_y_log10() +
   ggtitle('Frequency - Species')
 
 ```
+
+## Iberian Medieval
+```{r decontam_frequency_iber}
+# Check for contamination by fequency
+contam_iber.freq.species <- isContaminant(malt_species_iber.matrix, method="frequency", 
+                                 conc=metadata_iber.decontam$`DNA_molecules_per_library_x10^6`, 
+                                 threshold = 0.5)
+
+# Print the # of species identified as contaminants by frequency
+table(contam_iber.freq.species$contaminant)
+
+cont_freq_species_list_iber <- contam_iber.freq.species[which(contam_iber.freq.species$contaminant=="TRUE"), ]
+
+# Make a histogram to look at the distribution of the p-value (probability for classifying contaminants)
+
+ggplot(contam_iber.freq.species, aes(x=p)) +
+  geom_histogram(bins=100) +
+  scale_y_log10() +
+  ggtitle('Frequency - Species')
+
+```
+
+## JAE/VLC modern
+```{r decontam_frequency_mid}
+# Check for contamination by fequency
+contam_mod.freq.species <- isContaminant(malt_species_mod.matrix, method="frequency", 
+                                 conc=metadata_mod.decontam$`DNA_molecules_per_library_x10^6`, 
+                                 threshold = 0.95)
+
+# Print the # of species identified as contaminants by frequency
+table(contam_mod.freq.species$contaminant)
+
+cont_freq_species_list_mod <- contam_mod.freq.species[which(contam_mod.freq.species$contaminant=="TRUE"), ]
+
+# Make a histogram to look at the distribution of the p-value (probability for classifying contaminants)
+
+ggplot(contam_mod.freq.species, aes(x=p)) +
+  geom_histogram(bins=100) +
+  scale_y_log10() +
+  ggtitle('Frequency - Species')
+
+```
+
+## Kilteasheen
+```{r decontam_frequency_kil}
+# Check for contamination by frequency
+contam_kil.freq.species <- isContaminant(malt_species_kil.matrix, method="frequency", 
+                                 conc=metadata_kil.decontam$`DNA_molecules_per_library_x10^6`, 
+                                 threshold = 0.7)
+
+# Print the # of species identified as contaminants by frequency
+# Check number of contaminants
+table(contam_kil.freq.species$contaminant)
+
+# List of contaminants
+cont_freq_species_list_kil <- contam_kil.freq.species[which(contam_kil.freq.species$contaminant=="TRUE"), ]
+
+# Make a histogram to look at the distribution of the p-value (probability for classifying contaminants)
+
+ggplot(contam_kil.freq.species, aes(x=p)) +
+  geom_histogram(bins=100) +
+  scale_y_log10() +
+  ggtitle('Frequency - Species')
+
+```
+
+
+```{r contaminants, eval = F}
+contaminant_species_freq_mid <- cont_prev_species_list_mid %>% rownames_to_column("Species") %>% select(Species)
+fwrite(contaminant_species_freq_mid, file = "./05-results.backup/contaminant_species_freq_mid.tsv", sep="\t", quote=F)
+
+# contaminant_species_freq_rad <- cont_prev_species_list_rad %>% rownames_to_column("Species") %>% select(Species)
+# fwrite(contaminant_species_freq_rad, file = "./05-results.backup/contaminant_species_freq_rad.tsv", sep="\t", quote=F)
+
+contaminant_species_freq_iber <- cont_prev_species_list_iber %>% rownames_to_column("Species") %>% select(Species)
+fwrite(contaminant_species_freq_iber, file = "./05-results.backup/contaminant_species_freq_iber.tsv", sep="\t", quote=F)
+
+contaminant_species_freq_kil <- cont_freq_species_list_kil %>% rownames_to_column("Species") %>% select(Species)
+fwrite(contaminant_species_freq_kil, file = "./05-results.backup/contaminant_species_freq_kil.tsv", sep="\t", quote=F)
+
+contaminant_species_freq_mod <- cont_prev_species_list_mod %>% rownames_to_column("Species") %>% select(Species)
+fwrite(contaminant_species_freq_mod, file = "./05-results.backup/contaminant_species_freq_mod.tsv", sep="\t", quote=F)
+
+```
+
+
+# Not Used
 
 Check the combined prevalence and frequency method to see how it differs from the individual methods. 
 ```{r decontam_combined, eval=F}
@@ -598,7 +846,7 @@ metadata.decontam$is.control <- metadata.decontam$Sample_or_Control=="Control"
 
 # Assign contaminant status
 contam.comb.species <- isContaminant(malt_species.matrix, method="combined", 
-                                 conc=metadata.decontam$SumLibraryConcentration_copies_ul, 
+                                 conc=metadata.decontam$`DNA_molecules_per_library_x10^6`, 
                                  neg=metadata.decontam$is.control,
                                  threshold = 0.9)
 
