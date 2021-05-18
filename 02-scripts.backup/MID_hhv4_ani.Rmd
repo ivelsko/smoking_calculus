@@ -1,0 +1,96 @@
+---
+title: "HHV4 (Eppstein-Barr virus) ANI"
+author: "Irina Velsko"
+date: "`r format(Sys.time(), '%b %d, %Y')`"
+output:
+    github_document:
+        fig_width: 8
+        fig_height: 6
+        toc: true
+---
+
+```{r load_libraries, echo = F, message = F}
+library(knitr)
+library(data.table)
+library(janitor)
+library(DECIPHER)
+library(tidyverse)
+
+```
+
+```{r setup}
+knitr::opts_knit$set(root.dir = normalizePath(".."))
+```
+
+Load in the coverage information per bam file and put it together into a large data frame
+```{r load_radcliffe}
+# load the standard format output tables
+hhv4_ani <- fread("./01-data/hhv4/hhv4_ncbi-genomes-2021-03-02/fastani_hhv4_out.tsv", col.names = c("Query", "Reference","ANI","q_window","r_window"), sep = "\t") %>%
+# remove the file prefix genome file name
+  mutate(Query = str_replace_all(Query, "/projects1/microbiome_calculus/smoking_calculus/01-data/hhv4/hhv4_ncbi-genomes-2021-03-02/",""),
+         Reference = str_replace_all(Reference, "/projects1/microbiome_calculus/smoking_calculus/01-data/hhv4/hhv4_ncbi-genomes-2021-03-02/","")) %>%
+  # add a column to indicate if query and reference are the same genome
+  mutate(Same = Query == Reference)
+
+
+```
+
+```{r}
+
+hhv4_ani %>%
+  filter(ANI <= 95)
+
+```
+
+*Note that the nwk files will be written with quotes around the names, and these quotes will need to be removed*
+```{r DECIPHER_align_hhv4}
+# specify the path to the FASTA file (in quotes)
+hhv4_fas <- "./01-data/hhv4/hhv4_ncbi-genomes-2021-03-02/all_hhv4_genomes.fasta"
+
+# load the sequences from the file
+hhv4_seqs <- readDNAStringSet(hhv4_fas)
+
+# look at some of the sequences (optional)
+# hhv4_seqs
+
+# perform the alignment
+hhv4_aligned <- AlignSeqs(hhv4_seqs, processors = 16)
+
+writeXStringSet(hhv4_aligned, "./01-data/hhv4/hhv4_extraction_DECIPHER_aligned.fasta")
+
+# make a distance matrix from the alignment
+hhv4_dm <- DistanceMatrix(hhv4_aligned, correction = "Jukes-Cantor")
+
+# example of specifying multiple cutoffs. IdClusters returns a data frame
+hhv4_clustersML_08 <- IdClusters(hhv4_dm, method = "ML", myXStringSet = hhv4_aligned, type="both", cutoff = 0.8, showPlot = T, processors = 4)
+hhv4_clustersML_05 <- IdClusters(hhv4_dm, method = "ML", myXStringSet = hhv4_aligned, type="both", cutoff = 0.5, showPlot = T, processors = 4)
+hhv4_clustersML_02 <- IdClusters(hhv4_dm, method = "ML", myXStringSet = hhv4_aligned, type="both", cutoff = 0.2, showPlot = T, processors = 4)
+
+
+hhv4_clustersML_08_df <- hhv4_clustersML[1] %>%
+  as.data.frame(.) %>%
+  rownames_to_column("Genome")
+fwrite(hhv4_clustersML_08_df, "hhv4_clustersML_08.tsv", quote = F, sep = "\t")
+
+hhv4_clustersML_05_df <- hhv4_clustersML[1] %>%
+  as.data.frame(.) %>%
+  rownames_to_column("Genome")
+fwrite(hhv4_clustersML_05_df, "hhv4_clustersML_05.tsv", quote = F, sep = "\t")
+
+hhv4_clustersML_03_df <- hhv4_clustersML[1] %>%
+  as.data.frame(.) %>%
+  rownames_to_column("Genome")
+fwrite(hhv4_clustersML_03_df, "hhv4_clustersML_03.tsv", quote = F, sep = "\t")
+
+hhv4_clustersML_08_dend <- hhv4_clustersML_08[[2]]
+WriteDendrogram(hhv4_clustersML_08_dend, file = "hhv4_clustersML_08.nwk")
+
+hhv4_clustersML_05_dend <- hhv4_clustersML_05[[2]]
+WriteDendrogram(hhv4_clustersML_05_dend, file = "hhv4_clustersML_05.nwk")
+
+hhv4_clustersML_03_dend <- hhv4_clustersML_03[[2]]
+WriteDendrogram(hhv4_clustersML_03_dend, file = "hhv4_clustersML_03.nwk")
+
+
+```
+
