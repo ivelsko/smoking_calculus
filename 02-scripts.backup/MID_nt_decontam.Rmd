@@ -1,0 +1,397 @@
+---
+title: "MID/CMB calculus MALT nt database decontam"
+author: "Irina Velsko"
+date: "`r format(Sys.time(), '%b %d, %Y')`"
+output:
+    github_document:
+        fig_width: 8
+        fig_height: 6
+        toc: true
+---
+
+```{r load_libraries, echo = F, message = F}
+library(knitr)
+library(decontam)
+library(data.table)
+library(janitor)
+library(tidyverse)
+opts_chunk$set(echo=F, warning=F, message=F, dpi=150)
+```
+
+Set the working directory of the notebook to the parent directory of the 
+notebook itself.  
+
+```{r setup}
+knitr::opts_knit$set(root.dir = normalizePath(".."))
+```
+
+```{r load_data}
+# read in the species table
+nt_raw <- fread("./05-results.backup/MID_CMB_malt_nt-comparison-genus.txt")
+
+# clean the file names
+nt_raw <- rename(nt_raw, Species = `#Datasets`)
+colnames(nt_raw) <- gsub(".unmapped","", colnames(nt_raw))
+colnames(nt_raw) <- gsub(".10M","", colnames(nt_raw))
+
+# remove human and unassigned reads, convert NA to 0, and remove the 8 MID samples with no metadata
+nt_raw <- nt_raw %>% 
+  filter(!str_detect(Species, "Homo|Not assigned")) %>%
+  replace(is.na(.), 0) %>%
+  # these samples have no metadata
+  select(-c("MID025.A0101","MID033.A0101","MID052.A0101","MID056.A0101","MID065.A0101","MID068.A0101","MID076.A0101","MID078.A0101")) %>%
+  arrange(Species)
+
+```
+
+Load in the original table to pull the LIB and EXB samples
+```{r}
+load("./05-results.backup/Taxonomy_tables.RData")
+
+```
+
+```{r, eval = F}
+# merge the EXB and LIB samples from here with the raw tables
+
+nt_raw <- nt_raw %>%
+  full_join(., all_species_raw %>%
+              select(matches("Species|EXB|LIB")), by = "Species") %>%
+  replace(is.na(.), 0) %>%
+  adorn_totals(where = "col") %>%
+  filter(Total > 0) %>%
+  select(-Total)
+   
+```
+
+
+Load metadata
+```{r load_metadata}
+
+load("./05-results.backup/Metadata_tables.RData")
+
+```
+
+
+Read in the DeepEvo table with ARS samples, to use as bone controls to hopefully
+clean up more environmental taxa. From
+`https://github.com/jfy133/Hominid_Calculus_Microbiome_Evolution/tree/master/06-additional_data_files/Data_R11_S12_MALTMEGANTables/`.
+```{r species, eval=F}
+ars_bone_sp <- fread("./05-results.backup/Evolution-Comparison_MEGAN_20190410-ex_absolute_species_prokaryotes_summarised_refseq.txt") %>%
+  rename(Species = `#Datasets`) %>%
+  column_to_rownames("Species") %>%
+  select(matches("ARS")) %>%
+  rownames_to_column("Species") %>%
+# remove all species that aren't in the gut samples
+  adorn_totals(where = "col") %>%
+  filter(Total != 0) %>%
+  select(-Total)
+
+colnames(ars_bone_sp) <- gsub("_S0_L003_R1_001.fastq.combined.fq.prefixed.extractunmapped.bam","", colnames(ars_bone_sp))
+
+```
+
+```{r genus}
+ars_bone_sp <- fread("./05-results.backup/Evolution-Comparison_MEGAN_20190401-ex_absolute_genus_prokaryotes_summarised_nt.tsv") %>%
+  rename(Species = `#Datasets`) %>%
+  column_to_rownames("Species") %>%
+  select(matches("ARS")) %>%
+  rownames_to_column("Species") %>%
+# remove all species that aren't in the gut samples
+  adorn_totals(where = "col") %>%
+  filter(Total != 0) %>%
+  select(-Total)
+
+colnames(ars_bone_sp) <- gsub("_S0_L003_R1_001.sorted.bam.unmapped","", colnames(ars_bone_sp))
+
+```
+
+```{r deep_evo_meta}
+deep_evo_metadata <- fread("./00-documentation.backup/02-calculus_microbiome-deep_evolution-individualscontrolssources_metadata_20200219.tsv") %>%
+  rename(Library_ID = `#SampleID`) %>%
+  filter(str_detect(Library_ID, "ARS"))
+
+ars_samples <- deep_evo_metadata %>%
+  pull(Library_ID)
+  
+```
+
+
+```{r pca_plotting_functions}
+# plotting PCA with colored dots
+plot_pca <- function(df, pc1, pc2, metadata_group) {
+    metadata_group_colors <- get(paste(metadata_group, "_colors", sep = ""))
+    metadata_group_shapes <- get(paste(metadata_group, "_shapes", sep = ""))
+
+    exp_var <- paste0(round(df$explained_variance * 100, 2), "%")
+    df_X <- df$variates$X %>%
+              as.data.frame() %>%
+              rownames_to_column("Library_ID") %>%
+              inner_join(full_metadata %>%
+                           select(Library_ID, Site, Sample_or_Control), by = "Library_ID")
+    
+    metadata_group = df_X[[metadata_group]]
+    
+                       if (pc1 == 'PC1') {
+                           pc1 <- df_X$PC1
+                           exp_var_pc1 <- exp_var[1]
+                           xaxis <- c("PC1")
+                       }  else if (pc1 == 'PC2') {
+                           pc1 <- df_X$PC2
+                           exp_var_pc1 <- exp_var[2]
+                           xaxis <- c("PC2")
+                       } else if (pc1 == 'PC3') {
+                           pc1 <- df_X$PC3
+                           exp_var_pc1 <- exp_var[3]
+                           xaxis <- c("PC3")
+                       }
+
+                       if (pc2 == 'PC1') {
+                           pc2 <- df_X$PC1
+                           exp_var_pc2 <- exp_var[1]
+                           yaxis <- c("PC1")
+                       }  else if (pc2 == 'PC2') {
+                           pc2 <- df_X$PC2
+                           exp_var_pc2 <- exp_var[2]
+                           yaxis <- c("PC2")
+                       } else if (pc2 == 'PC3') {
+                           pc2 <- df_X$PC3
+                           exp_var_pc2 <- exp_var[3]
+                           yaxis <- c("PC3")
+                       }
+
+    pca_plot <- ggplot(df_X, aes(pc1, pc2, colour = metadata_group, shape = metadata_group)) +
+                        geom_point(size = 4) +
+                        scale_colour_manual(values = metadata_group_colors) +
+                        scale_shape_manual(values = metadata_group_shapes) +
+                        # stat_ellipse() +
+                        xlab(paste(xaxis, " - ", exp_var_pc1)) +
+                        ylab(paste(yaxis, " - ", exp_var_pc2)) +
+                        theme_minimal(base_size = 10) +
+                        theme(legend.position = "top") +
+                        theme(legend.title = element_blank())
+
+    return(pca_plot)
+}
+
+# this function plots the PCA with the sample names instead of points
+plot_pca_names <- function(df, pc1, pc2, metadata_group) {
+    metadata_group_colors <- get(paste(metadata_group, "_colors", sep = ""))
+
+    exp_var <- paste0(round(df$explained_variance * 100, 2), "%")
+    df_X <- df$variates$X %>%
+              as.data.frame() %>%
+              rownames_to_column("Library_ID") %>%
+              inner_join(full_metadata %>%
+                           select(Library_ID, Site, Sample_or_Control), by = "Library_ID")
+    
+    metadata_group = df_X[[metadata_group]]
+    
+                       if (pc1 == 'PC1') {
+                           pc1 <- df_X$PC1
+                           exp_var_pc1 <- exp_var[1]
+                           xaxis <- c("PC1")
+                       }  else if (pc1 == 'PC2') {
+                           pc1 <- df_X$PC2
+                           exp_var_pc1 <- exp_var[2]
+                           xaxis <- c("PC2")
+                       } else if (pc1 == 'PC3') {
+                           pc1 <- df_X$PC3
+                           exp_var_pc1 <- exp_var[3]
+                           xaxis <- c("PC3")
+                       }
+
+                       if (pc2 == 'PC1') {
+                           pc2 <- df_X$PC1
+                           exp_var_pc2 <- exp_var[1]
+                           yaxis <- c("PC1")
+                       }  else if (pc2 == 'PC2') {
+                           pc2 <- df_X$PC2
+                           exp_var_pc2 <- exp_var[2]
+                           yaxis <- c("PC2")
+                       } else if (pc2 == 'PC3') {
+                           pc2 <- df_X$PC3
+                           exp_var_pc2 <- exp_var[3]
+                           yaxis <- c("PC3")
+                       }
+
+    pca_plot_names <- ggplot(df_X, aes(pc1, pc2, colour = metadata_group)) +
+                        geom_text(aes(label = Library_ID), size = 2) +
+                        scale_colour_manual(values = metadata_group_colors) +
+                        # stat_ellipse() +
+                        xlab(paste(xaxis, " - ", exp_var_pc1)) +
+                        ylab(paste(yaxis, " - ", exp_var_pc2)) +
+                        theme_minimal(base_size = 10) +
+                        theme(legend.position = "top") +
+                        theme(legend.title = element_blank())
+
+    return(pca_plot_names)
+}
+
+```
+
+
+### nt
+Before running decontam, let's plot the samples in a PCA to see if there are any that are clearly not good-quality
+```{r raw_plot_nt}
+
+malt_species_raw <- nt_raw %>%
+  gather("Library_ID","Counts",2:ncol(.)) %>%
+  mutate(Counts = Counts + 1) %>%
+  spread(Species,Counts) %>%
+  column_to_rownames("Library_ID")
+
+# prepare to run a PCA
+# check the number of components to retain by tuning the PCA
+tune.malt_species_pca <- mixOmics::tune.pca(malt_species_raw, logratio = 'CLR')
+tune.malt_species_pca
+
+# perform a PCA to see how the data cluster
+malt_species_nt.pca <- mixOmics::pca(malt_species_raw, ncomp = 3, logratio = 'CLR')
+plot(malt_species_nt.pca)
+
+# define some colors
+Sample_or_Control_colors = c("Blue", "Magenta")
+Sample_or_Control_shapes = c(19,8)
+
+plot_pca(malt_species_nt.pca, "PC1", "PC2", "Sample_or_Control")
+plot_pca_names(malt_species_nt.pca,  "PC1", "PC2", "Sample_or_Control")
+
+```
+
+```{r outliers_nt}
+# these are the 3 blanks that "passed" the cuperdec cut-off
+# and we can see they plot with samples in the PCA above
+outliers_nt <- c("EXB059.A2501","LIB058.A0103")
+poor_samples_nt <- fread("./05-results.backup/cuperdec_nt_poor_samples.tsv") %>%
+  pull(Sample)
+
+```
+
+# Decontamination with Decontam
+We want to know if there are any species that can be removed b/c they appear to
+be contaminants. Use the package decontam to determine which species may be
+contaminants. Prepare the matrix for decontam.
+
+
+## nt
+```{r decontam_data_prep}
+# remove NA value samples from the input data frame
+malt_species_nt.dataframe <- nt_raw %>%
+  filter(!str_detect(Species, "Not assigned|Homo")) %>%
+  select(-one_of(outliers_nt)) %>%
+  select(-one_of(poor_samples_nt))%>%
+  full_join(., ars_bone_sp) %>%
+  replace(is.na(.), 0) %>%
+  gather("Library_ID","Counts", 2:ncol(.)) %>%
+  spread(Species,Counts) 
+
+# make a matrix for decontam
+malt_species_nt.matrix <- data.matrix(malt_species_nt.dataframe[2:ncol(malt_species_nt.dataframe)])
+rownames(malt_species_nt.matrix) <- malt_species_nt.dataframe$Library_ID
+
+# make a metadata dataframe with the same NA-containing samples removed
+metadata.decontam <- full_metadata %>%
+  filter(!str_detect(Library_ID, poor_samples_nt %>% str_c(collapse = "|"))) %>%
+  filter(!str_detect(Library_ID, outliers_nt %>% str_c(collapse = "|"))) %>%
+  filter(str_detect(Library_ID, "MID|CMB|EXB|LIB|ARS")) %>% 
+   filter(!str_detect(Library_ID, "EXB015|LIB007")) %>% 
+  # these samples have no metadata
+  filter(!str_detect(Library_ID, "LIB058.A0101|MID025.A0101|MID033.A0101|MID052.A0101|MID056.A0101|MID065.A0101|MID068.A0101|MID076.A0101|MID078.A0101|CSN|CSL")) %>%
+  arrange(Library_ID) %>%
+  distinct() %>%
+  bind_rows(., deep_evo_metadata %>%
+              mutate(Site = "Bone") %>%
+              select(Site, Library_ID, Sample_or_Control)) %>%
+  arrange(Site)
+
+metadata.decontam %>% select(Library_ID) %>%
+  anti_join(., malt_species_nt.dataframe %>% select(Library_ID))
+
+```
+
+Use the prevalence method for all but Kilteasheen
+
+### MID/CMB
+
+```{r decontam_data_prep}
+# remove NA value samples from the input data frame
+malt_species_nt_mid.dataframe <- nt_raw %>%
+  filter(!str_detect(Species, "Not assigned|Homo sapiens")) %>%
+  select(-one_of(outliers_nt)) %>%
+  select(-one_of(poor_samples_nt)) %>%
+  full_join(., ars_bone_sp) %>%
+  select(matches("Species|ARS|MID|CMB|LIB058.A01|EXB059|EXB034")) %>%
+  replace(is.na(.), 0) %>%
+  gather("Library_ID","Counts", 2:ncol(.)) %>%
+  spread(Species,Counts) %>%
+  arrange(Library_ID)
+
+# make a matrix for decontam
+malt_species_nt_mid.matrix <- data.matrix(malt_species_nt_mid.dataframe[2:ncol(malt_species_nt_mid.dataframe)])
+rownames(malt_species_nt_mid.matrix) <- malt_species_nt_mid.dataframe$Library_ID
+
+# make a metadata dataframe with the same NA-containing samples removed
+metadata_mid.decontam <- full_metadata %>%
+  filter(!str_detect(Library_ID, poor_samples_nt %>% str_c(collapse = "|"))) %>%
+  filter(!str_detect(Library_ID, outliers_nt %>% str_c(collapse = "|"))) %>%
+  filter(str_detect(Library_ID, "ARS|MID|CMB|LIB058.A01|EXB059|EXB034")) %>%
+  # these samples have no metadata
+  filter(!str_detect(Library_ID, "LIB058.A0101|MID025.A0101|MID033.A0101|MID052.A0101|MID056.A0101|MID065.A0101|MID068.A0101|MID076.A0101|MID078.A0101|CSN|CSL")) %>%
+  arrange(Library_ID) %>%
+  distinct() %>%
+  bind_rows(., deep_evo_metadata %>%
+              mutate(Site = "Bone") %>%
+              select(Site, Library_ID, Sample_or_Control)) %>%
+  arrange(Site)
+
+metadata_mid.decontam %>% select(Library_ID) %>%
+  anti_join(., malt_species_nt_mid.dataframe %>% select(Library_ID))
+
+```
+
+```{r decontam_prevalence}
+# Assign sample-type status to identify control samples
+metadata.decontam$is.control <- metadata.decontam$Sample_or_Control=="Control"
+
+#Try changing the probability threshold cut-off to see how many more or less are ID'd as contaminants
+contam.prev.species <- isContaminant(malt_species_nt.matrix, method="prevalence", 
+                                 neg=metadata.decontam$is.control, 
+                                 threshold = 0.8)
+
+# Check number of contaminants
+table(contam.prev.species$contaminant)
+
+# List of contaminants
+cont_prev_species_list <- contam.prev.species[which(contam.prev.species$contaminant=="TRUE"), ]
+
+# Look at the histogram - does the probability threshold need to be changed?
+ggplot(contam.prev.species, aes(x=p)) +
+  geom_histogram(bins=100) +
+  scale_y_log10() +
+  ggtitle('Prevalence - Species')
+
+
+```
+
+```{r contaminants, eval = F}
+contaminant_species_nt <- cont_prev_species_list %>% rownames_to_column("Species") %>% select(Species)
+fwrite(contaminant_species_nt, file = "./05-results.backup/contaminant_species_nt.tsv", sep="\t", quote=F)
+
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
