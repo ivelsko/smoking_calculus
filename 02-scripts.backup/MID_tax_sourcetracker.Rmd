@@ -42,6 +42,10 @@ load("./05-results.backup/Metadata_tables.RData")
 # full_metadata <- full_metadata %>%
 #   mutate(`DNA_molecules_per_library_x10^6_log` = log10(`DNA_molecules_per_library_x10^6`))
 
+outliers <- c("EXB059.A2501","LIB058.A0103","LIB058.A0106","CSS","CSD")
+poor_samples <- fread("./05-results.backup/cuperdec_poor_samples.tsv") %>%
+  pull(Sample)
+
 ```
 
 ```{r load_sourcetracker_out}
@@ -109,7 +113,7 @@ ggsave("~/Desktop/MID_st_full_plot_all.pdf", plot = st_full_plot_all, device = "
 ```
 
 ```{r}
-reduced_source_results %>%
+st_red_plot_all <- reduced_source_results %>%
   arrange(desc(modernCalculus)) %>%
   gather("Sources", "Percent",2:ncol(.)) %>%
   mutate(Sources = fct_relevel(Sources, "Unknown","bone","sediment","skin","stool","plaque","modernCalculus"),
@@ -125,6 +129,10 @@ reduced_source_results %>%
          geom_hline(yintercept=0.9, linetype="dotted", color = "gray50") +
          ylab("% attributed to source") +
          ggtitle("Reduced sources")
+st_red_plot_all
+
+ggsave("~/Desktop/st_red_plot_all.pdf", plot = st_red_plot_all, device = "pdf",
+       scale = 1, width = 16, height = 5, units = c("in"), dpi = 300)
 
 ```
 

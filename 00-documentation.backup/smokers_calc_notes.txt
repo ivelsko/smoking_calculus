@@ -524,6 +524,53 @@ snakemake -s ../../../02-scripts.backup/007b-bwamap_hhv5.Snakefile --cluster 'sb
 rm FastQC/MID084.A0101* FastQC/KT19calc* FastQC/MID092.A0101* FastQC/MID068.A0101* FastQC/KT31calc*
 
 
+################################################################
+# HOPS/MALT extract to look at alignments against odd taxa driving horseshoe shape
+# on daghead1
+conda activate /home/alexander_huebner/miniconda3/envs/hops
+
+cd /mnt/archgen/users/velsko/smokers_calc/hops_me
+
+# the snakemake file didn't work, but running it with the command below did
+snakemake -s ./008-hops_malt_extract.Snakefile --cluster-config /mnt/archgen/microbiome_calculus/abpCapture/02-scripts.backup/snakemake_default.config --cluster "qsub -pe smp 4 -l virtual_free={cluster.mem},h_vmem={cluster.mem} -o {cluster.out} -e {cluster.err}" -j 1 --restart-times 1 --latency-wait 20 -n
+
+
+/home/irina_marie_velsko/bin/miniconda2/bin/hops -Xmx200G \
+    -input /mnt/archgen/projects1/microbiome_calculus/smoking_calculus/03-preprocessing/eager2/eager2_run/metagenomic_classification/malt/*.rma6 \
+    -output /mnt/archgen/users/velsko/smokers_calc/hops_me/test_out_multi \
+    -m maltex \
+    -c maltExtract.config
+
+
+################################################################
+
+/Users/velsko/Applications/MEGAN/tools/read-extractor -i ~/projects1/microbiome_calculus/smoking_calculus/03-preprocessing/eager2/eager2_run/metagenomic_classification/malt/*.rma6 -o ~/projects1/microbiome_calculus/smoking_calculus/04-analysis/malt_checks/odd_taxa_gc -c Taxonomy -n 'Thermanaerovibrio_acidaminovorans' -v # 81462
+/Users/velsko/Applications/MEGAN/tools/read-extractor -i ~/projects1/microbiome_calculus/smoking_calculus/03-preprocessing/eager2/eager2_run/metagenomic_classification/malt/*.rma6 -o ~/projects1/microbiome_calculus/smoking_calculus/04-analysis/malt_checks/odd_taxa_gc -c Taxonomy -n 'Jonquetella_anthropi' -v # 428712
+/Users/velsko/Applications/MEGAN/tools/read-extractor -i ~/projects1/microbiome_calculus/smoking_calculus/03-preprocessing/eager2/eager2_run/metagenomic_classification/malt/*.rma6 -o ~/projects1/microbiome_calculus/smoking_calculus/04-analysis/malt_checks/odd_taxa_gc -c Taxonomy -n 'Streptobacillus_moniliformis' -v # 34105
+/Users/velsko/Applications/MEGAN/tools/read-extractor -i ~/projects1/microbiome_calculus/smoking_calculus/03-preprocessing/eager2/eager2_run/metagenomic_classification/malt/*.rma6 -o ~/projects1/microbiome_calculus/smoking_calculus/04-analysis/malt_checks/odd_taxa_gc -c Taxonomy -n 'Emergencia_timonensis' -v # 1776384
+/Users/velsko/Applications/MEGAN/tools/read-extractor -i ~/projects1/microbiome_calculus/smoking_calculus/03-preprocessing/eager2/eager2_run/metagenomic_classification/malt/*.rma6 -o ~/projects1/microbiome_calculus/smoking_calculus/04-analysis/malt_checks/odd_taxa_gc -c Taxonomy -n 'Anaerovorax_odorimutans' -v # 109327 none found
+/Users/velsko/Applications/MEGAN/tools/read-extractor -i ~/projects1/microbiome_calculus/smoking_calculus/03-preprocessing/eager2/eager2_run/metagenomic_classification/malt/*.rma6 -o ~/projects1/microbiome_calculus/smoking_calculus/04-analysis/malt_checks/odd_taxa_gc -c Taxonomy -n 'Shuttleworthia_satelles' -v # 177972 none found
+
+
+# calculate GC content with EMBOSS infoseq for each file
+infoseq -auto -outfile gc_rl_test_out_gz.tsv -only -name -length -pgc abpOther_Group4_extraction.fasta.gz
+
+for f in *.txt; do infoseq -auto -outfile $(basename $f .txt).gc_rl.tsv -only -name -length -pgc $f; done
+
+################################################################
+MetaPhlAn3 on MID and CMB
+
+# here: /projects1/microbiome_calculus/smoking_calculus/04-analysis/metaphlan3
+snakemake -s ../../02-scripts.backup/009-metaphlan3_mid_cmb.Snakefile --cluster 'sbatch --mem 4G -p short -n {threads}' -j 4 -k --restart-times 3 -n
+
+# merge the tables
+merge_metaphlan_tables.py *.metaphlan3.tsv > MID_CMB_abundance_table.tsv
+
+
+
+
+
+
 
 
 

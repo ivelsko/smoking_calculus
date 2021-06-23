@@ -317,11 +317,8 @@ contaminants. Prepare the matrix for decontam.
 
 ## sub10M
 ```{r decontam_data_prep}
-# list out the samples that have all 0 or NA values to remove from the input matrix
-# NA_filter_list <- metadata %>% filter((is.na(SumLibraryConcentration_copies_ul) | SumLibraryConcentration_copies_ul <= 0)) %>% select(Library_ID)
-
 # remove NA value samples from the input data frame
-malt_species.dataframe <- sub10M_raw %>%
+malt_species_10M.dataframe <- sub10M_raw %>%
   filter(!str_detect(Species, "Not assigned|Homo sapiens")) %>%
   select(-one_of(outliers_sub10M)) %>%
   select(-one_of(poor_samples_10M)) %>%
@@ -329,8 +326,6 @@ malt_species.dataframe <- sub10M_raw %>%
   replace(is.na(.), 0) %>%
   gather("Library_ID","Counts", 2:ncol(.)) %>%
   spread(Species,Counts) 
-# %>%
-#   anti_join(., NA_filter_list)
 
 # make a matrix for decontam
 malt_species.matrix <- data.matrix(malt_species.dataframe[2:ncol(malt_species.dataframe)])
@@ -339,10 +334,10 @@ rownames(malt_species.matrix) <- malt_species.dataframe$Library_ID
 # make a metadata dataframe with the same NA-containing samples removed
 metadata.decontam <- full_metadata %>%
   filter(!str_detect(Library_ID, poor_samples_10M %>% str_c(collapse = "|"))) %>%
-  # anti_join(., NA_filter_list, by = "Library_ID") %>%
   filter(!str_detect(Library_ID, outliers_sub10M %>% str_c(collapse = "|"))) %>%
-  filter(Library_ID != "LIB058.A0101") %>% # this sample is not in the metadata
-  filter(!str_detect(Library_ID, "MID025.A0101|MID033.A0101|MID052.A0101|MID056.A0101|MID065.A0101|MID068.A0101|MID076.A0101|MID078.A0101|CSN|CSL")) %>%
+  filter(!str_detect(Library_ID, "VLC")) %>% 
+  # these samples have no metadata
+  filter(!str_detect(Library_ID, "LIB058.A0101|MID025.A0101|MID033.A0101|MID052.A0101|MID056.A0101|MID065.A0101|MID068.A0101|MID076.A0101|MID078.A0101|CSN|CSL")) %>%
   arrange(Library_ID) %>%
   distinct() %>%
   bind_rows(., deep_evo_metadata %>%
@@ -355,7 +350,46 @@ metadata.decontam %>% select(Library_ID) %>%
 
 ```
 
-Try the prevalence method to compare. 
+Use the prevalence method for all but Kilteasheen
+
+### MID/CMB
+
+```{r decontam_data_prep}
+# remove NA value samples from the input data frame
+malt_species_10M_mid.dataframe <- sub10M_raw %>%
+  filter(!str_detect(Species, "Not assigned|Homo sapiens")) %>%
+  select(-one_of(outliers_sub10M)) %>%
+  select(-one_of(poor_samples_10M)) %>%
+  full_join(., ars_bone_sp) %>%
+  select(matches("Species|ARS|MID|CMB|LIB058.A01|EXB059|EXB034")) %>%
+  replace(is.na(.), 0) %>%
+  gather("Library_ID","Counts", 2:ncol(.)) %>%
+  spread(Species,Counts) %>%
+  arrange(Library_ID)
+
+# make a matrix for decontam
+malt_species_10M_mid.matrix <- data.matrix(malt_species_10M_mid.dataframe[2:ncol(malt_species_10M_mid.dataframe)])
+rownames(malt_species_10M_mid.matrix) <- malt_species_10M_mid.dataframe$Library_ID
+
+# make a metadata dataframe with the same NA-containing samples removed
+metadata_mid.decontam <- full_metadata %>%
+  filter(!str_detect(Library_ID, poor_samples_10M %>% str_c(collapse = "|"))) %>%
+  filter(!str_detect(Library_ID, outliers_sub10M %>% str_c(collapse = "|"))) %>%
+  filter(str_detect(Library_ID, "ARS|MID|CMB|LIB058.A01|EXB059|EXB034")) %>%
+  # these samples have no metadata
+  filter(!str_detect(Library_ID, "LIB058.A0101|MID025.A0101|MID033.A0101|MID052.A0101|MID056.A0101|MID065.A0101|MID068.A0101|MID076.A0101|MID078.A0101|CSN|CSL")) %>%
+  arrange(Library_ID) %>%
+  distinct() %>%
+  bind_rows(., deep_evo_metadata %>%
+              mutate(Site = "Bone") %>%
+              select(Site, Library_ID, Sample_or_Control)) %>%
+  arrange(Site)
+
+metadata_mid.decontam %>% select(Library_ID) %>%
+  anti_join(., malt_species_10M_mid.dataframe %>% select(Library_ID))
+
+```
+
 ```{r decontam_prevalence}
 # Assign sample-type status to identify control samples
 metadata.decontam$is.control <- metadata.decontam$Sample_or_Control=="Control"
