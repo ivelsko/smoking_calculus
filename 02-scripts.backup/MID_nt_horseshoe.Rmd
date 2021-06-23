@@ -1,0 +1,454 @@
+---
+title: "Smokers calculus horseshoe investigation nt MALT database"
+author: "Irina Velsko"
+date: "`r format(Sys.time(), '%b %d, %Y')`"
+output: html_notebook
+---
+
+```{r load_libraries, echo = F, message = F}
+library(knitr)
+library(mixOmics)
+library(data.table)
+library(vegan)
+library(compositions)
+library(janitor)
+library(tidyverse)
+library(cowplot)
+```
+
+Set the working directory of the notebook to the parent directory of the 
+notebook itself.  
+
+```{r setup}
+knitr::opts_knit$set(root.dir = normalizePath(".."))
+```
+
+```{r load_data}
+# read in the species table
+nt_raw <- fread("./05-results.backup/MID_CMB_malt_nt-comparison-genus.txt")
+
+# clean the file names
+nt_raw <- rename(nt_raw, Species = `#Datasets`)
+colnames(nt_raw) <- gsub(".unmapped","", colnames(nt_raw))
+colnames(nt_raw) <- gsub(".10M","", colnames(nt_raw))
+
+# remove human and unassigned reads, convert NA to 0, and remove the 8 MID samples with no metadata
+nt_raw <- nt_raw %>% 
+  filter(!str_detect(Species, "Homo|Not assigned")) %>%
+  replace(is.na(.), 0) %>%
+  # these samples have no metadata
+  select(-c("MID025.A0101","MID033.A0101","MID052.A0101","MID056.A0101","MID065.A0101","MID068.A0101","MID076.A0101","MID078.A0101")) %>%
+  arrange(Species)
+
+```
+
+Read in the metadata tables
+```{r metadata}
+# load the metadata file
+load("./05-results.backup/Metadata_tables.RData")
+
+```
+
+List the outliers from the plot in `MID_CMB_Rad_Kil_Iber_decontam.Rmd`. 
+```{r outliers}
+outliers <- c("EXB059.A2501","LIB058.A0103","LIB058.A0106","CSS","CSD")
+poor_samples_nt <- fread("./05-results.backup/cuperdec_nt_poor_samples.tsv") %>%
+  pull(Sample)
+
+outliersF <- str_c(outliers, collapse = "|")
+
+```
+
+## Unfiltered data
+```{r}
+nt_contaminants <- fread("./05-results.backup/contaminant_species_nt.tsv", sep = "\t")
+# sub75bp_contaminants <- fread("./05-results.backup/contaminant_species_sub75bp.tsv", sep = "\t")
+
+# remove contaminant species from nt table
+nt_species_decontam <- nt_raw %>%
+  anti_join(., nt_contaminants)
+
+malt_otu_pca_table <- nt_species_decontam %>%
+  select(matches("Species|MID")) %>%
+  select(-one_of(outliers)) %>%
+  select(-one_of(poor_samples_nt)) %>%
+  gather("Library_ID","Counts",2:ncol(.)) %>%
+  mutate(Counts = Counts + 1) %>%
+  spread(Species, Counts) %>%
+  column_to_rownames("Library_ID")
+
+# look at the screenplot to decide how many components to keep for the PCA -> will keep all but 2
+mixOmics::tune.pca(malt_otu_pca_table, logratio = 'CLR')
+# perform a PCA to see how the data cluster
+malt_otu.pca <- mixOmics::pca(malt_otu_pca_table, ncomp = 2, logratio = 'CLR')
+malt_pca_values <- malt_otu.pca$variates$X %>%
+  as.data.frame() %>%
+  rownames_to_column("Library_ID") %>%
+  inner_join(., full_metadata, by = "Library_ID")
+
+```
+There is a point, point where bars jump from tall to much shorter, this number is used to determine numbers of components for pca (2 bars high, dropdown = leave at 2, only one bar = leave at 2), these contain most contaminations. Will leave 2 as number.
+
+Plot the PCA
+```{r}
+# plot the PCA with Library_IDs
+ggplot(malt_pca_values, aes(PC1, PC2, color = Region, shape = Region)) +
+  geom_text(aes(label = Library_ID), size = 3) +
+  theme_minimal()
+
+horseshoe <- ggplot(malt_pca_values, aes(PC1, PC2, color = Region, shape = Region)) +
+  geom_point(size = 2) +
+  theme_minimal()
+
+horseshoe
+
+# ggsave("~/Desktop/MID_horseshoe.pdf", plot = horseshoe, device = "pdf",
+#        scale = 1, width = 7, height = 5, units = c("in"), dpi = 300)
+
+```
+
+
+
+```{r}
+
+# plot with the species ordered by loading in PC1
+# Plot the heatmap with samples ordered by the loading in PC1 from above
+# make the Library_IDs a factor so they're in the correct order for the heatmap using the vector from the step above
+
+
+sample_order <- malt_pca_values %>%
+  arrange(PC1) %>%
+  pull(Library_ID)
+
+species_order <- malt_otu.pca$loadings$X %>%
+  as.data.frame() %>%
+  rownames_to_column("Species") %>%
+  arrange(desc(PC1)) %>%
+  filter(!between(PC1, -0.01, 0.01)) %>%
+  pull(Species)
+
+# re-define Region_colors so we don't have the additional regions as factors to deal with later
+Region_colors = c("#311068","#E95562")
+
+# CLR-transform the matrix for plotting the heatmap
+malt_otu_pca_table_clr <- clr(malt_otu_pca_table) # malt_otu_pca_table_filt
+malt_otu_pca_table_clr <- as.matrix(malt_otu_pca_table_clr)
+
+malt_otu_pca_table_clr_long <- malt_otu_pca_table_clr %>%
+  as.data.frame() %>%
+  rownames_to_column("Library_ID") %>%
+  gather("Species","CLR",2:ncol(.)) %>%
+  spread(Library_ID,CLR) %>%
+  filter(Species %in% species_order) %>%
+  mutate(Species = fct_relevel(Species, species_order)) %>%
+  arrange(Species) %>%
+  gather("Library_ID","CLR", 2:ncol(.)) %>%
+  inner_join(., full_metadata %>%
+               select(Library_ID, Region), by = "Library_ID") %>%
+  inner_join(., Region_colors %>%
+               as_data_frame(.) %>%
+               rename(Color = value) %>%
+               mutate(Region = c("Netherlands","Spain")), by = "Region") %>%
+  mutate(Library_ID = fct_relevel(Library_ID,  sample_order)) %>% # malt_otu_pca_table_clr_smp_order for cluster order
+  arrange(Library_ID)
+
+vector_color = malt_otu_pca_table_clr_long %>%
+  select(Library_ID, Color) %>%
+  unique %>%
+  pull(Color) %>%
+  as.character()
+
+# make a heatmap with ggplot
+heatmap_base <- ggplot(malt_otu_pca_table_clr_long, aes(Species, Library_ID, fill = CLR)) +
+  geom_tile() +
+  scale_fill_viridis_c(option = "A") +
+  theme_minimal(base_size = 7) +
+  theme(axis.text.x = element_text(angle = 90, hjust = 0.95), # , color = vector_color
+        plot.margin = margin(0, 0, 0, 0, "pt"),
+        axis.title.y = element_blank(),
+        legend.position = "left")
+
+heatmap_base
+
+
+```
+
+Look at the first and last 50 species ordered this way - are there any
+physiological characteristics that exlain grouping (like Gram+/-, oxygen
+tolerance, etc)?
+```{r}
+malt_otu.pca$loadings$X %>%
+  as.data.frame() %>%
+  rownames_to_column("Species") %>%
+  arrange(desc(PC1)) %>%
+  slice_head(., n = 50)
+
+malt_otu.pca$loadings$X %>%
+  as.data.frame() %>%
+  rownames_to_column("Species") %>%
+  arrange(desc(PC1)) %>%
+  slice_tail(., n = 50) %>%
+  arrange(PC1)
+
+```
+It looks like there are 2 things going on here. First, there is a gradient in
+oxygen tolerance, and second there is a difference in preservation. Many of the
+first 30 or so taxa with strongest loading in PC1+ values are early-colonizer,
+aerobic and facultative taxa. The species with strongest loading in PC1- values
+are largely not typical oral taxa, however are anaerobic, assacharolytic, and
+close relatives of other (well-known/characterized) oral taxa.Then after that
+the taxa are predominantly late-colonizer, anaerobic taxa more commonly seen in
+dental plaque.
+
+Kirsten pooled calculus off of multiple teeth for extraction of MID samples, but
+I need to ask if Lena has records of which teeth she pooled for each sample.
+Also need to ask Lena which teeth were sampled for the CMB individuals, and if
+they were pooled.
+
+It would be good to be able to assess preservation. Perhaps run sourceTracker?
+The ARS bones from James' paper were included in decontam as controls, but these
+bones are not site-specific. Does that matter?
+
+```{r}
+pc1_pws_species <- malt_otu.pca$loadings$X %>%
+         as.data.frame() %>%
+         rownames_to_column("Species") %>%
+         arrange(desc(PC1)) %>%
+         slice_head(., n = 50) %>%
+         pull(Species)
+
+all_species_decontam %>%
+  adorn_totals(where = "col") %>%
+  select(Species, Total) %>%
+  arrange(desc(Total)) %>%
+  mutate(Order = 1:n()) %>%
+  filter(Species %in% pc1_pws_species) %>%
+  as_tibble()
+
+pc1_neg_species <- malt_otu.pca$loadings$X %>%
+         as.data.frame() %>%
+         rownames_to_column("Species") %>%
+         arrange(desc(PC1)) %>%
+         slice_tail(., n = 50) %>%
+         pull(Species)
+
+all_species_decontam %>%
+  adorn_totals(where = "col") %>%
+  select(Species, Total) %>%
+  arrange(desc(Total)) %>%
+  mutate(Order = 1:n()) %>%
+  filter(Species %in% pc1_neg_species) %>%
+  as_tibble()
+
+```
+
+## Abundance-filtered data
+```{r}
+malt_otu_filt_pca_table <- nt_species_decontam %>%
+  select(matches("Species|MID")) %>%
+  select(-one_of(outliers)) %>%
+  select(-one_of(poor_samples_nt)) %>%
+  adorn_totals(where = "col", name = "Sum_species") %>%
+  mutate(Percent = Sum_species/sum(Sum_species)*100) %>%
+  filter(Percent > 0.001) %>%
+  gather("Library_ID","Counts",2:ncol(.)) %>%
+  mutate(Counts = Counts + 1) %>%
+  spread(Species, Counts) %>%
+  column_to_rownames("Library_ID")
+
+# look at the screenplot to decide how many components to keep for the PCA -> will keep all but 2
+mixOmics::tune.pca(malt_otu_filt_pca_table, logratio = 'CLR')
+# perform a PCA to see how the data cluster
+malt_otu_filt.pca <- mixOmics::pca(malt_otu_filt_pca_table, ncomp = 2, logratio = 'CLR')
+malt_filt_pca_values <- malt_otu_filt.pca$variates$X %>%
+  as.data.frame() %>%
+  rownames_to_column("Library_ID") %>%
+  inner_join(., full_metadata, by = "Library_ID")
+
+```
+There is a point, point where bars jump from tall to much shorter, this number is used to determine numbers of components for pca (2 bars high, dropdown = leave at 2, only one bar = leave at 2), these contain most contaminations. Will leave 2 as number.
+
+Plot the PCA
+```{r}
+# plot the PCA with Library_IDs
+ggplot(malt_filt_pca_values, aes(PC1, PC2, color = Region, shape = Region)) +
+  geom_text(aes(label = Library_ID), size = 3) +
+  theme_minimal()
+
+horseshoe <- ggplot(malt_filt_pca_values, aes(PC2, PC1, color = Region, shape = Region)) +
+  geom_point(size = 2) +
+  theme_minimal()
+
+horseshoe
+
+ggsave("~/Desktop/MID_horseshoe.pdf", plot = horseshoe, device = "pdf",
+       scale = 1, width = 5, height = 5, units = c("in"), dpi = 300)
+
+```
+
+
+
+```{r}
+
+# plot with the species ordered by loading in PC1
+# Plot the heatmap with samples ordered by the loading in PC1 from above
+# make the Library_IDs a factor so they're in the correct order for the heatmap using the vector from the step above
+
+
+sample_order <- malt_filt_pca_values %>%
+  arrange(PC1) %>%
+  pull(Library_ID)
+
+species_filt_order <- malt_otu_filt.pca$loadings$X %>%
+  as.data.frame() %>%
+  rownames_to_column("Species") %>%
+  arrange(desc(PC1)) %>%
+  filter(!between(PC1, -0.01, 0.01)) %>%
+  pull(Species)
+
+# re-define Region_colors so we don't have the additional regions as factors to deal with later
+Region_colors = c("#311068","#E95562")
+
+# CLR-transform the matrix for plotting the heatmap
+malt_otu_filt_pca_table_clr <- clr(malt_otu_filt_pca_table) # malt_otu_filt_pca_table_filt
+malt_otu_filt_pca_table_clr <- as.matrix(malt_otu_filt_pca_table_clr)
+
+malt_otu_filt_pca_table_clr_long <- malt_otu_filt_pca_table_clr %>%
+  as.data.frame() %>%
+  rownames_to_column("Library_ID") %>%
+  gather("Species","CLR",2:ncol(.)) %>%
+  spread(Library_ID,CLR) %>%
+  filter(Species %in% species_filt_order) %>%
+  mutate(Species = fct_relevel(Species, species_filt_order)) %>%
+  arrange(Species) %>%
+  gather("Library_ID","CLR", 2:ncol(.)) %>%
+  inner_join(., full_metadata %>%
+               select(Library_ID, Region), by = "Library_ID") %>%
+  inner_join(., Region_colors %>%
+               as_data_frame(.) %>%
+               rename(Color = value) %>%
+               mutate(Region = c("Netherlands","Spain")), by = "Region") %>%
+  mutate(Library_ID = fct_relevel(Library_ID,  sample_order)) %>% # malt_otu_filt_pca_table_clr_smp_order for cluster order
+  arrange(Library_ID)
+
+vector_color = malt_otu_filt_pca_table_clr_long %>%
+  select(Library_ID, Color) %>%
+  unique %>%
+  pull(Color) %>%
+  as.character()
+
+# make a heatmap with ggplot
+heatmap_base <- ggplot(malt_otu_filt_pca_table_clr_long, aes(Species, Library_ID, fill = CLR)) +
+  geom_tile() +
+  scale_fill_viridis_c(option = "A") +
+  theme_minimal(base_size = 7) +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1), # , color = vector_color
+        plot.margin = margin(0, 0, 0, 0, "pt"),
+        axis.title.y = element_blank(),
+        legend.position = "left")
+
+heatmap_base
+
+# ggsave("~/Desktop/heatmap_ordered.pdf", plot = heatmap_base, device = "pdf",
+#        scale = 1, width = 20, height = 9.5, units = c("in"), dpi = 300)
+
+```
+
+Look at the first and last 50 species ordered this way - are there any
+physiological characteristics that exlain grouping (like Gram+/-, oxygen
+tolerance, etc)?
+```{r}
+malt_otu_filt.pca$loadings$X %>%
+  as.data.frame() %>%
+  rownames_to_column("Species") %>%
+  arrange(desc(PC1)) %>%
+  slice_head(., n = 50)
+
+malt_otu_filt.pca$loadings$X %>%
+  as.data.frame() %>%
+  rownames_to_column("Species") %>%
+  arrange(desc(PC1)) %>%
+  slice_tail(., n = 50) %>%
+  arrange(PC1)
+
+```
+
+```{r}
+pc1_pws_species_filt <- malt_otu_filt.pca$loadings$X %>%
+         as.data.frame() %>%
+         rownames_to_column("Species") %>%
+         arrange(desc(PC1)) %>%
+         slice_head(., n = 50) %>%
+         pull(Species)
+
+all_species_decontam %>%
+  adorn_totals(where = "col") %>%
+  select(Species, Total) %>%
+  arrange(desc(Total)) %>%
+  mutate(Order = 1:n()) %>%
+  filter(Species %in% pc1_pws_species_filt) %>%
+  as_tibble()
+
+pc1_neg_species_filt <- malt_otu_filt.pca$loadings$X %>%
+         as.data.frame() %>%
+         rownames_to_column("Species") %>%
+         arrange(desc(PC1)) %>%
+         slice_tail(., n = 50) %>%
+         pull(Species)
+
+all_species_decontam %>%
+  adorn_totals(where = "col") %>%
+  select(Species, Total) %>%
+  arrange(desc(Total)) %>%
+  mutate(Order = 1:n()) %>%
+  filter(Species %in% pc1_neg_species_filt) %>%
+  as_tibble()
+
+```
+
+```{r}
+
+malt_pca_species %>%
+  mutate(topPC1 = PC1 > PC2 & PC1 > PC3,
+         lowPC1 = PC1 < PC2 & PC1 < PC3) %>%
+  filter(topPC1 == TRUE, lowPC1 == TRUE)
+
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

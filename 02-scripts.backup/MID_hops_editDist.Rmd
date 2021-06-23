@@ -1,0 +1,582 @@
+---
+title: "MID/CMB, Radcliffe, Kilteasheen, Iberian medieval calculus metadata and colors"
+author: "Irina Velsko"
+date: "`r format(Sys.time(), '%b %d, %Y')`"
+output:
+    github_document:
+        fig_width: 8
+        fig_height: 6
+        toc: true
+---
+
+```{r load_libraries, echo = F, message = F}
+library(knitr)
+library(data.table)
+library(tidyverse)
+
+```
+
+```{r setup}
+knitr::opts_knit$set(root.dir = normalizePath(".."))
+```
+
+
+```{r}
+# load the metadata file
+load("./05-results.backup/Metadata_tables.RData")
+```
+
+```{r}
+# load the edit distance tables
+# ancient settings
+ed_list_anc <- list.files(path = "~/archgen/users/velsko/smokers_calc/hops_me/test_out_multi/maltExtract/ancient/editDistance/", pattern = ".txt", full.names = T)
+
+ed_anc <- map_dfr(ed_list_anc, function(fn) {
+  fread(fn, sep = "\t") %>%
+  mutate(Library_ID = basename(fn))
+}) %>%
+  arrange(Library_ID) %>%
+  mutate(Library_ID = str_replace(Library_ID, ".unmapped.rma6_editDistance.txt","")) %>%
+  select(Library_ID, Taxon, everything(.)) %>%
+  gather("EditDist","Counts", 3:ncol(.))
+
+# default settings
+ed_list_def <- list.files(path = "~/archgen/users/velsko/smokers_calc/hops_me/test_out_multi/maltExtract/default/editDistance/", pattern = ".txt", full.names = T)
+
+ed_def <- map_dfr(ed_list_def, function(fn) {
+  fread(fn, sep = "\t") %>%
+  mutate(Library_ID = basename(fn))
+}) %>%
+  arrange(Library_ID) %>%
+  mutate(Library_ID = str_replace(Library_ID, ".unmapped.rma6_editDistance.txt","")) %>%
+  select(Library_ID, Taxon, everything(.)) %>%
+  gather("EditDist","Counts", 3:ncol(.))
+
+```
+
+
+# Default Settings
+```{r seqdepth_groups}
+ed_def_sum <- ed_def %>%
+  mutate(Taxon = str_replace_all(Taxon, "_DSM_5092",""),
+         Taxon = str_replace_all(Taxon, "_DSM_6589",""),
+         Taxon = str_replace_all(Taxon, "_DSM_22815",""),
+         Taxon = str_replace_all(Taxon, "_str._T_A4",""),
+         Taxon = str_replace_all(Taxon, "_DSM_14600",""),
+         Taxon = str_replace_all(Taxon, "_DSM_19115",""),
+         Taxon = str_replace_all(Taxon, "_ATCC_33806","")) %>%
+  group_by(Library_ID, Taxon, EditDist) %>%
+  summarize(Reads = sum(Counts)) %>%
+  ungroup() %>%
+  mutate(EditDist = fct_relevel(EditDist, "0","1","2","3","4","5","6","7","8","9","10","higher")) %>%
+  arrange(Library_ID, Taxon, EditDist)
+
+ed_def_sum %>%
+  filter(str_detect(Library_ID, "030|024|058|034|084|072|059|093|051|097|064")) %>%
+  filter(str_detect(EditDist, "0|1|2|3|4|5"),
+         Reads <= 120) %>%
+  ggplot(., aes(x = EditDist, y = Reads)) +
+    geom_point(size = 2, color = "grey50") +
+    theme_minimal() +
+    # scale_fill_manual(values = colors3) +
+    # scale_shape_manual(values = shapes3) +
+    theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5),
+          text = element_text(size=12)) +
+    scale_y_continuous(breaks=scales::pretty_breaks(n=8)) +
+    # geom_hline(yintercept = 5000000, linetype = "dotted") +
+    facet_wrap(~Taxon, nrow = 2) +
+    ylab("No. reads")
+
+
+```
+
+# Ancient Settings
+```{r seqdepth_groups}
+ed_anc_sum <- ed_anc %>%
+  mutate(Taxon = str_replace_all(Taxon, "_DSM_5092",""),
+         Taxon = str_replace_all(Taxon, "_DSM_6589",""),
+         Taxon = str_replace_all(Taxon, "_DSM_22815",""),
+         Taxon = str_replace_all(Taxon, "_str._T_A4",""),
+         Taxon = str_replace_all(Taxon, "_DSM_14600",""),
+         Taxon = str_replace_all(Taxon, "_DSM_19115",""),
+         Taxon = str_replace_all(Taxon, "_ATCC_33806","")) %>%
+  group_by(Library_ID, Taxon, EditDist) %>%
+  summarize(Reads = sum(Counts)) %>%
+  ungroup() %>%
+  mutate(EditDist = fct_relevel(EditDist, "0","1","2","3","4","5","6","7","8","9","10","higher")) %>%
+  arrange(Library_ID, Taxon, EditDist)
+
+ed_anc_sum %>%
+  filter(str_detect(Library_ID, "030|024|058|034|084|072|059|093|051|097|064")) %>%
+  filter(str_detect(EditDist, "0|1|2|3|4|5")) %>%
+  ggplot(., aes(x = EditDist, y = Reads)) +
+    geom_point(size = 2, color = "grey50") +
+    theme_minimal() +
+    # scale_fill_manual(values = colors3) +
+    # scale_shape_manual(values = shapes3) +
+    theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5),
+          text = element_text(size=12)) +
+    scale_y_continuous(breaks=scales::pretty_breaks(n=8)) +
+    # geom_hline(yintercept = 5000000, linetype = "dotted") +
+    facet_wrap(~Taxon, nrow = 3) +
+    ylab("No. reads")
+
+
+```
+
+```{r}
+ed_anc_sum %>%
+  filter(str_detect(Library_ID, "030|024|058|034|084|072|059|093|051|097|064")) %>%
+  group_by(Taxon, EditDist) %>%
+  count(Reads, name = "Libraries") %>%
+  full_join(., ed_anc_sum, by = c("Taxon","EditDist","Reads")) %>%
+  filter(str_detect(EditDist, "0|1|2|3|4|5"),
+         Reads > 0) %>%
+  select(-Library_ID) %>%
+  ggplot(., aes(x = EditDist, y = Reads, size = Libraries, color = Libraries)) +
+    geom_point() +
+    theme_minimal() +
+    # scale_fill_manual(values = colors3) +
+    # scale_shape_manual(values = shapes3) +
+    theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5),
+          text = element_text(size=12)) +
+    scale_y_continuous(breaks=scales::pretty_breaks(n=12)) +
+    scale_color_continuous(limits = c(1,8), breaks = c(0, 2, 4, 6, 8), guide = guide_colorbar(draw.ulim = T, draw.llim = T, reverse = T)) +
+    # scale_color_continuous(limits = c(1,28), breaks = c(0, 5, 10, 15, 20, 25, 30), guide = guide_colorbar(draw.ulim = T, draw.llim = T, reverse = T)) +
+    theme(panel.grid.minor.y = element_blank()) +
+    scale_size_binned() +
+    facet_wrap(~Taxon, nrow = 3) +
+    ylab("No. reads")
+
+```
+
+```{r Anaerovorax_odorimutans}
+plot1 <- ed_def_sum %>%
+  filter(str_detect(Library_ID, "030|024|058|034|084|072|059|061|036|023|090|079|026|027|080"), # |093|051|097|064
+         !str_detect(Library_ID, "EXB|LIB")) %>%
+  filter(str_detect(EditDist, "0|1|2|3|4|5"),
+         EditDist != "10",
+         Taxon == "Anaerovorax_odorimutans") %>% # Anaerovorax_odorimutans Emergencia_timonensis Jonquetella_anthropi Ndongobacter_massiliensis Shuttleworthia_satelles Streptobacillus_moniliformis Thermanaerovibrio_acidaminovorans Treponema_pedis; Actinomyces_dentalis Corynebacterium_matruchotii
+  mutate(Library_ID = fct_relevel(Library_ID, "MID030.A0101","MID024.A0101","MID058.A0101","MID034.A0101","MID084.A0101","MID072.A0101","MID059.A0101","MID061.A0101","MID036.A0101","MID023.A0101","MID090.A0101","MID079.A0101","MID026.A0101","MID027.A0101","MID080.A0101")) %>%
+  ggplot(., aes(x = EditDist, y = Reads)) +
+    geom_bar(stat = "identity") +
+    theme_minimal() +
+    theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5),
+          text = element_text(size=12)) +
+    scale_y_continuous(breaks=scales::pretty_breaks(n=6)) +
+    theme(panel.grid.minor.y = element_blank()) +
+    facet_wrap(~Library_ID, nrow = 3) +
+    ylab("No. reads") +
+    ggtitle("Default Anaerovorax_odorimutans")
+plot1
+
+# ggsave("~/Desktop/a_odorimutans.pdf", plot = plot1, device = "pdf",
+#         scale = 1, width = 7, height = 5, units = c("in"), dpi = 300)
+
+
+ed_anc_sum %>%
+  filter(str_detect(Library_ID, "030|024|058|034|084|072|059|061|036|023|090|079|026|027|080"), # |093|051|097|064
+         !str_detect(Library_ID, "EXB|LIB")) %>%
+  filter(str_detect(EditDist, "0|1|2|3|4|5"),
+         EditDist != "10",
+         Taxon == "Anaerovorax_odorimutans") %>% # Anaerovorax_odorimutans Emergencia_timonensis Jonquetella_anthropi Ndongobacter_massiliensis Shuttleworthia_satelles Streptobacillus_moniliformis Thermanaerovibrio_acidaminovorans Treponema_pedis; Actinomyces_dentalis Corynebacterium_matruchotii
+  mutate(Library_ID = fct_relevel(Library_ID, "MID030.A0101","MID024.A0101","MID058.A0101","MID034.A0101","MID084.A0101","MID072.A0101","MID059.A0101","MID061.A0101","MID036.A0101","MID023.A0101","MID090.A0101","MID079.A0101","MID026.A0101","MID027.A0101","MID080.A0101")) %>%
+  ggplot(., aes(x = EditDist, y = Reads)) +
+    geom_bar(stat = "identity") +
+    theme_minimal() +
+    theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5),
+          text = element_text(size=12)) +
+    scale_y_continuous(breaks=scales::pretty_breaks(n=6)) +
+    theme(panel.grid.minor.y = element_blank()) +
+    facet_wrap(~Library_ID, nrow = 3) +
+    ylab("No. reads") +
+    ggtitle("Ancient Anaerovorax_odorimutans")
+
+```
+
+```{r Emergencia_timonensis}
+ed_def_sum %>%
+  filter(str_detect(Library_ID, "030|024|058|034|084|072|059|061|036|023|090|079|026|027|080"), # |093|051|097|064
+         !str_detect(Library_ID, "EXB|LIB")) %>%
+  filter(str_detect(EditDist, "0|1|2|3|4|5"),
+         EditDist != "10",
+         Taxon == "Emergencia_timonensis") %>% # Anaerovorax_odorimutans Emergencia_timonensis Jonquetella_anthropi Ndongobacter_massiliensis Shuttleworthia_satelles Streptobacillus_moniliformis Thermanaerovibrio_acidaminovorans Treponema_pedis; Actinomyces_dentalis Corynebacterium_matruchotii
+  mutate(Library_ID = fct_relevel(Library_ID, "MID030.A0101","MID024.A0101","MID058.A0101","MID034.A0101","MID084.A0101","MID072.A0101","MID059.A0101","MID061.A0101","MID036.A0101","MID023.A0101","MID090.A0101","MID079.A0101","MID026.A0101","MID027.A0101","MID080.A0101")) %>%
+  ggplot(., aes(x = EditDist, y = Reads)) +
+    geom_bar(stat = "identity") +
+    theme_minimal() +
+    theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5),
+          text = element_text(size=12)) +
+    scale_y_continuous(breaks=scales::pretty_breaks(n=6)) +
+    theme(panel.grid.minor.y = element_blank()) +
+    facet_wrap(~Library_ID, nrow = 3) +
+    ylab("No. reads") +
+    ggtitle("Default Emergencia_timonensis")
+
+ed_anc_sum %>%
+  filter(str_detect(Library_ID, "030|024|058|034|084|072|059|061|036|023|090|079|026|027|080"), # |093|051|097|064
+         !str_detect(Library_ID, "EXB|LIB")) %>%
+  filter(str_detect(EditDist, "0|1|2|3|4|5"),
+         EditDist != "10",
+         Taxon == "Emergencia_timonensis") %>% # Anaerovorax_odorimutans Emergencia_timonensis Jonquetella_anthropi Ndongobacter_massiliensis Shuttleworthia_satelles Streptobacillus_moniliformis Thermanaerovibrio_acidaminovorans Treponema_pedis; Actinomyces_dentalis Corynebacterium_matruchotii
+  mutate(Library_ID = fct_relevel(Library_ID, "MID030.A0101","MID024.A0101","MID058.A0101","MID034.A0101","MID084.A0101","MID072.A0101","MID059.A0101","MID061.A0101","MID036.A0101","MID023.A0101","MID090.A0101","MID079.A0101","MID026.A0101","MID027.A0101","MID080.A0101")) %>%
+  ggplot(., aes(x = EditDist, y = Reads)) +
+    geom_bar(stat = "identity") +
+    theme_minimal() +
+    theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5),
+          text = element_text(size=12)) +
+    scale_y_continuous(breaks=scales::pretty_breaks(n=6)) +
+    theme(panel.grid.minor.y = element_blank()) +
+    facet_wrap(~Library_ID, nrow = 3) +
+    ylab("No. reads") +
+    ggtitle("Ancient Emergencia_timonensis")
+
+```
+
+```{r Jonquetella_anthropi}
+plot2 <- ed_def_sum %>%
+  filter(str_detect(Library_ID, "030|024|058|034|084|072|059|061|036|023|090|079|026|027|080"), # |093|051|097|064
+         !str_detect(Library_ID, "EXB|LIB")) %>%
+  filter(str_detect(EditDist, "0|1|2|3|4|5"),
+         EditDist != "10",
+         Taxon == "Jonquetella_anthropi") %>% # Anaerovorax_odorimutans Emergencia_timonensis Jonquetella_anthropi Ndongobacter_massiliensis Shuttleworthia_satelles Streptobacillus_moniliformis Thermanaerovibrio_acidaminovorans Treponema_pedis; Actinomyces_dentalis Corynebacterium_matruchotii
+  mutate(Library_ID = fct_relevel(Library_ID, "MID030.A0101","MID024.A0101","MID058.A0101","MID034.A0101","MID084.A0101","MID072.A0101","MID059.A0101","MID061.A0101","MID036.A0101","MID023.A0101","MID090.A0101","MID079.A0101","MID026.A0101","MID027.A0101","MID080.A0101")) %>%
+  ggplot(., aes(x = EditDist, y = Reads)) +
+    geom_bar(stat = "identity") +
+    theme_minimal() +
+    theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5),
+          text = element_text(size=12)) +
+    scale_y_continuous(breaks=scales::pretty_breaks(n=6)) +
+    theme(panel.grid.minor.y = element_blank()) +
+    facet_wrap(~Library_ID, nrow = 3) +
+    ylab("No. reads") +
+    ggtitle("Default Jonquetella_anthropi")
+plot2
+
+# ggsave("~/Desktop/j_anthropi.pdf", plot = plot2, device = "pdf",
+#         scale = 1, width = 7, height = 5, units = c("in"), dpi = 300)
+
+ed_anc_sum %>%
+  filter(str_detect(Library_ID, "030|024|058|034|084|072|059|061|036|023|090|079|026|027|080"), # |093|051|097|064
+         !str_detect(Library_ID, "EXB|LIB")) %>%
+  filter(str_detect(EditDist, "0|1|2|3|4|5"),
+         EditDist != "10",
+         Taxon == "Jonquetella_anthropi") %>% # Anaerovorax_odorimutans Emergencia_timonensis Jonquetella_anthropi Ndongobacter_massiliensis Shuttleworthia_satelles Streptobacillus_moniliformis Thermanaerovibrio_acidaminovorans Treponema_pedis; Actinomyces_dentalis Corynebacterium_matruchotii
+  mutate(Library_ID = fct_relevel(Library_ID, "MID030.A0101","MID024.A0101","MID058.A0101","MID034.A0101","MID084.A0101","MID072.A0101","MID059.A0101","MID061.A0101","MID036.A0101","MID023.A0101","MID090.A0101","MID079.A0101","MID026.A0101","MID027.A0101","MID080.A0101")) %>%
+  ggplot(., aes(x = EditDist, y = Reads)) +
+    geom_bar(stat = "identity") +
+    theme_minimal() +
+    theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5),
+          text = element_text(size=12)) +
+    scale_y_continuous(breaks=scales::pretty_breaks(n=6)) +
+    theme(panel.grid.minor.y = element_blank()) +
+    facet_wrap(~Library_ID, nrow = 3) +
+    ylab("No. reads") +
+    ggtitle("Ancient Jonquetella_anthropi")
+
+```
+
+```{r Ndongobacter_massiliensis}
+ed_def_sum %>%
+  filter(str_detect(Library_ID, "030|024|058|034|084|072|059|061|036|023|090|079|026|027|080"), # |093|051|097|064
+         !str_detect(Library_ID, "EXB|LIB")) %>%
+  filter(str_detect(EditDist, "0|1|2|3|4|5"),
+         EditDist != "10",
+         Taxon == "Ndongobacter_massiliensis") %>% # Anaerovorax_odorimutans Emergencia_timonensis Jonquetella_anthropi Ndongobacter_massiliensis Shuttleworthia_satelles Streptobacillus_moniliformis Thermanaerovibrio_acidaminovorans Treponema_pedis; Actinomyces_dentalis Corynebacterium_matruchotii
+  mutate(Library_ID = fct_relevel(Library_ID, "MID030.A0101","MID024.A0101","MID058.A0101","MID034.A0101","MID084.A0101","MID072.A0101","MID059.A0101","MID061.A0101","MID036.A0101","MID023.A0101","MID090.A0101","MID079.A0101","MID026.A0101","MID027.A0101","MID080.A0101")) %>%
+  ggplot(., aes(x = EditDist, y = Reads)) +
+    geom_bar(stat = "identity") +
+    theme_minimal() +
+    theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5),
+          text = element_text(size=12)) +
+    scale_y_continuous(breaks=scales::pretty_breaks(n=6)) +
+    theme(panel.grid.minor.y = element_blank()) +
+    facet_wrap(~Library_ID, nrow = 3) +
+    ylab("No. reads") +
+    ggtitle("Default Ndongobacter_massiliensis")
+
+ed_anc_sum %>%
+  filter(str_detect(Library_ID, "030|024|058|034|084|072|059|061|036|023|090|079|026|027|080"), # |093|051|097|064
+         !str_detect(Library_ID, "EXB|LIB")) %>%
+  filter(str_detect(EditDist, "0|1|2|3|4|5"),
+         EditDist != "10",
+         Taxon == "Ndongobacter_massiliensis") %>% # Anaerovorax_odorimutans Emergencia_timonensis Jonquetella_anthropi Ndongobacter_massiliensis Shuttleworthia_satelles Streptobacillus_moniliformis Thermanaerovibrio_acidaminovorans Treponema_pedis; Actinomyces_dentalis Corynebacterium_matruchotii
+  mutate(Library_ID = fct_relevel(Library_ID, "MID030.A0101","MID024.A0101","MID058.A0101","MID034.A0101","MID084.A0101","MID072.A0101","MID059.A0101","MID061.A0101","MID036.A0101","MID023.A0101","MID090.A0101","MID079.A0101","MID026.A0101","MID027.A0101","MID080.A0101")) %>%
+  ggplot(., aes(x = EditDist, y = Reads)) +
+    geom_bar(stat = "identity") +
+    theme_minimal() +
+    theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5),
+          text = element_text(size=12)) +
+    scale_y_continuous(breaks=scales::pretty_breaks(n=6)) +
+    theme(panel.grid.minor.y = element_blank()) +
+    facet_wrap(~Library_ID, nrow = 3) +
+    ylab("No. reads") +
+    ggtitle("Ancient Ndongobacter_massiliensis")
+
+```
+
+```{r Shuttleworthia_satelles}
+plot3 <- ed_def_sum %>%
+  filter(str_detect(Library_ID, "030|024|058|034|084|072|059|061|036|023|090|079|026|027|080"), # |093|051|097|064
+         !str_detect(Library_ID, "EXB|LIB")) %>%
+  filter(str_detect(EditDist, "0|1|2|3|4|5"),
+         EditDist != "10",
+         Taxon == "Shuttleworthia_satelles") %>% # Anaerovorax_odorimutans Emergencia_timonensis Jonquetella_anthropi Ndongobacter_massiliensis Shuttleworthia_satelles Streptobacillus_moniliformis Thermanaerovibrio_acidaminovorans Treponema_pedis; Actinomyces_dentalis Corynebacterium_matruchotii
+  mutate(Library_ID = fct_relevel(Library_ID, "MID030.A0101","MID024.A0101","MID058.A0101","MID034.A0101","MID084.A0101","MID072.A0101","MID059.A0101","MID061.A0101","MID036.A0101","MID023.A0101","MID090.A0101","MID079.A0101","MID026.A0101","MID027.A0101","MID080.A0101")) %>%
+  ggplot(., aes(x = EditDist, y = Reads)) +
+    geom_bar(stat = "identity") +
+    theme_minimal() +
+    theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5),
+          text = element_text(size=12)) +
+    scale_y_continuous(breaks=scales::pretty_breaks(n=6)) +
+    theme(panel.grid.minor.y = element_blank()) +
+    facet_wrap(~Library_ID, nrow = 3) +
+    ylab("No. reads") +
+    ggtitle("Default Shuttleworthia_satelles")
+plot3
+# ggsave("~/Desktop/s_satelles.pdf", plot = plot3, device = "pdf",
+#         scale = 1, width = 7, height = 5, units = c("in"), dpi = 300)
+
+ed_anc_sum %>%
+  filter(str_detect(Library_ID, "030|024|058|034|084|072|059|061|036|023|090|079|026|027|080"), # |093|051|097|064
+         !str_detect(Library_ID, "EXB|LIB")) %>%
+  filter(str_detect(EditDist, "0|1|2|3|4|5"),
+         EditDist != "10",
+         Taxon == "Shuttleworthia_satelles") %>% # Anaerovorax_odorimutans Emergencia_timonensis Jonquetella_anthropi Ndongobacter_massiliensis Shuttleworthia_satelles Streptobacillus_moniliformis Thermanaerovibrio_acidaminovorans Treponema_pedis; Actinomyces_dentalis Corynebacterium_matruchotii
+  mutate(Library_ID = fct_relevel(Library_ID, "MID030.A0101","MID024.A0101","MID058.A0101","MID034.A0101","MID084.A0101","MID072.A0101","MID059.A0101","MID061.A0101","MID036.A0101","MID023.A0101","MID090.A0101","MID079.A0101","MID026.A0101","MID027.A0101","MID080.A0101")) %>%
+  ggplot(., aes(x = EditDist, y = Reads)) +
+    geom_bar(stat = "identity") +
+    theme_minimal() +
+    theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5),
+          text = element_text(size=12)) +
+    scale_y_continuous(breaks=scales::pretty_breaks(n=6)) +
+    theme(panel.grid.minor.y = element_blank()) +
+    facet_wrap(~Library_ID, nrow = 3) +
+    ylab("No. reads") +
+    ggtitle("Ancient Shuttleworthia_satelles")
+
+```
+
+```{r Streptobacillus_moniliformis}
+ed_def_sum %>%
+  filter(str_detect(Library_ID, "030|024|058|034|084|072|059|061|036|023|090|079|026|027|080"), # |093|051|097|064
+         !str_detect(Library_ID, "EXB|LIB")) %>%
+  filter(str_detect(EditDist, "0|1|2|3|4|5"),
+         EditDist != "10",
+         Taxon == "Streptobacillus_moniliformis") %>% # Anaerovorax_odorimutans Emergencia_timonensis Jonquetella_anthropi Ndongobacter_massiliensis Shuttleworthia_satelles Streptobacillus_moniliformis Thermanaerovibrio_acidaminovorans Treponema_pedis; Actinomyces_dentalis Corynebacterium_matruchotii
+  mutate(Library_ID = fct_relevel(Library_ID, "MID030.A0101","MID024.A0101","MID058.A0101","MID034.A0101","MID084.A0101","MID072.A0101","MID059.A0101","MID061.A0101","MID036.A0101","MID023.A0101","MID090.A0101","MID079.A0101","MID026.A0101","MID027.A0101","MID080.A0101")) %>%
+  ggplot(., aes(x = EditDist, y = Reads)) +
+    geom_bar(stat = "identity") +
+    theme_minimal() +
+    theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5),
+          text = element_text(size=12)) +
+    scale_y_continuous(breaks=scales::pretty_breaks(n=6)) +
+    theme(panel.grid.minor.y = element_blank()) +
+    facet_wrap(~Library_ID, nrow = 3) +
+    ylab("No. reads") +
+    ggtitle("Default Streptobacillus_moniliformis")
+
+ed_anc_sum %>%
+  filter(str_detect(Library_ID, "030|024|058|034|084|072|059|061|036|023|090|079|026|027|080"), # |093|051|097|064
+         !str_detect(Library_ID, "EXB|LIB")) %>%
+  filter(str_detect(EditDist, "0|1|2|3|4|5"),
+         EditDist != "10",
+         Taxon == "Streptobacillus_moniliformis") %>% # Anaerovorax_odorimutans Emergencia_timonensis Jonquetella_anthropi Ndongobacter_massiliensis Shuttleworthia_satelles Streptobacillus_moniliformis Thermanaerovibrio_acidaminovorans Treponema_pedis; Actinomyces_dentalis Corynebacterium_matruchotii
+  mutate(Library_ID = fct_relevel(Library_ID, "MID030.A0101","MID024.A0101","MID058.A0101","MID034.A0101","MID084.A0101","MID072.A0101","MID059.A0101","MID061.A0101","MID036.A0101","MID023.A0101","MID090.A0101","MID079.A0101","MID026.A0101","MID027.A0101","MID080.A0101")) %>%
+  ggplot(., aes(x = EditDist, y = Reads)) +
+    geom_bar(stat = "identity") +
+    theme_minimal() +
+    theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5),
+          text = element_text(size=12)) +
+    scale_y_continuous(breaks=scales::pretty_breaks(n=6)) +
+    theme(panel.grid.minor.y = element_blank()) +
+    facet_wrap(~Library_ID, nrow = 3) +
+    ylab("No. reads") +
+    ggtitle("Ancient Streptobacillus_moniliformis")
+
+```
+
+```{r Thermanaerovibrio_acidaminovorans}
+ed_def_sum %>%
+  filter(str_detect(Library_ID, "030|024|058|034|084|072|059|061|036|023|090|079|026|027|080"), # |093|051|097|064
+         !str_detect(Library_ID, "EXB|LIB")) %>%
+  filter(str_detect(EditDist, "0|1|2|3|4|5"),
+         EditDist != "10",
+         Taxon == "Thermanaerovibrio_acidaminovorans") %>% # Anaerovorax_odorimutans Emergencia_timonensis Jonquetella_anthropi Ndongobacter_massiliensis Shuttleworthia_satelles Streptobacillus_moniliformis Thermanaerovibrio_acidaminovorans Treponema_pedis; Actinomyces_dentalis Corynebacterium_matruchotii
+  mutate(Library_ID = fct_relevel(Library_ID, "MID030.A0101","MID024.A0101","MID058.A0101","MID034.A0101","MID084.A0101","MID072.A0101","MID059.A0101","MID061.A0101","MID036.A0101","MID023.A0101","MID090.A0101","MID079.A0101","MID026.A0101","MID027.A0101","MID080.A0101")) %>%
+  ggplot(., aes(x = EditDist, y = Reads)) +
+    geom_bar(stat = "identity") +
+    theme_minimal() +
+    theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5),
+          text = element_text(size=12)) +
+    scale_y_continuous(breaks=scales::pretty_breaks(n=6)) +
+    theme(panel.grid.minor.y = element_blank()) +
+    facet_wrap(~Library_ID, nrow = 3) +
+    ylab("No. reads") +
+    ggtitle("Default Thermanaerovibrio_acidaminovorans")
+
+ed_anc_sum %>%
+  filter(str_detect(Library_ID, "030|024|058|034|084|072|059|061|036|023|090|079|026|027|080"), # |093|051|097|064
+         !str_detect(Library_ID, "EXB|LIB")) %>%
+  filter(str_detect(EditDist, "0|1|2|3|4|5"),
+         EditDist != "10",
+         Taxon == "Thermanaerovibrio_acidaminovorans") %>% # Anaerovorax_odorimutans Emergencia_timonensis Jonquetella_anthropi Ndongobacter_massiliensis Shuttleworthia_satelles Streptobacillus_moniliformis Thermanaerovibrio_acidaminovorans Treponema_pedis; Actinomyces_dentalis Corynebacterium_matruchotii
+  mutate(Library_ID = fct_relevel(Library_ID, "MID030.A0101","MID024.A0101","MID058.A0101","MID034.A0101","MID084.A0101","MID072.A0101","MID059.A0101","MID061.A0101","MID036.A0101","MID023.A0101","MID090.A0101","MID079.A0101","MID026.A0101","MID027.A0101","MID080.A0101")) %>%
+  ggplot(., aes(x = EditDist, y = Reads)) +
+    geom_bar(stat = "identity") +
+    theme_minimal() +
+    theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5),
+          text = element_text(size=12)) +
+    scale_y_continuous(breaks=scales::pretty_breaks(n=6)) +
+    theme(panel.grid.minor.y = element_blank()) +
+    facet_wrap(~Library_ID, nrow = 3) +
+    ylab("No. reads") +
+    ggtitle("Ancient Thermanaerovibrio_acidaminovorans")
+
+```
+
+```{r Treponema_pedis}
+ed_def_sum %>%
+  filter(str_detect(Library_ID, "030|024|058|034|084|072|059|061|036|023|090|079|026|027|080"), # |093|051|097|064
+         !str_detect(Library_ID, "EXB|LIB")) %>%
+  filter(str_detect(EditDist, "0|1|2|3|4|5"),
+         EditDist != "10",
+         Taxon == "Treponema_pedis") %>% # Anaerovorax_odorimutans Emergencia_timonensis Jonquetella_anthropi Ndongobacter_massiliensis Shuttleworthia_satelles Streptobacillus_moniliformis Thermanaerovibrio_acidaminovorans Treponema_pedis; Actinomyces_dentalis Corynebacterium_matruchotii
+  mutate(Library_ID = fct_relevel(Library_ID, "MID030.A0101","MID024.A0101","MID058.A0101","MID034.A0101","MID084.A0101","MID072.A0101","MID059.A0101","MID061.A0101","MID036.A0101","MID023.A0101","MID090.A0101","MID079.A0101","MID026.A0101","MID027.A0101","MID080.A0101")) %>%
+  ggplot(., aes(x = EditDist, y = Reads)) +
+    geom_bar(stat = "identity") +
+    theme_minimal() +
+    theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5),
+          text = element_text(size=12)) +
+    scale_y_continuous(breaks=scales::pretty_breaks(n=6)) +
+    theme(panel.grid.minor.y = element_blank()) +
+    facet_wrap(~Library_ID, nrow = 3) +
+    ylab("No. reads") +
+    ggtitle("Default Treponema_pedis")
+
+ed_anc_sum %>%
+  filter(str_detect(Library_ID, "030|024|058|034|084|072|059|061|036|023|090|079|026|027|080"), # |093|051|097|064
+         !str_detect(Library_ID, "EXB|LIB")) %>%
+  filter(str_detect(EditDist, "0|1|2|3|4|5"),
+         EditDist != "10",
+         Taxon == "Treponema_pedis") %>% # Anaerovorax_odorimutans Emergencia_timonensis Jonquetella_anthropi Ndongobacter_massiliensis Shuttleworthia_satelles Streptobacillus_moniliformis Thermanaerovibrio_acidaminovorans Treponema_pedis; Actinomyces_dentalis Corynebacterium_matruchotii
+  mutate(Library_ID = fct_relevel(Library_ID, "MID030.A0101","MID024.A0101","MID058.A0101","MID034.A0101","MID084.A0101","MID072.A0101","MID059.A0101","MID061.A0101","MID036.A0101","MID023.A0101","MID090.A0101","MID079.A0101","MID026.A0101","MID027.A0101","MID080.A0101")) %>%
+  ggplot(., aes(x = EditDist, y = Reads)) +
+    geom_bar(stat = "identity") +
+    theme_minimal() +
+    theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5),
+          text = element_text(size=12)) +
+    scale_y_continuous(breaks=scales::pretty_breaks(n=6)) +
+    theme(panel.grid.minor.y = element_blank()) +
+    facet_wrap(~Library_ID, nrow = 3) +
+    ylab("No. reads") +
+    ggtitle("Ancient Treponema_pedis")
+
+```
+
+```{r Actinomyces_dentalis}
+plot4 <- ed_def_sum %>%
+  filter(str_detect(Library_ID, "030|024|058|034|084|072|059|061|036|023|090|079|026|027|080"), # |093|051|097|064
+         !str_detect(Library_ID, "EXB|LIB")) %>%
+  filter(str_detect(EditDist, "0|1|2|3|4|5"),
+         EditDist != "10",
+         Taxon == "Actinomyces_dentalis") %>% # Anaerovorax_odorimutans Emergencia_timonensis Jonquetella_anthropi Ndongobacter_massiliensis Shuttleworthia_satelles Streptobacillus_moniliformis Thermanaerovibrio_acidaminovorans Treponema_pedis; Actinomyces_dentalis Corynebacterium_matruchotii
+  mutate(Library_ID = fct_relevel(Library_ID, "MID030.A0101","MID024.A0101","MID058.A0101","MID034.A0101","MID084.A0101","MID072.A0101","MID059.A0101","MID061.A0101","MID036.A0101","MID023.A0101","MID090.A0101","MID079.A0101","MID026.A0101","MID027.A0101","MID080.A0101")) %>%
+  ggplot(., aes(x = EditDist, y = Reads)) +
+    geom_bar(stat = "identity") +
+    theme_minimal() +
+    theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5),
+          text = element_text(size=12)) +
+    scale_y_continuous(breaks=scales::pretty_breaks(n=6)) +
+    theme(panel.grid.minor.y = element_blank()) +
+    facet_wrap(~Library_ID, nrow = 3) +
+    ylab("No. reads") +
+    ggtitle("Default Actinomyces_dentalis")
+plot4
+
+# ggsave("~/Desktop/a_dentalis.pdf", plot = plot4, device = "pdf",
+#         scale = 1, width = 7, height = 5, units = c("in"), dpi = 300)
+
+ed_anc_sum %>%
+  filter(str_detect(Library_ID, "030|024|058|034|084|072|059|061|036|023|090|079|026|027|080"), # |093|051|097|064
+         !str_detect(Library_ID, "EXB|LIB")) %>%
+  filter(str_detect(EditDist, "0|1|2|3|4|5"),
+         EditDist != "10",
+         Taxon == "Actinomyces_dentalis") %>% # Anaerovorax_odorimutans Emergencia_timonensis Jonquetella_anthropi Ndongobacter_massiliensis Shuttleworthia_satelles Streptobacillus_moniliformis Thermanaerovibrio_acidaminovorans Treponema_pedis; Actinomyces_dentalis Corynebacterium_matruchotii
+  mutate(Library_ID = fct_relevel(Library_ID, "MID030.A0101","MID024.A0101","MID058.A0101","MID034.A0101","MID084.A0101","MID072.A0101","MID059.A0101","MID061.A0101","MID036.A0101","MID023.A0101","MID090.A0101","MID079.A0101","MID026.A0101","MID027.A0101","MID080.A0101")) %>%
+  ggplot(., aes(x = EditDist, y = Reads)) +
+    geom_bar(stat = "identity") +
+    theme_minimal() +
+    theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5),
+          text = element_text(size=12)) +
+    scale_y_continuous(breaks=scales::pretty_breaks(n=6)) +
+    theme(panel.grid.minor.y = element_blank()) +
+    facet_wrap(~Library_ID, nrow = 3) +
+    ylab("No. reads") +
+    ggtitle("Ancient Actinomyces_dentalis")
+
+```
+
+```{r Corynebacterium_matruchotii}
+ed_def_sum %>%
+  filter(str_detect(Library_ID, "030|024|058|034|084|072|059|061|036|023|090|079|026|027|080"), # |093|051|097|064
+         !str_detect(Library_ID, "EXB|LIB")) %>%
+  filter(str_detect(EditDist, "0|1|2|3|4|5"),
+         EditDist != "10",
+         Taxon == "Corynebacterium_matruchotii") %>% # Anaerovorax_odorimutans Emergencia_timonensis Jonquetella_anthropi Ndongobacter_massiliensis Shuttleworthia_satelles Streptobacillus_moniliformis Thermanaerovibrio_acidaminovorans Treponema_pedis; Actinomyces_dentalis Corynebacterium_matruchotii
+  mutate(Library_ID = fct_relevel(Library_ID, "MID030.A0101","MID024.A0101","MID058.A0101","MID034.A0101","MID084.A0101","MID072.A0101","MID059.A0101","MID061.A0101","MID036.A0101","MID023.A0101","MID090.A0101","MID079.A0101","MID026.A0101","MID027.A0101","MID080.A0101")) %>%
+  ggplot(., aes(x = EditDist, y = Reads)) +
+    geom_bar(stat = "identity") +
+    theme_minimal() +
+    theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5),
+          text = element_text(size=12)) +
+    scale_y_continuous(breaks=scales::pretty_breaks(n=6)) +
+    theme(panel.grid.minor.y = element_blank()) +
+    facet_wrap(~Library_ID, nrow = 3) +
+    ylab("No. reads") +
+    ggtitle("Default Corynebacterium_matruchotii")
+
+ed_anc_sum %>%
+  filter(str_detect(Library_ID, "030|024|058|034|084|072|059|061|036|023|090|079|026|027|080"), # |093|051|097|064
+         !str_detect(Library_ID, "EXB|LIB")) %>%
+  filter(str_detect(EditDist, "0|1|2|3|4|5"),
+         EditDist != "10",
+         Taxon == "Corynebacterium_matruchotii") %>% # Anaerovorax_odorimutans Emergencia_timonensis Jonquetella_anthropi Ndongobacter_massiliensis Shuttleworthia_satelles Streptobacillus_moniliformis Thermanaerovibrio_acidaminovorans Treponema_pedis; Actinomyces_dentalis Corynebacterium_matruchotii
+  mutate(Library_ID = fct_relevel(Library_ID, "MID030.A0101","MID024.A0101","MID058.A0101","MID034.A0101","MID084.A0101","MID072.A0101","MID059.A0101","MID061.A0101","MID036.A0101","MID023.A0101","MID090.A0101","MID079.A0101","MID026.A0101","MID027.A0101","MID080.A0101")) %>%
+  ggplot(., aes(x = EditDist, y = Reads)) +
+    geom_bar(stat = "identity") +
+    theme_minimal() +
+    theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5),
+          text = element_text(size=12)) +
+    scale_y_continuous(breaks=scales::pretty_breaks(n=6)) +
+    theme(panel.grid.minor.y = element_blank()) +
+    facet_wrap(~Library_ID, nrow = 3) +
+    ylab("No. reads") +
+    ggtitle("Ancient Corynebacterium_matruchotii")
+
+```
+
+```{r}
+ed_def %>%
+  filter(Library_ID == "MID030.A0101",
+         str_detect(Taxon, "Jonquetella_anthropi"))
+  
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

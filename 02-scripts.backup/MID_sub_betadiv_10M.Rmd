@@ -74,28 +74,28 @@ sub10M_raw <- sub10M_raw %>%
   filter(Total > 0) %>%
   select(-Total)
    
-sub75bp_raw <- sub75bp_raw %>%
-  full_join(., all_species_raw %>%
-              select(matches("Species|EXB|LIB")), by = "Species") %>%
-  replace(is.na(.), 0) %>%
-  adorn_totals(where = "col") %>%
-  filter(Total > 0) %>%
-  select(-Total)
+# sub75bp_raw <- sub75bp_raw %>%
+#   full_join(., all_species_raw %>%
+#               select(matches("Species|EXB|LIB")), by = "Species") %>%
+#   replace(is.na(.), 0) %>%
+#   adorn_totals(where = "col") %>%
+#   filter(Total > 0) %>%
+#   select(-Total)
  
 ```
 
 Now decontam the tables
 ```{r}
 sub10M_contaminants <- fread("./05-results.backup/contaminant_species_sub10M.tsv", sep = "\t")
-sub75bp_contaminants <- fread("./05-results.backup/contaminant_species_sub75bp.tsv", sep = "\t")
+# sub75bp_contaminants <- fread("./05-results.backup/contaminant_species_sub75bp.tsv", sep = "\t")
 
 # remove contaminant species from sub10M table
 sub10M_species_decontam <- sub10M_raw %>%
   anti_join(., sub10M_contaminants)
 
 # remove contaminant species from sub10M table
-sub75bp_species_decontam <- sub75bp_raw %>%
-  anti_join(., sub75bp_contaminants)
+# sub75bp_species_decontam <- sub75bp_raw %>%
+#   anti_join(., sub75bp_contaminants)
 
 ```
 
@@ -495,9 +495,9 @@ samples to eachother between groups.
 sub10M_species_decontam_unfilt <- sub10M_species_decontam %>%
   select(-one_of(outliers)) %>%
   select(-one_of(poor_samples_sub10M)) %>%
-  adorn_totals(where = "col", name = "Sum_species.decontam") %>%
-  mutate(Percent = Sum_species.decontam/sum(Sum_species.decontam)*100) %>%
-  select(-one_of(c("Sum_species.decontam","Percent"))) %>%
+  # adorn_totals(where = "col", name = "Sum_species.decontam") %>%
+  # mutate(Percent = Sum_species.decontam/sum(Sum_species.decontam)*100) %>%
+  # select(-one_of(c("Sum_species.decontam","Percent"))) %>%
   gather("Library_ID","Counts",2:ncol(.)) %>%
   mutate(Counts = Counts +1) %>%
   spread(Species,Counts) %>%
@@ -513,12 +513,12 @@ plot_pca(sub10M_species_decontam_unfilt, "PC3", "PC2", "Site", "Time_period", 3)
 
 # decontaminated and filtered
 sub10M_species_decontam_filtered <- sub10M_species_decontam %>%
-  adorn_totals(where = "col", name = "Sum_species.decontam_filtered") %>%
+  # adorn_totals(where = "col", name = "Sum_species.decontam_filtered") %>%
   select(-one_of(outliers)) %>%
   select(-one_of(poor_samples_sub10M)) %>%
-  mutate(Percent = Sum_species.decontam_filtered/sum(Sum_species.decontam_filtered)*100) %>%
-  filter(Percent > 0.005) %>%
-  select(-one_of(c("Sum_species.decontam_filtered","Percent"))) %>%
+  # mutate(Percent = Sum_species.decontam_filtered/sum(Sum_species.decontam_filtered)*100) %>%
+  # filter(Percent > 0.005) %>%
+  # select(-one_of(c("Sum_species.decontam_filtered","Percent"))) %>%
   gather("Library_ID","Counts",2:ncol(.)) %>%
   mutate(Counts = Counts +1) %>%
   spread(Species,Counts) %>%
@@ -555,7 +555,7 @@ least 10% of at least 1 group, it will be removed from analysis.
 
 # Determine the prevalence of species in each group
 sub10M_species_decontam_noblanks_presence_more_10 <- sub10M_species_decontam %>%
-  select(-matches("EXB|LIB|CSS|CSD|CSN|CSL")) %>%
+  select(-matches("EXB|LIB|CSS|CSD|CSN|CSL|JAE")) %>%
   select(-one_of(outliers)) %>%
   select(-one_of(poor_samples_sub10M)) %>%
   mutate_if(is.numeric, ~1 * (. > 0)) %>%
@@ -573,10 +573,10 @@ sub10M_species_decontam_noblanks_presence_more_10 <- sub10M_species_decontam %>%
 
 # Species, no blanks 
 sub10M_species_decontam_noblanks <- sub10M_species_decontam %>%
-  select(-matches("EXB|LIB|CSS|CSD|CSN|CSL")) %>%
+  select(-matches("EXB|LIB|CSS|CSD|CSN|CSL|JAE")) %>%
   select(-one_of(outliers)) %>%
   select(-one_of(poor_samples_sub10M)) %>%
-  inner_join(., sub10M_species_decontam_noblanks_presence_more_10, by = "Species") %>%
+  # inner_join(., sub10M_species_decontam_noblanks_presence_more_10, by = "Species") %>%
   gather("Library_ID","Counts",2:ncol(.)) %>%
   mutate(Counts = Counts +1) %>%
   spread(Species,Counts) %>%
@@ -602,13 +602,13 @@ The PCA plots are indistinguishable to me. Is one necessarily better than the
 other to use?
 ```{r pca_abd_noblanks_species}
 sub10M_species_decontam_filtered_noblanks <- sub10M_species_decontam %>%
-  select(-matches("EXB|LIB|CSS|CSD|CSN|CSL")) %>%
+  select(-matches("EXB|LIB|CSS|CSD|CSN|CSL|JAE")) %>%
   select(-one_of(outliers)) %>%
   select(-one_of(poor_samples_sub10M)) %>%
-  adorn_totals(where = "col", name = "Sum_species") %>%
-  mutate(Percent = Sum_species/sum(Sum_species)*100) %>%
-  filter(Percent > 0.001) %>%
-  select(-one_of(c("Sum_species","Percent"))) %>%
+  # adorn_totals(where = "col", name = "Sum_species") %>%
+  # mutate(Percent = Sum_species/sum(Sum_species)*100) %>%
+  # filter(Percent > 0.001) %>%
+  # select(-one_of(c("Sum_species","Percent"))) %>%
   gather("Library_ID","Counts",2:ncol(.)) %>% 
   mutate(Counts = Counts +1) %>%
   spread(Species,Counts) %>% 
@@ -909,13 +909,13 @@ of PC1 and PC2, using the abundance filter.
 ```{r biplot_noblanks}
 # remove the Yanomami samples from the input table
 sub10M_species_decontam_filtered_noblanks <- sub10M_species_decontam %>%
-  select(-matches("EXB|LIB|CSS|CSD|CSN|CSL")) %>%
+  select(-matches("EXB|LIB|CSS|CSD|CSN|CSL|JAE")) %>%
   select(-one_of(outliers)) %>%
   select(-one_of(poor_samples_sub10M)) %>%
-  adorn_totals(where = "col", name = "Sum_species") %>%
-  mutate(Percent = Sum_species/sum(Sum_species)*100) %>%
-  filter(Percent > 0.001) %>%
-  select(-one_of(c("Sum_species","Percent"))) %>%
+  # adorn_totals(where = "col", name = "Sum_species") %>%
+  # mutate(Percent = Sum_species/sum(Sum_species)*100) %>%
+  # filter(Percent > 0.001) %>%
+  # select(-one_of(c("Sum_species","Percent"))) %>%
   gather("Library_ID","Counts",2:ncol(.)) %>% 
   mutate(Counts = Counts +1) %>%
   spread(Species,Counts) %>%
@@ -997,7 +997,7 @@ Filter the species table by % abundance
 sub10M_species_decontam_filtered_mid <- sub10M_species_decontam %>%
   select(-one_of(outliers)) %>%
   select(-one_of(poor_samples_sub10M)) %>%
-  select(matches("Species|MID")) %>%
+  select(matches("Species|MID|CMB")) %>%
   # adorn_totals(where = "col", name = "Sum_species") %>%
   # mutate(Percent = Sum_species/sum(Sum_species)*100) %>%
   # filter(Percent > 0.001) %>%
@@ -1241,11 +1241,11 @@ plot_pca_cont(sub10M_species_decontam_filtered_mid, "PC3", "PC2", "avg_rl_malt_m
 sub10M_species_decontam_filtered_mid <- sub10M_species_decontam %>%
   select(-one_of(outliers)) %>%
   select(-one_of(poor_samples_sub10M)) %>%
-  select(matches("Species|MID")) %>%
-  adorn_totals(where = "col", name = "Sum_species") %>%
-  mutate(Percent = Sum_species/sum(Sum_species)*100) %>%
-  filter(Percent > 0.001) %>%
-  select(-one_of(c("Sum_species","Percent"))) %>%
+  select(matches("Species|MID|CMB")) %>%
+  # adorn_totals(where = "col", name = "Sum_species") %>%
+  # mutate(Percent = Sum_species/sum(Sum_species)*100) %>%
+  # filter(Percent > 0.001) %>%
+  # select(-one_of(c("Sum_species","Percent"))) %>%
   gather("Library_ID","Counts",2:ncol(.)) %>% 
   mutate(Counts = Counts +1) %>%
   spread(Species,Counts) %>%

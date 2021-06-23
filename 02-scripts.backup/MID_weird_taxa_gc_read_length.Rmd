@@ -1,0 +1,132 @@
+---
+title: "MID/CMB, Radcliffe, Kilteasheen, Iberian medieval calculus read length and GC content differences"
+author: "Irina Velsko"
+date: "`r format(Sys.time(), '%b %d, %Y')`"
+output:
+    github_document:
+        fig_width: 8
+        fig_height: 6
+        toc: true
+---
+
+```{r load_libraries, echo = F, message = F}
+library(knitr)
+library(data.table)
+library(janitor)
+library(tidyverse)
+
+```
+
+```{r setup}
+knitr::opts_knit$set(root.dir = normalizePath(".."))
+```
+
+Load in the coverage information per bam file and put it together into a large data frame
+```{r load_radcliffe}
+# load the standard format output tables
+Ta_list <- list.files(path = "~/projects1/microbiome_calculus/smoking_calculus/04-analysis/malt_checks/odd_taxa_gc", pattern = ".tsv", full.names = T)
+
+# test_file <- fread("~/projects1/microbiome_calculus/smoking_calculus/04-analysis/GC_RL/test.tsv")
+# elr_test_file <- fread("~/projects1/microbiome_calculus/smoking_calculus/04-analysis/GC_RL/ELR006.A0101.gc_rl.tsv.gz", nrows = 1000000)
+
+Ta_gc_rl <- map_dfr(Ta_list, function(fn) {
+  fread(fn, sep = " ") %>%
+  mutate(SampleID = basename(fn))
+}) %>%
+  arrange(SampleID) %>%
+  mutate(Species = SampleID,
+         Species = str_replace_all(Species, "unmapped-[0-9]*-",""),
+         Species = str_replace_all(Species, ".gc_rl.tsv","")) %>%
+  separate(SampleID, into = "Library_ID", sep = ".u", extra = "drop") %>%
+  mutate(Species = str_sub(Species, 14, -1))
+
+
+
+```
+
+```{r}
+
+Ta_gc_rl_sum <- Ta_gc_rl %>%
+  group_by(Species, Library_ID) %>%
+  summarize(avg_gc = mean(`%GC`)) %>%
+  filter(Species != "Streptobacillus") %>%
+  # add average GC content from NCBI genome page
+  mutate(ref_GC = ifelse(Species == "Emergencia_timonensis","45.8",
+                         ifelse(Species == "Jonquetella_anthropi","59.5",
+                                       ifelse(Species == "Streptobacillus_moniliformis", "26.3","63.8"))))
+```
+
+```{r}
+Ta_gc_rl_sum %>%
+  filter(Species == "Emergencia_timonensis") %>%
+  ggplot(., aes(x = Library_ID, y = avg_gc)) +
+    geom_point(size = 3, color = "grey50") +
+    theme_minimal() +
+    theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5),
+          text = element_text(size=12)) +
+    scale_y_continuous(breaks=scales::pretty_breaks(n=8)) +
+    geom_hline(yintercept = 45.8, linetype = "dotted") +
+    ylab("Avg. GC (%)") +
+    ggtitle("Emergencia timonensis")
+
+```
+
+```{r Jonquetella_anthropi}
+
+Ta_gc_rl_sum %>%
+  filter(Species == "Jonquetella_anthropi") %>%
+  ggplot(., aes(x = Library_ID, y = avg_gc)) +
+    geom_point(size = 3, color = "grey50") +
+    theme_minimal() +
+    theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5),
+          text = element_text(size=12)) +
+    scale_y_continuous(breaks=scales::pretty_breaks(n=8)) +
+    geom_hline(yintercept = 59.5, linetype = "dotted") +
+    ylab("Avg. GC (%)") +
+    ggtitle("Jonquetella anthropi")
+
+```
+
+
+```{r Streptobacillus_moniliformis}
+
+Ta_gc_rl_sum %>%
+  filter(Species == "Streptobacillus_moniliformis") %>%
+  ggplot(., aes(x = Library_ID, y = avg_gc)) +
+    geom_point(size = 3, color = "grey50") +
+    theme_minimal() +
+    theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5),
+          text = element_text(size=12)) +
+    scale_y_continuous(breaks=scales::pretty_breaks(n=8)) +
+    geom_hline(yintercept = 26.3, linetype = "dotted") +
+    ylab("Avg. GC (%)") +
+    ggtitle("Streptobacillus moniliformis")
+
+```
+
+```{r Thermanaerovibrio}
+
+Ta_gc_rl_sum %>%
+  filter(Species == "Thermanaerovibrio") %>%
+  ggplot(., aes(x = Library_ID, y = avg_gc)) +
+    geom_point(size = 3, color = "grey50") +
+    theme_minimal() +
+    theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5),
+          text = element_text(size=12)) +
+    scale_y_continuous(breaks=scales::pretty_breaks(n=8)) +
+    geom_hline(yintercept = 63.8, linetype = "dotted") +
+    ylab("Avg. GC (%)") +
+    ggtitle("Thermanaerovibrio")
+
+```
+
+
+
+
+
+
+
+
+
+
+
