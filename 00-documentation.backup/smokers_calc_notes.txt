@@ -548,8 +548,8 @@ snakemake -s ./008-hops_malt_extract.Snakefile --cluster-config /mnt/archgen/mic
 /Users/velsko/Applications/MEGAN/tools/read-extractor -i ~/projects1/microbiome_calculus/smoking_calculus/03-preprocessing/eager2/eager2_run/metagenomic_classification/malt/*.rma6 -o ~/projects1/microbiome_calculus/smoking_calculus/04-analysis/malt_checks/odd_taxa_gc -c Taxonomy -n 'Jonquetella_anthropi' -v # 428712
 /Users/velsko/Applications/MEGAN/tools/read-extractor -i ~/projects1/microbiome_calculus/smoking_calculus/03-preprocessing/eager2/eager2_run/metagenomic_classification/malt/*.rma6 -o ~/projects1/microbiome_calculus/smoking_calculus/04-analysis/malt_checks/odd_taxa_gc -c Taxonomy -n 'Streptobacillus_moniliformis' -v # 34105
 /Users/velsko/Applications/MEGAN/tools/read-extractor -i ~/projects1/microbiome_calculus/smoking_calculus/03-preprocessing/eager2/eager2_run/metagenomic_classification/malt/*.rma6 -o ~/projects1/microbiome_calculus/smoking_calculus/04-analysis/malt_checks/odd_taxa_gc -c Taxonomy -n 'Emergencia_timonensis' -v # 1776384
-/Users/velsko/Applications/MEGAN/tools/read-extractor -i ~/projects1/microbiome_calculus/smoking_calculus/03-preprocessing/eager2/eager2_run/metagenomic_classification/malt/*.rma6 -o ~/projects1/microbiome_calculus/smoking_calculus/04-analysis/malt_checks/odd_taxa_gc -c Taxonomy -n 'Anaerovorax_odorimutans' -v # 109327 none found
-/Users/velsko/Applications/MEGAN/tools/read-extractor -i ~/projects1/microbiome_calculus/smoking_calculus/03-preprocessing/eager2/eager2_run/metagenomic_classification/malt/*.rma6 -o ~/projects1/microbiome_calculus/smoking_calculus/04-analysis/malt_checks/odd_taxa_gc -c Taxonomy -n 'Shuttleworthia_satelles' -v # 177972 none found
+/Users/velsko/Applications/MEGAN/tools/read-extractor -i ~/projects1/microbiome_calculus/smoking_calculus/03-preprocessing/eager2/eager2_run/metagenomic_classification/malt/*.rma6 -o ~/projects1/microbiome_calculus/smoking_calculus/04-analysis/malt_checks/odd_taxa_gc -c Taxonomy -n 'Anaerovorax_odorimutans_DSM_5092' -v # 109327 
+/Users/velsko/Applications/MEGAN/tools/read-extractor -i ~/projects1/microbiome_calculus/smoking_calculus/03-preprocessing/eager2/eager2_run/metagenomic_classification/malt/*.rma6 -o ~/projects1/microbiome_calculus/smoking_calculus/04-analysis/malt_checks/odd_taxa_gc -c Taxonomy -n 'Shuttleworthia_satelles_DSM_14600' -v # 177972 none found
 
 
 # calculate GC content with EMBOSS infoseq for each file
@@ -564,10 +564,7 @@ MetaPhlAn3 on MID and CMB
 snakemake -s ../../02-scripts.backup/009-metaphlan3_mid_cmb.Snakefile --cluster 'sbatch --mem 4G -p short -n {threads}' -j 4 -k --restart-times 3 -n
 
 # merge the tables
-merge_metaphlan_tables.py *.metaphlan3.tsv > MID_CMB_abundance_table.tsv
-
-
-
+merge_metaphlan_tables.py *.metaphlan3.tsv > ../../05-results.backup/MID_CMB_abundance_table.tsv
 
 
 

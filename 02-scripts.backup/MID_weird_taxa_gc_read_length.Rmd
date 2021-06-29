@@ -26,9 +26,6 @@ Load in the coverage information per bam file and put it together into a large d
 # load the standard format output tables
 Ta_list <- list.files(path = "~/projects1/microbiome_calculus/smoking_calculus/04-analysis/malt_checks/odd_taxa_gc", pattern = ".tsv", full.names = T)
 
-# test_file <- fread("~/projects1/microbiome_calculus/smoking_calculus/04-analysis/GC_RL/test.tsv")
-# elr_test_file <- fread("~/projects1/microbiome_calculus/smoking_calculus/04-analysis/GC_RL/ELR006.A0101.gc_rl.tsv.gz", nrows = 1000000)
-
 Ta_gc_rl <- map_dfr(Ta_list, function(fn) {
   fread(fn, sep = " ") %>%
   mutate(SampleID = basename(fn))
@@ -53,10 +50,27 @@ Ta_gc_rl_sum <- Ta_gc_rl %>%
   # add average GC content from NCBI genome page
   mutate(ref_GC = ifelse(Species == "Emergencia_timonensis","45.8",
                          ifelse(Species == "Jonquetella_anthropi","59.5",
-                                       ifelse(Species == "Streptobacillus_moniliformis", "26.3","63.8"))))
+                                       ifelse(Species == "Streptobacillus_moniliformis", "26.3",
+                                              ifelse(Species == "Anaerovorax_odorimutans_DSM_5092", "34.3", 
+                                                     ifelse(Species == "Shuttleworthia_satelles_DSM_14600","51.3", "63.8"))))))
 ```
 
-```{r}
+```{r Anaerovorax_odorimutans}
+Ta_gc_rl_sum %>%
+  filter(Species == "Anaerovorax_odorimutans_DSM_5092") %>%
+  ggplot(., aes(x = Library_ID, y = avg_gc)) +
+    geom_point(size = 3, color = "grey50") +
+    theme_minimal() +
+    theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5),
+          text = element_text(size=12)) +
+    scale_y_continuous(breaks=scales::pretty_breaks(n=8)) +
+    geom_hline(yintercept = 34.3, linetype = "dotted") +
+    ylab("Avg. GC (%)") +
+    ggtitle("Anaerovorax odorimutans")
+
+```
+
+```{r Emergencia_timonensis}
 Ta_gc_rl_sum %>%
   filter(Species == "Emergencia_timonensis") %>%
   ggplot(., aes(x = Library_ID, y = avg_gc)) +
@@ -101,6 +115,22 @@ Ta_gc_rl_sum %>%
     geom_hline(yintercept = 26.3, linetype = "dotted") +
     ylab("Avg. GC (%)") +
     ggtitle("Streptobacillus moniliformis")
+
+```
+
+```{r Shuttleworthia_satelles}
+
+Ta_gc_rl_sum %>%
+  filter(Species == "Shuttleworthia_satelles_DSM_14600") %>%
+  ggplot(., aes(x = Library_ID, y = avg_gc)) +
+    geom_point(size = 3, color = "grey50") +
+    theme_minimal() +
+    theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5),
+          text = element_text(size=12)) +
+    scale_y_continuous(breaks=scales::pretty_breaks(n=8)) +
+    geom_hline(yintercept = 51.3, linetype = "dotted") +
+    ylab("Avg. GC (%)") +
+    ggtitle("Shuttleworthia satelles")
 
 ```
 
