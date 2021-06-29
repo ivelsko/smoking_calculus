@@ -1,5 +1,5 @@
 ################################################################################
-# Run MetaPhlAn3 on MID and CMB samples
+# Run MetaPhlAn3 on MID, CMB, Kilteasheen, Radcliffe, ELR, IVE samples
 #
 # Irina Velsko, 23/06/2021
 ################################################################################
@@ -12,7 +12,7 @@ workdir: "/projects1/microbiome_calculus/smoking_calculus/04-analysis/metaphlan3
 
 #### SAMPLES ###################################################################
 SAMPLES = {}
-for sample in glob("/projects1/microbiome_calculus/smoking_calculus/03-preprocessing/eager2/eager2_run/samtools/filter/*.gz"):
+for sample in glob("/projects1/microbiome_calculus/smoking_calculus/04-analysis/metaphlan3/input/*.gz"):
 	SAMPLES[os.path.basename(sample).split(".u")[0]] = sample
 ################################################################################
 
@@ -34,7 +34,7 @@ rule metaphlan3:
     threads: 12
     shell:
         """
-        metaphlan {params.fastq} --input_type fastq --nproc 12 > {output}
+        metaphlan {params.fastq} --input_type fastq --nproc 24 > {output}
         """
 
         
