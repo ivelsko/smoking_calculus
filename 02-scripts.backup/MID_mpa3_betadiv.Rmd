@@ -1,5 +1,5 @@
 ---
-title: "MID/CMB, Radcliffe, Kilteasheen, Iberian medieval calculus MALT beta diversity"
+title: "MID/CMB, calculus MetaPhlAn3 beta diversity"
 author: "Irina Velsko"
 date: "`r format(Sys.time(), '%b %d, %Y')`"
 output:
@@ -39,17 +39,19 @@ knitr::opts_knit$set(root.dir = normalizePath(".."))
 
 ```{r load_data}
 # read in the species table
-nt_raw <- fread("./05-results.backup/MID_CMB_malt_nt-comparison-species.txt")
+mpa3_raw <- fread("./05-results.backup/MID_CMB_abundance_table_mpa3.tsv") %>%
+  select(-NCBI_tax_id)
 
 # clean the file names
-nt_raw <- rename(nt_raw, Species = `#Datasets`)
-colnames(nt_raw) <- gsub(".unmapped","", colnames(nt_raw))
-colnames(nt_raw) <- gsub(".10M","", colnames(nt_raw))
+colnames(mpa3_raw) <- gsub(".metaphlan3","", colnames(mpa3_raw))
 
-# remove human and unassigned reads, convert NA to 0, and remove the 8 MID samples with no metadata
-nt_raw <- nt_raw %>% 
-  filter(!str_detect(Species, "Homo sapiens|Not assigned")) %>%
-  replace(is.na(.), 0) %>%
+# filter to have only species
+mpa3_sp <- mpa3_raw %>% 
+  filter(str_detect(clade_name, "s__")) %>%
+  separate(clade_name, into = c("K","P","C","O","F","G","Species"), sep = "\\|") %>%
+  select(-c("K","P","C","O","F","G")) %>%
+  mutate(Species = str_replace_all(Species, "s__",""),
+         Species = str_replace_all(Species, "_"," ")) %>%
   # these samples have no metadata
   select(-c("MID025.A0101","MID033.A0101","MID052.A0101","MID056.A0101","MID065.A0101","MID068.A0101","MID076.A0101","MID078.A0101")) %>%
   arrange(Species)
@@ -65,7 +67,7 @@ load("./05-results.backup/Taxonomy_tables.RData")
 ```{r}
 # merge the EXB and LIB samples from here with the raw tables
 
-nt_raw <- nt_raw %>%
+mpa3_sp <- mpa3_sp %>%
   full_join(., all_species_raw %>%
               select(matches("Species|EXB|LIB")), by = "Species") %>%
   replace(is.na(.), 0) %>%
@@ -73,28 +75,15 @@ nt_raw <- nt_raw %>%
   filter(Total > 0) %>%
   select(-Total)
    
-# sub75bp_raw <- sub75bp_raw %>%
-#   full_join(., all_species_raw %>%
-#               select(matches("Species|EXB|LIB")), by = "Species") %>%
-#   replace(is.na(.), 0) %>%
-#   adorn_totals(where = "col") %>%
-#   filter(Total > 0) %>%
-#   select(-Total)
- 
 ```
 
 Now decontam the tables
 ```{r}
-nt_contaminants <- fread("./05-results.backup/contaminant_species_nt.tsv", sep = "\t")
-# sub75bp_contaminants <- fread("./05-results.backup/contaminant_species_sub75bp.tsv", sep = "\t")
+mpa3_contaminants <- fread("./05-results.backup/contaminant_species_mpa3.tsv", sep = "\t")
 
 # remove contaminant species from nt table
-nt_species_decontam <- nt_raw %>%
-  anti_join(., nt_contaminants)
-
-# remove contaminant species from nt table
-# sub75bp_species_decontam <- sub75bp_raw %>%
-#   anti_join(., sub75bp_contaminants)
+mpa3_species_decontam <- mpa3_sp %>%
+  anti_join(., mpa3_contaminants)
 
 ```
 
@@ -301,7 +290,7 @@ plot_pca_mid <- function(df, pc1, pc2, color_group, shape_group, ncomps, title_t
 
 ```
 
-```{r pca_plot_cont_fxn}
+```{r pca_plot_compa3_fxn}
 # for continuous data
 plot_pca_cont <- function(df, pc1, pc2, color_group, shape_group, ncomps, title_text) {
 
@@ -472,8 +461,8 @@ plot_pca_bi <- function(df, pc1, pc2, metadata_group, columntitle) {
 
 List the outliers from the plot in `MID_CMB_Rad_Kil_Iber_decontam.Rmd`. 
 ```{r outliers}
-outliers <- c("EXB059.A2501","LIB058.A0103","LIB058.A0106","CSS","CSD", "CS14","CS27","CS48") # the lat 3 Radcliffe samples have very few reads
-poor_samples_nt <- fread("./05-results.backup/cuperdec_nt_poor_samples.tsv") %>%
+outliers <- c("EXB059.A2101","EXB059.A2501","LIB058.A0103","LIB058.A0106") 
+poor_samples_mpa3 <- fread("./05-results.backup/cuperdec_mpa3_poor_samples.tsv") %>%
   pull(Sample)
 
 outliersF <- str_c(outliers, collapse = "|")
@@ -488,12 +477,9 @@ by PCA to see how contaminants/low abundance species affect the relationships of
 samples to eachother between groups.
 ```{r pca_all_species}
 # decontaminated only
-nt_species_decontam_unfilt <- nt_species_decontam %>%
+mpa3_species_decontam_unfilt <- mpa3_species_decontam %>%
   select(-one_of(outliers)) %>%
-  select(-one_of(poor_samples_nt)) %>%
-  # adorn_totals(where = "col", name = "Sum_species.decontam") %>%
-  # mutate(Percent = Sum_species.decontam/sum(Sum_species.decontam)*100) %>%
-  # select(-one_of(c("Sum_species.decontam","Percent"))) %>%
+  select(-one_of(poor_samples_mpa3)) %>%
   gather("Library_ID","Counts",2:ncol(.)) %>%
   mutate(Counts = Counts +1) %>%
   spread(Species,Counts) %>%
@@ -501,20 +487,17 @@ nt_species_decontam_unfilt <- nt_species_decontam %>%
 
 # prepare to run a PCA
 # check the number of components to retain by tuning the PCA
-tune.pca(nt_species_decontam_unfilt, logratio = 'CLR')
+tune.pca(mpa3_species_decontam_unfilt, logratio = 'CLR')
 
 # perform and plot a PCA to see how the data cluster
-plot_pca(nt_species_decontam_unfilt, "PC1", "PC2", "Site", "Time_period", 3)
-plot_pca(nt_species_decontam_unfilt, "PC3", "PC2", "Site", "Time_period", 3)
+plot_pca(mpa3_species_decontam_unfilt, "PC1", "PC2", "Site", "Time_period", 3)
+plot_pca(mpa3_species_decontam_unfilt, "PC3", "PC2", "Site", "Time_period", 3)
 
 # decontaminated and filtered
-nt_species_decontam_filtered <- nt_species_decontam %>%
+mpa3_species_decontam_filtered <- mpa3_species_decontam %>%
   # adorn_totals(where = "col", name = "Sum_species.decontam_filtered") %>%
   select(-one_of(outliers)) %>%
-  select(-one_of(poor_samples_nt)) %>%
-  # mutate(Percent = Sum_species.decontam_filtered/sum(Sum_species.decontam_filtered)*100) %>%
-  # filter(Percent > 0.005) %>%
-  # select(-one_of(c("Sum_species.decontam_filtered","Percent"))) %>%
+  select(-one_of(poor_samples_mpa3)) %>%
   gather("Library_ID","Counts",2:ncol(.)) %>%
   mutate(Counts = Counts +1) %>%
   spread(Species,Counts) %>%
@@ -522,12 +505,12 @@ nt_species_decontam_filtered <- nt_species_decontam %>%
 
 # prepare to run a PCA
 # check the number of components to retain by tuning the PCA
-tune.pca(nt_species_decontam_filtered, logratio = 'CLR')
+tune.pca(mpa3_species_decontam_filtered, logratio = 'CLR')
 
 # perform and plot a PCA to see how the data cluster
-plot_pca(nt_species_decontam_filtered, "PC1", "PC2", "Site", "Time_period", 3)
+plot_pca(mpa3_species_decontam_filtered, "PC1", "PC2", "Site", "Time_period", 3)
 
-plot_pca(nt_species_decontam_filtered, "PC3", "PC2", "Site", "Time_period", 3)
+plot_pca(mpa3_species_decontam_filtered, "PC3", "PC2", "Site", "Time_period", 3)
 
 
 # ggsave("./06-publication/supplemental_figures/SXX28/SXX28_all_samples_sp_pca12.pdf", plot = all_samples_sp_pca12, device = "pdf",
@@ -547,14 +530,10 @@ What is the relationship of Cameroon plaque samples to eachother without any
 other sample types? Do they cluster by any of the metadata categories?
 Filter the species table by % abundance
 ```{r pca_species_mid_pc12}
-nt_species_decontam_filtered_mid <- nt_species_decontam %>%
+mpa3_species_decontam_filtered_mid <- mpa3_species_decontam %>%
   select(-one_of(outliers)) %>%
-  select(-one_of(poor_samples_nt)) %>%
+  select(-one_of(poor_samples_mpa3)) %>%
   select(matches("Species|MID|CMB")) %>%
-  # adorn_totals(where = "col", name = "Sum_species") %>%
-  # mutate(Percent = Sum_species/sum(Sum_species)*100) %>%
-  # filter(Percent > 0.001) %>%
-  select(-one_of(c("Sum_species","Percent"))) %>%
   gather("Library_ID","Counts",2:ncol(.)) %>% 
   mutate(Counts = Counts +1) %>%
   spread(Species,Counts) %>%
@@ -562,10 +541,10 @@ nt_species_decontam_filtered_mid <- nt_species_decontam %>%
 
 # prepare to run a PCA
 # check the number of components to retain by tuning the PCA
-mixOmics::tune.pca(nt_species_decontam_filtered_mid, logratio = 'CLR')
+mixOmics::tune.pca(mpa3_species_decontam_filtered_mid, logratio = 'CLR')
 
 
-malt_otu.pca <- mixOmics::pca(nt_species_decontam_filtered_mid, ncomp = 2, logratio = 'CLR')
+malt_otu.pca <- mixOmics::pca(mpa3_species_decontam_filtered_mid, ncomp = 2, logratio = 'CLR')
 malt_pca_values <- malt_otu.pca$variates$X %>%
   as.data.frame() %>%
   rownames_to_column("Library_ID") %>%
@@ -577,201 +556,200 @@ ggplot(malt_pca_values, aes(PC1, PC2, color = Region, shape = Region)) +
 
 # perform and plot a PCA to see how the data cluster
 # by pipe notch presence
-mid_pipe_pc12 <- plot_pca_mid(nt_species_decontam_filtered_mid, "PC1", "PC2", "Pipenotch", "Pipenotch", 3, "Pipe notch")
+mid_pipe_pc12 <- plot_pca_mid(mpa3_species_decontam_filtered_mid, "PC1", "PC2", "Pipenotch", "Pipenotch", 3, "Pipe notch")
 mid_pipe_pc12
 # ggsave("~/Desktop/MID_pca_mid_pipe_pc12.pdf", plot = mid_pipe_pc12, device = "pdf",
 #        scale = 1, width = 9, height = 5, units = c("in"), dpi = 300)
 
 # by sex
-plot_pca_mid(nt_species_decontam_filtered_mid, "PC1", "PC2", "Sex", "Pipenotch", 3, "Sex")
+plot_pca_mid(mpa3_species_decontam_filtered_mid, "PC1", "PC2", "Sex", "Pipenotch", 3, "Sex")
 
 # by age
-plot_pca_mid(nt_species_decontam_filtered_mid, "PC1", "PC2", "Age", "Pipenotch", 3, "Age")
+plot_pca_mid(mpa3_species_decontam_filtered_mid, "PC1", "PC2", "Age", "Pipenotch", 3, "Age")
 
 # by presence of periodontal disease
-plot_pca_mid(nt_species_decontam_filtered_mid, "PC1", "PC2", "Periodontal_disease_present", "Pipenotch", 3, "Periodontal disease present")
+plot_pca_mid(mpa3_species_decontam_filtered_mid, "PC1", "PC2", "Periodontal_disease_present", "Pipenotch", 3, "Periodontal disease present")
 
 # by presence of caries
-plot_pca_mid(nt_species_decontam_filtered_mid, "PC1", "PC2", "Caries_present", "Pipenotch", 3, "Caries present")
+plot_pca_mid(mpa3_species_decontam_filtered_mid, "PC1", "PC2", "Caries_present", "Pipenotch", 3, "Caries present")
 
 # by ante-mortem tooth loss
-plot_pca_mid(nt_species_decontam_filtered_mid, "PC1", "PC2", "AMTL", "Pipenotch", 3, "AMTL")
+plot_pca_mid(mpa3_species_decontam_filtered_mid, "PC1", "PC2", "AMTL", "Pipenotch", 3, "AMTL")
 
 # by supragingival calculus score
-plot_pca_cont(nt_species_decontam_filtered_mid, "PC1", "PC2", "calc_sup_SI_score", "Pipenotch", 3, "Sup calc SI score")
+plot_pca_cont(mpa3_species_decontam_filtered_mid, "PC1", "PC2", "calc_sup_SI_score", "Pipenotch", 3, "Sup calc SI score")
 
 # by subgingival calculus score
-plot_pca_cont(nt_species_decontam_filtered_mid, "PC1", "PC2", "Calc_sub_SI_score", "Pipenotch", 3, "Sub calc SI score")
+plot_pca_cont(mpa3_species_decontam_filtered_mid, "PC1", "PC2", "Calc_sub_SI_score", "Pipenotch", 3, "Sub calc SI score")
 
 # by presence of perioapical lesions
-plot_pca_mid(nt_species_decontam_filtered_mid, "PC1", "PC2", "Periapical_lesions", "Pipenotch", 3, "Periapical lesions")
+plot_pca_mid(mpa3_species_decontam_filtered_mid, "PC1", "PC2", "Periapical_lesions", "Pipenotch", 3, "Periapical lesions")
 
 # by max periodontal disease score
-plot_pca_cont(nt_species_decontam_filtered_mid, "PC1", "PC2", "Max_Perio_Score", "Pipenotch", 3, "Max perio score")
+plot_pca_cont(mpa3_species_decontam_filtered_mid, "PC1", "PC2", "Max_Perio_Score", "Pipenotch", 3, "Max perio score")
 
 # by periodontal affect score
-plot_pca_cont(nt_species_decontam_filtered_mid, "PC1", "PC2", "Peridontal_affect_score", "Pipenotch", 3, "Perio affect score")
+plot_pca_cont(mpa3_species_decontam_filtered_mid, "PC1", "PC2", "Peridontal_affect_score", "Pipenotch", 3, "Perio affect score")
 
 # by % antemortem tooth loss
-plot_pca_cont(nt_species_decontam_filtered_mid, "PC1", "PC2", "%AMTL", "Pipenotch", 3, " % AMTL")
+plot_pca_cont(mpa3_species_decontam_filtered_mid, "PC1", "PC2", "%AMTL", "Pipenotch", 3, " % AMTL")
 
 # by % positions w/periapical lesions
-plot_pca_cont(nt_species_decontam_filtered_mid, "PC1", "PC2", "%_positions_perioapical", "Pipenotch", 3, "% positions periapical lesions")
+plot_pca_cont(mpa3_species_decontam_filtered_mid, "PC1", "PC2", "%_positions_perioapical", "Pipenotch", 3, "% positions periapical lesions")
 
 # by % teeth with caries
-plot_pca_cont(nt_species_decontam_filtered_mid, "PC1", "PC2", "%teeth_with_caries", "Pipenotch", 3, "% teeth w/ caries")
+plot_pca_cont(mpa3_species_decontam_filtered_mid, "PC1", "PC2", "%teeth_with_caries", "Pipenotch", 3, "% teeth w/ caries")
 
 # by % teeth with calculus
-plot_pca_cont(nt_species_decontam_filtered_mid, "PC1", "PC2", "%teeth_with_calc", "Pipenotch", 3, "% teeth w/ calc")
+plot_pca_cont(mpa3_species_decontam_filtered_mid, "PC1", "PC2", "%teeth_with_calc", "Pipenotch", 3, "% teeth w/ calc")
 
 # by % positions with periodontal disease
-plot_pca_cont(nt_species_decontam_filtered_mid, "PC1", "PC2", "%_positions_with_Periodontal", "Pipenotch", 3, "% positions w/ PD")
+plot_pca_cont(mpa3_species_decontam_filtered_mid, "PC1", "PC2", "%_positions_with_Periodontal", "Pipenotch", 3, "% positions w/ PD")
 
 # by minimum number of pipenotches 
-mid_minpipe_pc12 <- plot_pca_cont(nt_species_decontam_filtered_mid, "PC1", "PC2", "Min_no_Pipe_notches", "Pipenotch", 3, "Min # pipe notches")
+mid_minpipe_pc12 <- plot_pca_cont(mpa3_species_decontam_filtered_mid, "PC1", "PC2", "Min_no_Pipe_notches", "Pipenotch", 3, "Min # pipe notches")
 mid_minpipe_pc12
 # ggsave("~/Desktop/MID_pca_mid_minpipe_pc12.pdf", plot = mid_minpipe_pc12, device = "pdf",
 #        scale = 1, width = 9, height = 5, units = c("in"), dpi = 300)
 
 # by sequencing depth 
-mid_seqdepth_pc12 <- plot_pca_cont(nt_species_decontam_filtered_mid, "PC1", "PC2", "No_reads_total", "Pipenotch", 3, "Total reads into MALT")
+mid_seqdepth_pc12 <- plot_pca_cont(mpa3_species_decontam_filtered_mid, "PC1", "PC2", "No_reads_total", "Pipenotch", 3, "Total reads into MALT")
 mid_seqdepth_pc12
 # ggsave("~/Desktop/MID_pca_mid_seqdepth_pc12.pdf", plot = mid_seqdepth_pc12, device = "pdf",
 #        scale = 1, width = 9, height = 5, units = c("in"), dpi = 300)
 
 # by sampled tooth site(s)
-mid_tooth_pc12 <- plot_pca_mid(nt_species_decontam_filtered_mid, "PC1", "PC2", "Tooth_location", "Pipenotch", 3, "Tooth location")
+mid_tooth_pc12 <- plot_pca_mid(mpa3_species_decontam_filtered_mid, "PC1", "PC2", "Tooth_location", "Pipenotch", 3, "Tooth location")
 mid_tooth_pc12
 # ggsave("~/Desktop/MID_pca_mid_tooth_pc12.pdf", plot = mid_tooth_pc12, device = "pdf",
 #        scale = 1, width = 9, height = 5, units = c("in"), dpi = 300)
 
 # by sampled tooth site(s)
-plot_pca_mid(nt_species_decontam_filtered_mid, "PC1", "PC2", "alt_tooth_location", "Pipenotch", 3, "Tooth location")
+plot_pca_mid(mpa3_species_decontam_filtered_mid, "PC1", "PC2", "alt_tooth_location", "Pipenotch", 3, "Tooth location")
 
 # by mg of extracted calculus
-plot_pca_cont(nt_species_decontam_filtered_mid, "PC1", "PC2", "Calculus_extracted_mg", "Pipenotch", 3, "Weight of extracted calculus")
+plot_pca_cont(mpa3_species_decontam_filtered_mid, "PC1", "PC2", "Calculus_extracted_mg", "Pipenotch", 3, "Weight of extracted calculus")
 
 # by [DNA] after extraction per mg of calculus extracted
-plot_pca_cont(nt_species_decontam_filtered_mid, "PC1", "PC2", "extract_conc_ng/mg", "Pipenotch", 3, "DNA extract concentration (ng/mg)")
+plot_pca_cont(mpa3_species_decontam_filtered_mid, "PC1", "PC2", "extract_conc_ng/mg", "Pipenotch", 3, "DNA extract concentration (ng/mg)")
 
 # by [DNA] after extraction per uL of eluate
-mid_extract_pc12 <- plot_pca_cont(nt_species_decontam_filtered_mid, "PC1", "PC2", "extract_conc_ng/uL", "Pipenotch", 3, "DNA extract concentration (ng/uL)")
+mid_extract_pc12 <- plot_pca_cont(mpa3_species_decontam_filtered_mid, "PC1", "PC2", "extract_conc_ng/uL", "Pipenotch", 3, "DNA extract concentration (ng/uL)")
 mid_extract_pc12
 # ggsave("~/Desktop/MID_pca_mid_extract_pc12.pdf", plot = mid_extract_pc12, device = "pdf",
 #        scale = 1, width = 9, height = 5, units = c("in"), dpi = 300)
 
 # by [DNA] after storage, before building libraries
-plot_pca_cont(nt_species_decontam_filtered_mid, "PC1", "PC2", "extract_conc_after_storage_ng/mg", "Pipenotch", 3, "DNA extract concentration after storage (ng/uL)")
+plot_pca_cont(mpa3_species_decontam_filtered_mid, "PC1", "PC2", "extract_conc_after_storage_ng/mg", "Pipenotch", 3, "DNA extract concentration after storage (ng/uL)")
 
 # by # of molecules in the library after indexing amplification
-mid_library_pc12 <- plot_pca_cont(nt_species_decontam_filtered_mid, "PC1", "PC2", "DNA_molecules_per_library_x10^6_log", "Pipenotch", 3, "log10(DNA_molecules_per_library_x10^6)")
+mid_library_pc12 <- plot_pca_cont(mpa3_species_decontam_filtered_mid, "PC1", "PC2", "DNA_molecules_per_library_x10^6_log", "Pipenotch", 3, "log10(DNA_molecules_per_library_x10^6)")
 mid_library_pc12
 # ggsave("~/Desktop/MID_pca_mid_library_pc12.pdf", plot = mid_library_pc12, device = "pdf",
 #        scale = 1, width = 9, height = 5, units = c("in"), dpi = 300)
 
 # by soil type
-plot_pca_mid(nt_species_decontam_filtered_mid, "PC1", "PC2", "Soil", "Pipenotch", 3, "Soil type")
+plot_pca_mid(mpa3_species_decontam_filtered_mid, "PC1", "PC2", "Soil", "Pipenotch", 3, "Soil type")
 
 # by average GC content
-plot_pca_cont(nt_species_decontam_filtered_mid, "PC1", "PC2", "gc_avg", "Time_period", 3, "Avg. GC content (%)")
+plot_pca_cont(mpa3_species_decontam_filtered_mid, "PC1", "PC2", "gc_avg", "Time_period", 3, "Avg. GC content (%)")
 
 # by average read length
-plot_pca_cont(nt_species_decontam_filtered_mid, "PC1", "PC2", "seq_len_avg", "Time_period", 3, "Avg. read length (bp)")
+plot_pca_cont(mpa3_species_decontam_filtered_mid, "PC1", "PC2", "seq_len_avg", "Time_period", 3, "Avg. read length (bp)")
 
 # with names
-# pca.list <- mixOmics::pca(nt_species_decontam_filtered_mid, ncomp = 3, logratio = 'CLR')
+# pca.list <- mixOmics::pca(mpa3_species_decontam_filtered_mid, ncomp = 3, logratio = 'CLR')
 # plot_pca_names(pca.list, "PC1", "PC2", "Pipenotch")
 
-# ggsave("05-results.backup/pca_nt_species_pc1pc2.pdf", plot = pca_nt_species_pc1pc2, device = "pdf",
+# ggsave("05-results.backup/pca_mpa3_species_pc1pc2.pdf", plot = pca_mpa3_species_pc1pc2, device = "pdf",
 #        scale = 1, width = 7, height = 5, units = c("in"),
 #        dpi = 300)
 ```
 
 ```{r pca_species_mid_pc32}
 # by sex
-plot_pca_mid(nt_species_decontam_filtered_mid, "PC3", "PC2", "Sex", "Pipenotch", 3, "Sex")
+plot_pca_mid(mpa3_species_decontam_filtered_mid, "PC3", "PC2", "Sex", "Pipenotch", 3, "Sex")
 
 # by age
-plot_pca_mid(nt_species_decontam_filtered_mid, "PC3", "PC2", "Age", "Pipenotch", 3, "Age")
+plot_pca_mid(mpa3_species_decontam_filtered_mid, "PC3", "PC2", "Age", "Pipenotch", 3, "Age")
 
 # by pipe notch presence
-plot_pca_mid(nt_species_decontam_filtered_mid, "PC3", "PC2", "Pipenotch", "Pipenotch", 3, "Pipe notch")
+plot_pca_mid(mpa3_species_decontam_filtered_mid, "PC3", "PC2", "Pipenotch", "Pipenotch", 3, "Pipe notch")
 
 # by presence of periodontal disease
-plot_pca_mid(nt_species_decontam_filtered_mid, "PC3", "PC2", "Periodontal_disease_present", "Pipenotch", 3, "Periodontal disease present")
+plot_pca_mid(mpa3_species_decontam_filtered_mid, "PC3", "PC2", "Periodontal_disease_present", "Pipenotch", 3, "Periodontal disease present")
 
 # by presence of caries
-plot_pca_mid(nt_species_decontam_filtered_mid, "PC3", "PC2", "Caries_present", "Pipenotch", 3, "Caries present")
+plot_pca_mid(mpa3_species_decontam_filtered_mid, "PC3", "PC2", "Caries_present", "Pipenotch", 3, "Caries present")
 
 # by ante-mortem tooth loss
-plot_pca_mid(nt_species_decontam_filtered_mid, "PC3", "PC2", "AMTL", "Pipenotch", 3, "AMTL")
+plot_pca_mid(mpa3_species_decontam_filtered_mid, "PC3", "PC2", "AMTL", "Pipenotch", 3, "AMTL")
 
 # by supragingival calculus score
-plot_pca_cont(nt_species_decontam_filtered_mid, "PC3", "PC2", "calc_sup_SI_score", "Pipenotch", 3, "Sup calc SI score")
+plot_pca_cont(mpa3_species_decontam_filtered_mid, "PC3", "PC2", "calc_sup_SI_score", "Pipenotch", 3, "Sup calc SI score")
 
 # by subgingival calculus score
-plot_pca_cont(nt_species_decontam_filtered_mid, "PC3", "PC2", "Calc_sub_SI_score", "Pipenotch", 3, "Sub calc SI score")
+plot_pca_cont(mpa3_species_decontam_filtered_mid, "PC3", "PC2", "Calc_sub_SI_score", "Pipenotch", 3, "Sub calc SI score")
 
 # by presence of perioapical lesions
-plot_pca_mid(nt_species_decontam_filtered_mid, "PC3", "PC2", "Periapical_lesions", "Pipenotch", 3, "Periapical lesions")
+plot_pca_mid(mpa3_species_decontam_filtered_mid, "PC3", "PC2", "Periapical_lesions", "Pipenotch", 3, "Periapical lesions")
 
 # by max periodontal disease score
-plot_pca_cont(nt_species_decontam_filtered_mid, "PC3", "PC2", "Max_Perio_Score", "Pipenotch", 3, "Max perio score")
+plot_pca_cont(mpa3_species_decontam_filtered_mid, "PC3", "PC2", "Max_Perio_Score", "Pipenotch", 3, "Max perio score")
 
 # by periodontal affect score
-plot_pca_cont(nt_species_decontam_filtered_mid, "PC3", "PC2", "Peridontal_affect_score", "Pipenotch", 3, "Perio affect score")
+plot_pca_cont(mpa3_species_decontam_filtered_mid, "PC3", "PC2", "Peridontal_affect_score", "Pipenotch", 3, "Perio affect score")
 
 # by % antemortem tooth loss
-plot_pca_cont(nt_species_decontam_filtered_mid, "PC3", "PC2", "%AMTL", "Pipenotch", 3, "% AMTL")
+plot_pca_cont(mpa3_species_decontam_filtered_mid, "PC3", "PC2", "%AMTL", "Pipenotch", 3, "% AMTL")
 
 # by % positions w/periapical lesions
-plot_pca_cont(nt_species_decontam_filtered_mid, "PC3", "PC2", "%_positions_perioapical", "Pipenotch", 3, "% positions periapical lesions")
+plot_pca_cont(mpa3_species_decontam_filtered_mid, "PC3", "PC2", "%_positions_perioapical", "Pipenotch", 3, "% positions periapical lesions")
 
 # by % teeth with caries
-plot_pca_cont(nt_species_decontam_filtered_mid, "PC3", "PC2", "%teeth_with_caries", "Pipenotch", 3, "% teeth w/ caries")
+plot_pca_cont(mpa3_species_decontam_filtered_mid, "PC3", "PC2", "%teeth_with_caries", "Pipenotch", 3, "% teeth w/ caries")
 
 # by % teeth with calculus
-plot_pca_cont(nt_species_decontam_filtered_mid, "PC3", "PC2", "%teeth_with_calc", "Pipenotch", 3, "% teeth w/ calc")
+plot_pca_cont(mpa3_species_decontam_filtered_mid, "PC3", "PC2", "%teeth_with_calc", "Pipenotch", 3, "% teeth w/ calc")
 
 # by % positions with periodontal disease
-plot_pca_cont(nt_species_decontam_filtered_mid, "PC3", "PC2", "%_positions_with_Periodontal", "Pipenotch", 3, "% positions w/ PD")
+plot_pca_cont(mpa3_species_decontam_filtered_mid, "PC3", "PC2", "%_positions_with_Periodontal", "Pipenotch", 3, "% positions w/ PD")
 
 # by minimum number of pipenotches 
-plot_pca_cont(nt_species_decontam_filtered_mid, "PC3", "PC2", "Min_no_Pipe_notches", "Pipenotch", 3, "Min # pipe notches")
+plot_pca_cont(mpa3_species_decontam_filtered_mid, "PC3", "PC2", "Min_no_Pipe_notches", "Pipenotch", 3, "Min # pipe notches")
 
 # by sequencing depth 
-plot_pca_cont(nt_species_decontam_filtered_mid, "PC3", "PC2", "No_reads_total", "Pipenotch", 3, "Total reads into MALT")
+plot_pca_cont(mpa3_species_decontam_filtered_mid, "PC3", "PC2", "No_reads_total", "Pipenotch", 3, "Total reads into MALT")
 
 # by sampled tooth site(s)
-plot_pca_mid(nt_species_decontam_filtered_mid, "PC3", "PC2", "Tooth_location", "Pipenotch", 3, "Tooth location")
+plot_pca_mid(mpa3_species_decontam_filtered_mid, "PC3", "PC2", "Tooth_location", "Pipenotch", 3, "Tooth location")
 
 # by sampled tooth site(s)
-plot_pca_mid(nt_species_decontam_filtered_mid, "PC3", "PC2", "alt_tooth_location", "Pipenotch", 3, "Tooth location")
+plot_pca_mid(mpa3_species_decontam_filtered_mid, "PC3", "PC2", "alt_tooth_location", "Pipenotch", 3, "Tooth location")
 
 # by mg of extracted calculus
-plot_pca_cont(nt_species_decontam_filtered_mid, "PC3", "PC2", "Calculus_extracted_mg", "Pipenotch", 3, "Weight of extracted calculus")
+plot_pca_cont(mpa3_species_decontam_filtered_mid, "PC3", "PC2", "Calculus_extracted_mg", "Pipenotch", 3, "Weight of extracted calculus")
 
 # by [DNA] after extraction
-plot_pca_cont(nt_species_decontam_filtered_mid, "PC3", "PC2", "extract_conc_ng/mg", "Pipenotch", 3, "DNA extract concentration (ng/mg)")
+plot_pca_cont(mpa3_species_decontam_filtered_mid, "PC3", "PC2", "extract_conc_ng/mg", "Pipenotch", 3, "DNA extract concentration (ng/mg)")
 
 # by [DNA] after extraction per uL of eluate
-plot_pca_cont(nt_species_decontam_filtered_mid, "PC3", "PC2", "extract_conc_ng/uL", "Pipenotch", 3, "DNA extract concentration (ng/uL)")
+plot_pca_cont(mpa3_species_decontam_filtered_mid, "PC3", "PC2", "extract_conc_ng/uL", "Pipenotch", 3, "DNA extract concentration (ng/uL)")
 
 # by [DNA] after storage, before building libraries
-plot_pca_cont(nt_species_decontam_filtered_mid, "PC3", "PC2", "extract_conc_after_storage_ng/mg", "Pipenotch", 3, "DNA extract concentration after storage (ng/uL)")
+plot_pca_cont(mpa3_species_decontam_filtered_mid, "PC3", "PC2", "extract_conc_after_storage_ng/mg", "Pipenotch", 3, "DNA extract concentration after storage (ng/uL)")
 
 # by # of molecules in the library after indexing amplification
-plot_pca_cont(nt_species_decontam_filtered_mid, "PC3", "PC2", "DNA_molecules_per_library_x10^6_log", "Pipenotch", 3, "log10(DNA_molecules_per_library_x10^6)")
+plot_pca_cont(mpa3_species_decontam_filtered_mid, "PC3", "PC2", "DNA_molecules_per_library_x10^6_log", "Pipenotch", 3, "log10(DNA_molecules_per_library_x10^6)")
 
 # by soil type
-plot_pca_mid(nt_species_decontam_filtered_mid, "PC3", "PC2", "Soil", "Pipenotch", 3, "Soil type")
+plot_pca_mid(mpa3_species_decontam_filtered_mid, "PC3", "PC2", "Soil", "Pipenotch", 3, "Soil type")
 
 # by average GC content
-plot_pca_cont(nt_species_decontam_filtered_mid, "PC3", "PC2", "gc_avg", "Time_period", 33, "Avg. GC content (%)")
+plot_pca_cont(mpa3_species_decontam_filtered_mid, "PC3", "PC2", "gc_avg", "Time_period", 33, "Avg. GC content (%)")
 
 # by average read length
-plot_pca_cont(nt_species_decontam_filtered_mid, "PC3", "PC2", "seq_len_avg", "Time_period", 33, "Avg. read length (bp)")
-
+plot_pca_cont(mpa3_species_decontam_filtered_mid, "PC3", "PC2", "seq_len_avg", "Time_period", 33, "Avg. read length (bp)")
 
 ```
 
@@ -779,40 +757,36 @@ plot_pca_cont(nt_species_decontam_filtered_mid, "PC3", "PC2", "seq_len_avg", "Ti
 
 ```{r biplots_cmc_species}
 
-nt_species_decontam_filtered_mid <- nt_species_decontam %>%
+mpa3_species_decontam_filtered_mid <- mpa3_species_decontam %>%
   select(-one_of(outliers)) %>%
-  select(-one_of(poor_samples_nt)) %>%
+  select(-one_of(poor_samples_mpa3)) %>%
   select(matches("Species|MID|CMB")) %>%
-  # adorn_totals(where = "col", name = "Sum_species") %>%
-  # mutate(Percent = Sum_species/sum(Sum_species)*100) %>%
-  # filter(Percent > 0.001) %>%
-  # select(-one_of(c("Sum_species","Percent"))) %>%
   gather("Library_ID","Counts",2:ncol(.)) %>% 
   mutate(Counts = Counts +1) %>%
   spread(Species,Counts) %>%
   column_to_rownames("Library_ID")
 
-nt_species_decontam_filtered_mid.pca <- mixOmics::pca(nt_species_decontam_filtered_mid, ncomp = 3, logratio = 'CLR')
-plot(nt_species_decontam_filtered_mid.pca)
+mpa3_species_decontam_filtered_mid.pca <- mixOmics::pca(mpa3_species_decontam_filtered_mid, ncomp = 3, logratio = 'CLR')
+plot(mpa3_species_decontam_filtered_mid.pca)
 
 # Define pipenotch colors for plotting
 Pipenotch_colors = c("#311068","#C83E73")
 Pipenotch_shapes = c(19,17)
 
-nt_species_decontam_filtered_nocontrols_biplot_121 <- plot_pca_bi(nt_species_decontam_filtered_mid.pca, "PC1", "PC2", "Pipenotch", PC1)
-nt_species_decontam_filtered_nocontrols_biplot_121
+mpa3_species_decontam_filtered_nocontrols_biplot_121 <- plot_pca_bi(mpa3_species_decontam_filtered_mid.pca, "PC1", "PC2", "Pipenotch", PC1)
+mpa3_species_decontam_filtered_nocontrols_biplot_121
 
-nt_species_decontam_filtered_nocontrols_biplot_122 <- plot_pca_bi(nt_species_decontam_filtered_mid.pca, "PC1", "PC2", "Pipenotch", PC2)
-nt_species_decontam_filtered_nocontrols_biplot_122
+mpa3_species_decontam_filtered_nocontrols_biplot_122 <- plot_pca_bi(mpa3_species_decontam_filtered_mid.pca, "PC1", "PC2", "Pipenotch", PC2)
+mpa3_species_decontam_filtered_nocontrols_biplot_122
 
-pandoc.table(nt_species_decontam_filtered_nocontrols_biplot_121$plot_env$pws_10 %>% arrange(desc(PC1)),
+pandoc.table(mpa3_species_decontam_filtered_nocontrols_biplot_121$plot_env$pws_10 %>% arrange(desc(PC1)),
              digits = 5,
              keep.trailing.zeros = T,
              justify = "lccr",
              split.tables = Inf,
              caption = "PC1 positive loadings")
 
-pandoc.table(nt_species_decontam_filtered_nocontrols_biplot_121$plot_env$neg_10 %>% arrange(PC1),
+pandoc.table(mpa3_species_decontam_filtered_nocontrols_biplot_121$plot_env$neg_10 %>% arrange(PC1),
              digits = 5,
              keep.trailing.zeros = T,
              justify = "lccr",
@@ -820,14 +794,14 @@ pandoc.table(nt_species_decontam_filtered_nocontrols_biplot_121$plot_env$neg_10 
              caption = "PC1 negative loadings")
 
 
-pandoc.table(nt_species_decontam_filtered_nocontrols_biplot_122$plot_env$pws_10 %>% arrange(desc(PC2)),
+pandoc.table(mpa3_species_decontam_filtered_nocontrols_biplot_122$plot_env$pws_10 %>% arrange(desc(PC2)),
              digits = 5,
              keep.trailing.zeros = T,
              justify = "lccr",
              split.tables = Inf,
              caption = "PC2 positive loadings")
 
-pandoc.table(nt_species_decontam_filtered_nocontrols_biplot_122$plot_env$neg_10 %>% arrange(PC2),
+pandoc.table(mpa3_species_decontam_filtered_nocontrols_biplot_122$plot_env$neg_10 %>% arrange(PC2),
              digits = 5,
              keep.trailing.zeros = T,
              justify = "lccr",
@@ -835,20 +809,20 @@ pandoc.table(nt_species_decontam_filtered_nocontrols_biplot_122$plot_env$neg_10 
              caption = "PC2 negative loadings")
 
 
-nt_species_decontam_filtered_nocontrols_biplot_322 <- plot_pca_bi(nt_species_decontam_filtered_mid.pca, "PC3", "PC2", "Pipenotch", PC2)
-nt_species_decontam_filtered_nocontrols_biplot_322
+mpa3_species_decontam_filtered_nocontrols_biplot_322 <- plot_pca_bi(mpa3_species_decontam_filtered_mid.pca, "PC3", "PC2", "Pipenotch", PC2)
+mpa3_species_decontam_filtered_nocontrols_biplot_322
 
-nt_species_decontam_filtered_nocontrols_biplot_323 <- plot_pca_bi(nt_species_decontam_filtered_mid.pca, "PC3", "PC2", "Pipenotch", PC3)
-nt_species_decontam_filtered_nocontrols_biplot_323
+mpa3_species_decontam_filtered_nocontrols_biplot_323 <- plot_pca_bi(mpa3_species_decontam_filtered_mid.pca, "PC3", "PC2", "Pipenotch", PC3)
+mpa3_species_decontam_filtered_nocontrols_biplot_323
 
-pandoc.table(nt_species_decontam_filtered_nocontrols_biplot_323$plot_env$pws_10 %>% arrange(desc(PC3)),
+pandoc.table(mpa3_species_decontam_filtered_nocontrols_biplot_323$plot_env$pws_10 %>% arrange(desc(PC3)),
              digits = 5,
              keep.trailing.zeros = T,
              justify = "lccr",
              split.tables = Inf,
              caption = "PC3 positive loadings")
 
-pandoc.table(nt_species_decontam_filtered_nocontrols_biplot_323$plot_env$neg_10 %>% arrange(PC3),
+pandoc.table(mpa3_species_decontam_filtered_nocontrols_biplot_323$plot_env$neg_10 %>% arrange(PC3),
              digits = 5,
              keep.trailing.zeros = T,
              justify = "lccr",

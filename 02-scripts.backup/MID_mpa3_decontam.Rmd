@@ -27,17 +27,19 @@ knitr::opts_knit$set(root.dir = normalizePath(".."))
 
 ```{r load_data}
 # read in the species table
-nt_raw <- fread("./05-results.backup/MID_CMB_malt_nt-comparison-species.txt")
+mpa3_raw <- fread("./05-results.backup/MID_CMB_abundance_table_mpa3.tsv") %>%
+  select(-NCBI_tax_id)
 
 # clean the file names
-nt_raw <- rename(nt_raw, Species = `#Datasets`)
-colnames(nt_raw) <- gsub(".unmapped","", colnames(nt_raw))
-colnames(nt_raw) <- gsub(".10M","", colnames(nt_raw))
+colnames(mpa3_raw) <- gsub(".metaphlan3","", colnames(mpa3_raw))
 
-# remove human and unassigned reads, convert NA to 0, and remove the 8 MID samples with no metadata
-nt_raw <- nt_raw %>% 
-  filter(!str_detect(Species, "Homo|Not assigned")) %>%
-  replace(is.na(.), 0) %>%
+# filter to have only species
+mpa3_sp <- mpa3_raw %>% 
+  filter(str_detect(clade_name, "s__")) %>%
+  separate(clade_name, into = c("K","P","C","O","F","G","Species"), sep = "\\|") %>%
+  select(-c("K","P","C","O","F","G")) %>%
+  mutate(Species = str_replace_all(Species, "s__",""),
+         Species = str_replace_all(Species, "_"," ")) %>%
   # these samples have no metadata
   select(-c("MID025.A0101","MID033.A0101","MID052.A0101","MID056.A0101","MID065.A0101","MID068.A0101","MID076.A0101","MID078.A0101")) %>%
   arrange(Species)
@@ -50,20 +52,6 @@ load("./05-results.backup/Taxonomy_tables.RData")
 
 ```
 
-```{r, eval = F}
-# merge the EXB and LIB samples from here with the raw tables
-
-nt_raw <- nt_raw %>%
-  full_join(., all_species_raw %>%
-              select(matches("Species|EXB|LIB")), by = "Species") %>%
-  replace(is.na(.), 0) %>%
-  adorn_totals(where = "col") %>%
-  filter(Total > 0) %>%
-  select(-Total)
-   
-```
-
-
 Load metadata
 ```{r load_metadata}
 
@@ -71,49 +59,6 @@ load("./05-results.backup/Metadata_tables.RData")
 
 ```
 
-
-Read in the DeepEvo table with ARS samples, to use as bone controls to hopefully
-clean up more environmental taxa. From
-`https://github.com/jfy133/Hominid_Calculus_Microbiome_Evolution/tree/master/06-additional_data_files/Data_R11_S12_MALTMEGANTables/`.
-```{r species}
-ars_bone_sp <- fread("./05-results.backup/Evolution-Comparison_MEGAN_20190401-ex_absolute_species_all_summarised_nt.tsv") %>%
-  rename(Species = `#Datasets`) %>%
-  column_to_rownames("Species") %>%
-  select(matches("ARS")) %>%
-  rownames_to_column("Species") %>%
-# remove all species that aren't in the gut samples
-  adorn_totals(where = "col") %>%
-  filter(Total != 0) %>%
-  select(-Total)
-
-colnames(ars_bone_sp) <- gsub("_S0_L003_R1_001.sorted.bam.unmapped","", colnames(ars_bone_sp))
-
-```
-
-```{r genus, eval=F}
-ars_bone_sp <- fread("./05-results.backup/Evolution-Comparison_MEGAN_20190401-ex_absolute_genus_prokaryotes_summarised_nt.tsv") %>%
-  rename(Species = `#Datasets`) %>%
-  column_to_rownames("Species") %>%
-  select(matches("ARS")) %>%
-  rownames_to_column("Species") %>%
-# remove all species that aren't in the gut samples
-  adorn_totals(where = "col") %>%
-  filter(Total != 0) %>%
-  select(-Total)
-
-colnames(ars_bone_sp) <- gsub("_S0_L003_R1_001.sorted.bam.unmapped","", colnames(ars_bone_sp))
-
-```
-
-```{r deep_evo_meta}
-deep_evo_metadata <- fread("./00-documentation.backup/02-calculus_microbiome-deep_evolution-individualscontrolssources_metadata_20200219.tsv") %>%
-  rename(Library_ID = `#SampleID`) %>%
-  filter(str_detect(Library_ID, "ARS"))
-
-ars_samples <- deep_evo_metadata %>%
-  pull(Library_ID)
-  
-```
 
 
 ```{r pca_plotting_functions}
@@ -230,11 +175,11 @@ plot_pca_names <- function(df, pc1, pc2, metadata_group) {
 ```
 
 
-### nt
+### MetaPhlAn3
 Before running decontam, let's plot the samples in a PCA to see if there are any that are clearly not good-quality
 ```{r raw_plot_nt}
 
-malt_species_raw <- nt_raw %>%
+malt_species_raw <- mpa3_sp %>%
   gather("Library_ID","Counts",2:ncol(.)) %>%
   mutate(Counts = Counts + 1) %>%
   spread(Species,Counts) %>%
@@ -258,11 +203,11 @@ plot_pca_names(malt_species_nt.pca,  "PC1", "PC2", "Sample_or_Control")
 
 ```
 
-```{r outliers_nt}
+```{r outliers_mpa3}
 # these are the 3 blanks that "passed" the cuperdec cut-off
 # and we can see they plot with samples in the PCA above
-outliers_nt <- c("EXB059.A2501","LIB058.A0103")
-poor_samples_nt <- fread("./05-results.backup/cuperdec_nt_poor_samples.tsv") %>%
+outliers_mpa3 <- c("EXB059.A2101","EXB059.A2501","LIB058.A0103","LIB058.A0106")
+poor_samples_mpa3 <- fread("./05-results.backup/cuperdec_mpa3_poor_samples.tsv") %>%
   pull(Sample)
 
 ```
@@ -272,52 +217,14 @@ We want to know if there are any species that can be removed b/c they appear to
 be contaminants. Use the package decontam to determine which species may be
 contaminants. Prepare the matrix for decontam.
 
-
-## nt
-```{r decontam_data_prep}
-# remove NA value samples from the input data frame
-malt_species_nt.dataframe <- nt_raw %>%
-  filter(!str_detect(Species, "Not assigned|Homo")) %>%
-  select(-one_of(outliers_nt)) %>%
-  select(-one_of(poor_samples_nt))%>%
-  full_join(., ars_bone_sp) %>%
-  replace(is.na(.), 0) %>%
-  gather("Library_ID","Counts", 2:ncol(.)) %>%
-  spread(Species,Counts) 
-
-# make a matrix for decontam
-malt_species_nt.matrix <- data.matrix(malt_species_nt.dataframe[2:ncol(malt_species_nt.dataframe)])
-rownames(malt_species_nt.matrix) <- malt_species_nt.dataframe$Library_ID
-
-# make a metadata dataframe with the same NA-containing samples removed
-metadata.decontam <- full_metadata %>%
-  filter(!str_detect(Library_ID, poor_samples_nt %>% str_c(collapse = "|"))) %>%
-  filter(!str_detect(Library_ID, outliers_nt %>% str_c(collapse = "|"))) %>%
-  filter(str_detect(Library_ID, "MID|CMB|EXB|LIB|ARS")) %>% 
-   filter(!str_detect(Library_ID, "EXB015|LIB007")) %>% 
-  # these samples have no metadata
-  filter(!str_detect(Library_ID, "LIB058.A0101|MID025.A0101|MID033.A0101|MID052.A0101|MID056.A0101|MID065.A0101|MID068.A0101|MID076.A0101|MID078.A0101|CSN|CSL")) %>%
-  arrange(Library_ID) %>%
-  distinct() %>%
-  bind_rows(., deep_evo_metadata %>%
-              mutate(Site = "Bone") %>%
-              select(Site, Library_ID, Sample_or_Control)) %>%
-  arrange(Site)
-
-metadata.decontam %>% select(Library_ID) %>%
-  anti_join(., malt_species_nt.dataframe %>% select(Library_ID))
-
-```
-
 ### MID/CMB
 
 ```{r decontam_data_prep}
 # remove NA value samples from the input data frame
-malt_species_nt_mid.dataframe <- nt_raw %>%
+malt_species_nt_mid.dataframe <- mpa3_sp %>%
   filter(!str_detect(Species, "Not assigned|Homo sapiens")) %>%
-  select(-one_of(outliers_nt)) %>%
-  select(-one_of(poor_samples_nt)) %>%
-  full_join(., ars_bone_sp) %>%
+  select(-one_of(outliers_mpa3)) %>%
+  select(-one_of(poor_samples_mpa3)) %>%
   select(matches("Species|ARS|MID|CMB|LIB058.A01|EXB059|EXB034")) %>%
   replace(is.na(.), 0) %>%
   gather("Library_ID","Counts", 2:ncol(.)) %>%
@@ -330,16 +237,13 @@ rownames(malt_species_nt_mid.matrix) <- malt_species_nt_mid.dataframe$Library_ID
 
 # make a metadata dataframe with the same NA-containing samples removed
 metadata_mid.decontam <- full_metadata %>%
-  filter(!str_detect(Library_ID, poor_samples_nt %>% str_c(collapse = "|"))) %>%
-  filter(!str_detect(Library_ID, outliers_nt %>% str_c(collapse = "|"))) %>%
+  filter(!str_detect(Library_ID, poor_samples_mpa3 %>% str_c(collapse = "|"))) %>%
+  filter(!str_detect(Library_ID, outliers_mpa3 %>% str_c(collapse = "|"))) %>%
   filter(str_detect(Library_ID, "ARS|MID|CMB|LIB058.A01|EXB059|EXB034")) %>%
   # these samples have no metadata
   filter(!str_detect(Library_ID, "LIB058.A0101|MID025.A0101|MID033.A0101|MID052.A0101|MID056.A0101|MID065.A0101|MID068.A0101|MID076.A0101|MID078.A0101|CSN|CSL")) %>%
   arrange(Library_ID) %>%
   distinct() %>%
-  bind_rows(., deep_evo_metadata %>%
-              mutate(Site = "Bone") %>%
-              select(Site, Library_ID, Sample_or_Control)) %>%
   arrange(Site)
 
 metadata_mid.decontam %>% select(Library_ID) %>%
@@ -354,7 +258,7 @@ metadata.decontam$is.control <- metadata.decontam$Sample_or_Control=="Control"
 #Try changing the probability threshold cut-off to see how many more or less are ID'd as contaminants
 contam.prev.species <- isContaminant(malt_species_nt.matrix, method="prevalence", 
                                  neg=metadata.decontam$is.control, 
-                                 threshold = 0.8)
+                                 threshold = 0.1)
 
 # Check number of contaminants
 table(contam.prev.species$contaminant)
@@ -372,8 +276,8 @@ ggplot(contam.prev.species, aes(x=p)) +
 ```
 
 ```{r contaminants, eval = F}
-contaminant_species_nt <- cont_prev_species_list %>% rownames_to_column("Species") %>% select(Species)
-fwrite(contaminant_species_nt, file = "./05-results.backup/contaminant_species_nt.tsv", sep="\t", quote=F)
+contaminant_species_mpa3 <- cont_prev_species_list %>% rownames_to_column("Species") %>% select(Species)
+fwrite(contaminant_species_mpa3, file = "./05-results.backup/contaminant_species_mpa3.tsv", sep="\t", quote=F)
 
 ```
 
