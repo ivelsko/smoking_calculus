@@ -73,28 +73,15 @@ nt_raw <- nt_raw %>%
   filter(Total > 0) %>%
   select(-Total)
    
-# sub75bp_raw <- sub75bp_raw %>%
-#   full_join(., all_species_raw %>%
-#               select(matches("Species|EXB|LIB")), by = "Species") %>%
-#   replace(is.na(.), 0) %>%
-#   adorn_totals(where = "col") %>%
-#   filter(Total > 0) %>%
-#   select(-Total)
- 
 ```
 
 Now decontam the tables
 ```{r}
 nt_contaminants <- fread("./05-results.backup/contaminant_species_nt.tsv", sep = "\t")
-# sub75bp_contaminants <- fread("./05-results.backup/contaminant_species_sub75bp.tsv", sep = "\t")
 
 # remove contaminant species from nt table
 nt_species_decontam <- nt_raw %>%
   anti_join(., nt_contaminants)
-
-# remove contaminant species from nt table
-# sub75bp_species_decontam <- sub75bp_raw %>%
-#   anti_join(., sub75bp_contaminants)
 
 ```
 
@@ -114,7 +101,35 @@ full_metadata <- full_metadata %>%
   full_join(., malt_map_unmap_rl_gc)
 
 ```
- 
+
+```{r load_strep_group}
+# load strep group info
+strep_groups <- fread("./00-documentation.backup/25-streptococcus_cladegroup_amylasegroup_database.tsv") %>%
+  select(Taxon, Clade_Consensus) %>%
+  rename(Species = Taxon) %>%
+  mutate(Species = str_replace_all(Species, "_", " ")) %>%
+  rename(Strep_group = Clade_Consensus) %>%
+  mutate(Strep_group = fct_relevel(Strep_group, "sanguinis","mitis","salivarius","anginosus","bovis","pyogenic","mutans","unknown","NA"))
+
+strep_group_info <- malt_nt %>%
+  filter(str_detect(Species, "Streptococcus")) %>%
+  # join with the Strep grup table for plotting
+  inner_join(., strep_groups) %>%
+  select(-Species) %>%
+  select(Strep_group, everything()) %>%
+  # transpose
+  gather("Library_ID","Counts", 2:ncol(.)) %>%
+  group_by(Library_ID, Strep_group) %>%
+  summarize(Reads = sum(Counts)) %>%
+  spread(Strep_group, Reads) %>%
+  # convert table to proportions
+  adorn_percentages(denominator = "row") %>%
+  # arrange by sanguinis and for the ones w/o sanguinis, by anginosis
+  arrange(desc(sanguinis), anginosus)
+
+```
+
+
 ```{r pca_name_fxn}
 # this function plots the PCA with the sample names instead of points
 plot_pca_names <- function(df, pc1, pc2, metadata_group) {
@@ -125,7 +140,8 @@ plot_pca_names <- function(df, pc1, pc2, metadata_group) {
               as.data.frame() %>%
               rownames_to_column("Library_ID") %>%
               inner_join(full_metadata %>%
-                           select(Library_ID, Site, Region, Time_period, Sample_or_Control, Periodontal_disease_present, Caries_present, Sex, Age, Tooth_location), by = "Library_ID")
+                           select(Library_ID, Site, Region, Time_period, Sample_or_Control, Periodontal_disease_present, Caries_present, Sex, Age, Tooth_location), by = "Library_ID") %>%
+              inner_join(., strep_group_info, by = "Library_ID")
     
     metadata_group = df_X[[metadata_group]]
     
@@ -186,8 +202,9 @@ plot_pca <- function(df, pc1, pc2, color_group, shape_group, ncomps) {
     df_X <- pca.list$variates$X %>%
               as.data.frame() %>%
               rownames_to_column("Library_ID") %>%
-              inner_join(full_metadata, by = "Library_ID")
-    
+              inner_join(full_metadata, by = "Library_ID") %>%
+              inner_join(., strep_group_info, by = "Library_ID")
+                
     color_group = df_X[[color_group]]
     shape_group = df_X[[shape_group]]
 
@@ -248,7 +265,8 @@ plot_pca_mid <- function(df, pc1, pc2, color_group, shape_group, ncomps, title_t
     df_X <- pca.list$variates$X %>%
               as.data.frame() %>%
               rownames_to_column("Library_ID") %>%
-              inner_join(full_metadata, by = "Library_ID")
+              inner_join(full_metadata, by = "Library_ID") %>%
+              inner_join(., strep_group_info, by = "Library_ID")
     
     color_group = df_X[[color_group]]
     shape_group = df_X[[shape_group]]
@@ -311,7 +329,8 @@ plot_pca_cont <- function(df, pc1, pc2, color_group, shape_group, ncomps, title_
     df_X <- pca.list$variates$X %>%
               as.data.frame() %>%
               rownames_to_column("Library_ID") %>%
-              inner_join(full_metadata, by = "Library_ID") 
+              inner_join(full_metadata, by = "Library_ID") %>%
+              inner_join(., strep_group_info, by = "Library_ID")
     # %>%
               # full_join(., full_source_results %>%
               #             rename(Library_ID = SampleID),  by = "Library_ID")
@@ -677,6 +696,12 @@ plot_pca_cont(nt_species_decontam_filtered_mid, "PC1", "PC2", "gc_avg", "Time_pe
 
 # by average read length
 plot_pca_cont(nt_species_decontam_filtered_mid, "PC1", "PC2", "seq_len_avg", "Time_period", 3, "Avg. read length (bp)")
+
+# by Sanguinis group
+plot_pca_cont(nt_species_decontam_filtered_mid, "PC1", "PC2", "sanguinis", "Time_period", 3, "Proportion of Sanguinis")
+
+# by Anginosis group
+plot_pca_cont(nt_species_decontam_filtered_mid, "PC1", "PC2", "anginosus", "Time_period", 3, "Proportion of Anginosus")
 
 # with names
 # pca.list <- mixOmics::pca(nt_species_decontam_filtered_mid, ncomp = 3, logratio = 'CLR')

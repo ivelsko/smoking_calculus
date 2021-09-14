@@ -561,16 +561,24 @@ for f in *.txt; do infoseq -auto -outfile $(basename $f .txt).gc_rl.tsv -only -n
 MetaPhlAn3 on MID and CMB
 
 # here: /projects1/microbiome_calculus/smoking_calculus/04-analysis/metaphlan3
-snakemake -s ../../02-scripts.backup/009-metaphlan3_mid_cmb.Snakefile --cluster 'sbatch --mem 4G -p short -n {threads}' -j 4 -k --restart-times 3 -n
+snakemake -s ../../02-scripts.backup/009-metaphlan3_mid.Snakefile --cluster 'sbatch --mem 4G -p short -n {threads}' -j 4 -k --restart-times 3 -n
 
 # merge the tables
-merge_metaphlan_tables.py *.metaphlan3.tsv > ../../05-results.backup/MID_CMB_abundance_table.tsv
+merge_metaphlan_tables.py *.metaphlan3.tsv > ../../05-results.backup/abundance_table_mpa3.tsv
 
 
+################################################################
 
+# Download the strep group table James made for DeepEvo and check if 
+# there are "chimp-like" strep distributions in the MID samples
+wget https://raw.githubusercontent.com/jfy133/Hominid_Calculus_Microbiome_Evolution/master/00-documentation.backup/25-streptococcus_cladegroup_amylasegroup_database.tsv
 
+################################################################
+# Use GRiD to see if replication status is different between different species in heavy smokers and light/non-smokers
 
+/mnt/archgen/microbiome_calculus/smoking_calculus/04-analysis/GRiD/HOMD
 
+snakemake -s ../../../02-scripts.backup/MID_GRiD_homd.Snakefile --cluster-config /mnt/archgen/microbiome_calculus/abpCapture/02-scripts.backup/snakemake_default.config --cluster "qsub -pe smp 4 -l virtual_free={cluster.mem},h_vmem={cluster.mem} -o {cluster.out} -e {cluster.err}" -j 1 --restart-times 1 --latency-wait 20 -n
 
 
 

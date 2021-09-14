@@ -205,7 +205,7 @@ Site_colors <- c(Middenbeemster = "#311068", CMB = "#7B2382FF", Radcliffe = "#C8
 Site_shapes <- c(Middenbeemster = 15, CMB = 16, Radcliffe = 17, Kilteasheen = 18, ELR = 25, IVE = 14, Jaen = 13, VLC = 13, Extraction_blank = 4, Library_blank = 3)
 Site_size <- c(Middenbeemster = 4.5, CMB = 4, Radcliffe = 4, Kilteasheen = 6, ELR = 4, IVE = 4, Jaen = 4, VLC = 4, Extraction_blank = 4, Library_blank = 4)
 
-Time_period_colors <- c(Industrial = "#311068", Medieval = "#C83E73", Modern = "#41b6c4", Extraction_blank = "#252525", Library_blank = "#737373")
+Time_period_colors <- c(Industrial = "#311068", Medieval = "#C83E73", Modern = "#41b6c4", Extraction_blank = "#252525", Library_blank = "#737373", Soil = "black")
 Time_period_shapes <- c(Industrial = 19, Medieval = 17, Modern = 15, Extraction_blank = 4, Library_blank = 3)
 Time_period_size <- c(Industrial = 4, Medieval = 4, Modern = 4, Extraction_blank = 4, Library_blank = 4)
 

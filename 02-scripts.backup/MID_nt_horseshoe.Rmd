@@ -69,7 +69,7 @@ nt_species_decontam <- nt_raw %>%
   anti_join(., nt_contaminants)
 
 malt_otu_pca_table <- nt_species_decontam %>%
-  select(matches("Species|MID")) %>%
+  select(matches("Species|MID|CMB")) %>%
   select(-one_of(outliers)) %>%
   select(-one_of(poor_samples_nt)) %>%
   gather("Library_ID","Counts",2:ncol(.)) %>%

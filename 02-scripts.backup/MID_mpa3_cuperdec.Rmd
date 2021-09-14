@@ -25,7 +25,7 @@ knitr::opts_knit$set(root.dir = normalizePath(".."))
 Read in the full species and genus tables.
 ```{r load_data}
 # read in the species table
-mpa3_raw <- fread("./05-results.backup/MID_CMB_abundance_table_mpa3.tsv") %>%
+mpa3_raw <- fread("./05-results.backup/abundance_table_mpa3.tsv") %>%
   select(-NCBI_tax_id)
 
 # clean the file names
@@ -55,12 +55,17 @@ load("./05-results.backup/Metadata_tables.RData")
 
 # MetaPhlAn3
 ```{r}
-
-mpa3_sp %>%
+# list samples with no metadata so they can be removed from the table
+no_meta_samples <- mpa3_sp %>%
   gather("Library_ID", "Counts", 2:ncol(.)) %>%
   spread(Species, Counts) %>%
   select(Library_ID) %>%
-  anti_join(., full_metadata %>% select(Library_ID))
+  anti_join(., full_metadata %>% select(Library_ID)) %>%
+  pull()
+
+# remove samples with no metadata
+mpa3_sp <- mpa3_sp %>%
+  select(-no_meta_samples)
 
 ```
 
@@ -107,7 +112,7 @@ plot_cuperdec(curves, metadata_map)
 
 filter_result <- simple_filter(curves, percent_threshold = 75) # percent_threshold = 82 starts to color some of the CMC samples red
 
-plot_cuperdec(curves, metadata_map, filter_result, restrict_x = 150)
+plot_cuperdec(curves, metadata_map, filter_result, restrict_x = 50)
 
 ```
 
@@ -127,7 +132,7 @@ cd_curve_plot
 
 ```{r adaptive_rank_burnin}
 
-adaptive_rank_burnin_result <- adaptive_burnin_filter(curves, percent_threshold = 70) # percent_threshold = 50 allows the highest ExtractionBlank line to turn turquoise; percent_threshold = 60 keeps the highest ExtractionBlank line red but turns one CMC sample line red; percent_threshold = 59 keeps all CMC turquoise and all ExtractionBlanks red; going higher turns more CMC red
+adaptive_rank_burnin_result <- adaptive_burnin_filter(curves, percent_threshold = 68) # percent_threshold = 50 allows the highest ExtractionBlank line to turn turquoise; percent_threshold = 60 keeps the highest ExtractionBlank line red but turns one CMC sample line red; percent_threshold = 59 keeps all CMC turquoise and all ExtractionBlanks red; going higher turns more CMC red
 cd_curve_plot <- plot_cuperdec(curves, metadata_map, adaptive_rank_burnin_result, restrict_x = 50)
 cd_curve_plot
 
@@ -143,11 +148,11 @@ discard_list <- adaptive_rank_burnin_result %>% filter(!Passed) %>%
   filter(!str_detect(Sample, "EXB|LIB")) # these are blanks, dentin, or soil
 discard_list
 
-fwrite(discard_list, "./05-results.backup/cuperdec_mpa3_poor_samples.tsv", sep = "\t", quote = F)
+# fwrite(discard_list, "./05-results.backup/cuperdec_mpa3_poor_samples.tsv", sep = "\t", quote = F)
 
 # list the controls that passed to know which to remove before running decontam
 adaptive_rank_burnin_result %>% filter(Passed) %>%
-  filter(str_detect(Sample, "EXB|LIB"))
+  filter(str_detect(Sample, "EXB|LIB|CSD|CSL|CSS|CSN"))
 
 ```
 
