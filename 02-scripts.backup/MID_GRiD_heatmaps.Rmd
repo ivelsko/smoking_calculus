@@ -1,0 +1,381 @@
+---
+title: "Radcliffe single tooth GRiD"
+author: "Irina Velsko"
+date: "`r format(Sys.time(), '%b %d, %Y')`"
+output:
+    github_document:
+        fig_width: 8
+        fig_height: 6
+        toc: true
+---
+
+```{r load_libraries, echo = F, message = F}
+library(knitr)
+library(ComplexHeatmap)
+library(data.table)
+library(vegan)
+library(janitor)
+library(scales)
+library(tidyverse)
+
+```
+
+```{r setup}
+knitr::opts_knit$set(root.dir = normalizePath(".."))
+```
+
+```{r load_homd_table}
+homd_table <- fread("./00-documentation.backup/homd_taxon_table.tsv", sep = "\t")
+
+# make a table with only the genus, species, and genome ID
+homd_short <- homd_table %>%
+  select(Genus, Species, Genome_ID) %>%
+  # make a new line for each genome ID (some species have multiple)
+  separate_rows(., Genome_ID, sep = "\\|") %>%
+  unite(species, Genus:Species, sep = " ") %>%
+  # remove all blank entries in the Genome column
+  filter(str_detect(Genome_ID, "SEQ")) %>%
+  rename(Genome = Genome_ID)
+
+
+```
+
+```{r load_metadata}
+
+load("./05-results.backup/Metadata_tables.RData")
+
+```
+
+```{r poor_preservation}
+poor_samples <- fread("./05-results.backup/cuperdec_poor_samples.tsv") %>%
+  pull(Sample)
+
+```
+
+
+```{r, eval = F}
+# load the GRiD merged output table
+
+grid_merged_full <- fread("./04-analysis/GRiD/HOMD/output/merged_table.txt", sep = "\t")
+
+colnames(grid_merged_full) <- gsub(".unmapped","", colnames(grid_merged_full))
+
+# Note: CS27 didn't have any assignments, maybe sequencing depth was too low
+
+# combine with the homd table to get species names for the genome IDs
+grid_merged <- grid_merged_full %>%
+  filter(!str_detect(Genome, "grid_database")) %>%
+  # make the NAs 0 for filtering
+  replace(is.na(.), 0) %>%
+  # remove CS27 b/c it has no entries
+  select(-CS27)
+
+```
+
+```{r}
+# load the individual GRiD.txt files and merge them together b/c GRiD crashed and didn't create a merged table
+# want it to be < 3 according to the GRiD page
+individual_list <- list.files(path = "~/archgen/microbiome_calculus/smoking_calculus/04-analysis/GRiD/HOMD/output", pattern = ".GRiD.txt", full.names = T)
+
+grid_final <- map_dfr(individual_list, function(fn) {
+  fread(fn) %>%
+  mutate(Library_ID = basename(fn))
+}) %>%
+  arrange(Library_ID) %>%
+  mutate(Library_ID = str_replace(Library_ID, ".unmapped.GRiD.txt","")) %>%
+  filter(!str_detect(Library_ID, "EXB|LIB")) %>%
+  remove_empty(which = "cols") %>%
+  filter(!str_detect(Library_ID, poor_samples %>%
+                       str_c(collapse = "|"))) %>%
+  # remove the MID samples that have no metadata
+  filter(!str_detect(Library_ID, "MID025.A0101|MID033.A0101|MID052.A0101|MID056.A0101|MID065.A0101|MID068.A0101|MID076.A0101|MID078.A0101"))
+
+```
+
+
+```{r}
+# load the individual mosdepth.summary.txt files and merge them together to get the species Species_heterogeneity info
+# want it to be < 3 according to the GRiD page
+mosdepth_list <- list.files(path = "~/archgen/microbiome_calculus/smoking_calculus/04-analysis/GRiD/HOMD/output", pattern = ".summary.txt", full.names = T)
+
+depth_info <- map_dfr(mosdepth_list, function(fn) {
+  fread(fn) %>%
+  mutate(Library_ID = basename(fn))
+}) %>%
+  arrange(Library_ID) %>%
+  mutate(Library_ID = str_replace(Library_ID, ".unmapped.mosdepth.summary.txt","")) %>%
+  filter(!str_detect(Library_ID, "EXB|LIB")) %>%
+  rename(Genome = chrom)
+
+
+```
+
+```{r filter_genomes}
+
+filtered_genomes <- grid_final %>%
+  filter(!str_detect(Genome, "grid_database")) %>%
+  select(Library_ID, GRiD, Genome) %>%
+  pivot_wider(names_from = "Library_ID", values_from = "GRiD") %>%
+  # make the NAs 0 for filtering
+  replace(is.na(.), 0)%>%
+  # select only genomes detected in 9 or more libraries (~10% of libraries)
+  pivot_longer(!Genome, names_to = "Library_ID", values_to = "GRiD") %>%
+  mutate(GRiD = ifelse(GRiD == 0, 0, 1)) %>%
+  pivot_wider(names_from = "Library_ID", values_from = "GRiD") %>%
+  adorn_totals(where = "col") %>%
+  # filter for genomes present in X samples
+  filter(Total >=2) %>%
+  pull(Genome)
+
+```
+
+```{r cluster_genomes}
+# create a wide table to run clustering with vegan and hclust
+grid_final_wide <- grid_final %>%
+  filter(!str_detect(Genome, "grid_database")) %>%
+  select(Library_ID, Genome, GRiD) %>%
+  pivot_wider(names_from = "Library_ID", values_from = "GRiD", values_fill = 1) %>%
+  column_to_rownames("Genome")
+
+# perform a distance calculation for hierarchical clustering for the protein ordering
+grid_final_wide_dist <- vegdist(grid_final_wide, method = "euclidian")
+
+# cluster the data with hclust
+grid_final_wide_dist_hr <- hclust(grid_final_wide_dist)
+
+# pull this order out and store as a vector to make the order a factor in the next step for plotting
+sp_all_order <- grid_final_wide_dist_hr$order %>%
+  as.character.numeric_version(.) %>%
+  str_trim(.)
+
+# use the dendrogram order to list out the genomes in the correct order for the heatmap
+grid_final_wide_order <- grid_final_wide %>%
+  as.data.frame() %>%
+  rownames_to_column("Genome") %>%
+  # make a new column with row numbers
+  mutate(SpOrder = as.character(seq(1,1164))) %>%
+  select(Genome, SpOrder, everything()) %>%
+  # make the row numbers a factor from the clustering to be able to order for plotting
+  mutate(SpOrder = fct_relevel(SpOrder, sp_all_order)) %>%
+  arrange(SpOrder) %>%
+  pull(Genome)
+
+# select the first 30 genomes from the ordered list
+grid_final_wide_order_top <- grid_final_wide_order[1:60]
+  
+# select the last 30 genomes from the ordered list
+grid_final_wide_order_less <- grid_final_wide_order[1105:1164]
+
+# combine the 1st and last genomes for a list of 60
+grid_final_wide_order_ends <- c(grid_final_wide_order_top, grid_final_wide_order_less)
+
+```
+
+```{r}
+
+# make the Genome a factor so they're in the correct order for the heatmap using the vector from the step above
+grid_final_long <- grid_final_wide %>%
+  as.data.frame() %>%
+  rownames_to_column("Genome") %>%
+  pivot_longer(!Genome, names_to = "Library_ID", values_to = "GRiD") %>%
+  mutate(Genome = fct_relevel(Genome, grid_final_wide_order)) 
+
+# plot everything with samples ordered by PC1 value (from horseshoe)
+grid_final_long %>%
+  # filter(str_detect(Genome, filtered_genomes)) %>%
+  # take only genomes with a GRiD score of >= 1.5
+  # inner_join(., genomes_15, by = "Genome") %>%
+  inner_join(., homd_short, by = "Genome") %>%
+  select(species, everything()) %>%
+  unite(Species, species:Genome, sep = "_") %>%
+  mutate(Library_ID = fct_relevel(Library_ID,  sample_order)) %>%
+  arrange(Library_ID) %>%
+  ggplot(., aes(Library_ID, Species, fill = GRiD)) +
+    geom_tile(aes(fill = GRiD)) +
+    scale_fill_viridis_c(option = "A", direction = -1) +
+    theme_minimal(base_size = 9) +
+    theme(axis.text.x = element_text(angle = 90, hjust = 0.95), # , color = vector_color
+          plot.margin = margin(0, 0, 0, 0, "pt"),
+          axis.title.y = element_blank(),
+          legend.position = "left")
+
+grid_final_long %>%
+  # filter(str_detect(Genome, filtered_genomes)) %>%
+  # take only genomes with a GRiD score of >= 1.5
+  # inner_join(., genomes_15, by = "Genome") %>%
+  # inner_join(., homd_short, by = "Genome") %>%
+  # select(species, everything()) %>%
+  # unite(Species, species:Genome, sep = "_") %>%
+  mutate(Library_ID = fct_relevel(Library_ID,  sample_order)) %>%
+  arrange(Library_ID) %>%
+  ggplot(., aes(Library_ID, Genome, fill = GRiD)) +
+    geom_tile(aes(fill = GRiD)) +
+    scale_fill_viridis_c(option = "A", direction = -1) +
+    theme_minimal(base_size = 9) +
+    theme(axis.text.x = element_text(angle = 90, hjust = 0.95), # , color = vector_color
+          plot.margin = margin(0, 0, 0, 0, "pt"),
+          axis.title.y = element_blank(),
+          legend.position = "left")
+
+```
+
+
+```{r}
+
+grid_final_long %>%
+# already has NA values converted to 1 from grid_final_wide
+  filter(str_detect(Genome, grid_final_wide_order_ends %>%
+                      str_c(collapse = "|"))) %>%
+  inner_join(., homd_short, by = "Genome") %>%
+  mutate(genome = Genome) %>%
+  unite(Species, species:genome, sep = "_") %>%
+  mutate(Library_ID = fct_relevel(Library_ID,  sample_order),
+         GRiD10 = log10(GRiD)) %>%
+  arrange(Library_ID) %>%
+  ggplot(., aes(Library_ID, Species, fill = GRiD)) +
+    geom_tile(aes(fill = GRiD)) +
+    scale_fill_viridis_c(option = "A", direction = -1) +
+    theme_minimal(base_size = 9) +
+    theme(axis.text.x = element_text(angle = 90, hjust = 0.95), 
+          plot.margin = margin(0, 0, 0, 0, "pt"),
+          axis.title.y = element_blank(),
+          legend.position = "left")
+
+
+# Pg, Td, Tf
+grid_final_long %>%
+# already has NA values converted to 1 from grid_final_wide
+  inner_join(., homd_short, by = "Genome") %>%
+  mutate(genome = Genome) %>%
+  unite(Species, species:genome, sep = "_") %>%
+  filter(str_detect(Species, "Porphy|Tanner|Trepo")) %>%
+  mutate(Library_ID = fct_relevel(Library_ID,  sample_order),
+         GRiD10 = log10(GRiD)) %>%
+  arrange(Library_ID) %>%
+  ggplot(., aes(Library_ID, Species, fill = GRiD)) +
+    geom_tile(aes(fill = GRiD)) +
+    scale_fill_viridis_c(option = "A", direction = -1) +
+    theme_minimal(base_size = 9) +
+    theme(axis.text.x = element_text(angle = 90, hjust = 0.95), 
+          plot.margin = margin(0, 0, 0, 0, "pt"),
+          axis.title.y = element_blank(),
+          legend.position = "left")
+
+
+```
+
+```{r}
+  # combine with the homd table to get species names for the genome IDs
+# grid_final %>%
+#   filter(!str_detect(Genome, "grid_database")) %>%
+#   select(Genome, GRiD, Library_ID) %>%
+#   pivot_wider(names_from = "Library_ID", values_from = "GRiD") %>%
+#   filter(str_detect(Genome, filtered_genomes)) %>%
+#   pivot_longer(!Genome, names_to = "Library_ID", values_to = "GRiD") %>%
+#   ggplot(., aes(Library_ID, Genome, fill = GRiD)) +
+#     geom_tile(aes(fill = GRiD)) +
+#     scale_fill_viridis_c(option = "A") +
+#     theme_minimal(base_size = 9) +
+#     theme(axis.text.x = element_text(angle = 90, hjust = 0.95), # , color = vector_color
+#           plot.margin = margin(0, 0, 0, 0, "pt"),
+#           axis.title.y = element_blank(),
+#           legend.position = "left")
+
+grid_final_long %>%
+# already has NA values converted to 1 from grid_final_wide
+  # filter(str_detect(Genome, grid_final_wide_order_ends %>%
+  #                     str_c(collapse = "|"))) %>%
+  inner_join(., homd_short, by = "Genome") %>%
+  select(-c("Library_ID")) %>%
+  distinct() %>%
+  filter(str_detect(species, "Porphy"))
+
+
+
+```
+
+
+```{r}
+grid_final %>%
+  filter(!str_detect(Genome, "grid_database")) %>%
+  select(Library_ID, GRiD, Genome) %>%
+  pivot_wider(names_from = "Library_ID", values_from = "GRiD", values_fill = 1) %>%
+  # take only genomes that were detected in at least 9 libraries (~10% of libraries)
+  filter(str_detect(Genome, grid_final_wide_order_ends %>%
+                      str_c(collapse = "|"))) %>% # filtered_genomes
+  column_to_rownames("Genome") %>%
+  as.matrix(.) %>%
+  Heatmap(., clustering_distance_rows = "euclidean")
+
+```
+
+```{r}
+
+# list the genomes with GRiD scores >= 1.5
+genomes_15 <- grid_final %>%
+  filter(!str_detect(Genome, "grid_database")) %>%
+  select(Library_ID, GRiD, Genome) %>%
+  filter(GRiD >= 1.01) %>%
+  select(Genome) %>%
+  distinct() 
+
+
+selected_metadata <- full_metadata %>%
+  select(Library_ID, Pipenotch, AMTL, Min_no_Pipe_notches) %>%
+  mutate(Pipenotch = as.character(Pipenotch)) %>%
+  filter(str_detect(Library_ID, "CMB|MID")) %>%
+  drop_na(Pipenotch) %>%
+  as.data.frame(.) %>%
+  filter(!str_detect(Library_ID, poor_samples %>%
+                       str_c(collapse = "|"))) %>%
+  filter(Library_ID != "MID025.A0101") %>%
+  column_to_rownames("Library_ID")
+
+column_ha <- HeatmapAnnotation(df = selected_metadata, col = list(Pipenotch = c("Present" = "red", "Absent" = "blue"),
+                                                                  AMTL = c("Yes" = "red", "No" = "blue")))
+
+grid_final %>%
+  filter(!str_detect(Genome, "grid_database")) %>%
+  select(Library_ID, GRiD, Genome) %>%
+  pivot_wider(names_from = "Library_ID", values_from = "GRiD", values_fill = 1) %>%
+  filter(str_detect(Genome, filtered_genomes)) %>%
+  # take only genomes with a GRiD score of >= 1.5
+  # inner_join(., genomes_15, by = "Genome") %>%
+  inner_join(., homd_short, by = "Genome") %>%
+  select(species, everything()) %>%
+  unite(Species, species:Genome, sep = "_") %>%
+  column_to_rownames("Species") %>%
+  as.matrix(.) %>%
+  # dim(.)
+  Heatmap(., clustering_distance_rows = "euclidean", top_annotation = column_ha)
+
+  
+grid_final %>%
+  select(Library_ID) %>%
+  distinct() %>%
+  anti_join(., selected_metadata %>%
+              rownames_to_column("Library_ID"), by = "Library_ID")
+
+selected_metadata  %>%
+  rownames_to_column("Library_ID") %>%
+  anti_join(., grid_final %>%
+  select(Library_ID) %>%
+  distinct(), by = "Library_ID")
+
+```
+
+```{r}
+homd_short %>% 
+  group_by(species) %>% 
+  count() %>%
+  arrange(desc(n))
+
+grid_final %>%
+  filter(!str_detect(Genome, "grid_database"),
+         str_detect(Genome, "SEQF1530"))
+  
+```
+
+
+
+
