@@ -34,7 +34,7 @@ rule metaphlan3:
     threads: 12
     shell:
         """
-        metaphlan {params.fastq} --input_type fastq --nproc 24 > {output}
+        /home/irina_marie_velsko/miniconda3/envs/humann3/bin/metaphlan {params.fastq} --input_type fastq --nproc 24 > {output}
         """
 
         
