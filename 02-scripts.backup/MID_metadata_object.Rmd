@@ -100,14 +100,14 @@ Load the average GC content and read length information from multiqc from the
 eager runs
 ```{r rl_gc_info}
 
-mid_multiqc <- fread("~/projects1/microbiome_calculus/smoking_calculus/03-preprocessing/eager2/eager2_run/multiqc/multiqc_data/multiqc_fastqc_1.txt") %>%
+mid_multiqc <- fread("~/archgen/microbiome_calculus/smoking_calculus/03-preprocessing/eager2/eager2_run/multiqc/multiqc_data/multiqc_fastqc_1.txt") %>%
   mutate(Library_ID = str_trunc(Sample, width = 12, side = "right", ellipsis = "")) %>%
   select(Library_ID, avg_sequence_length, `%GC`) %>%
   group_by(Library_ID) %>%
   summarize(seq_len_avg = mean(avg_sequence_length),
             gc_avg = mean(`%GC`))
 
-rad_multiqc <- fread("~/projects1/microbiome_calculus/smoking_calculus/03-preprocessing/radcliffe_pfuT/eager2/multiqc/radcliffe_pfuT_tsv_multiqc_report_data/multiqc_general_stats.txt") %>%
+rad_multiqc <- fread("~/archgen/microbiome_calculus/smoking_calculus/03-preprocessing/radcliffe_pfuT/eager2/multiqc/radcliffe_pfuT_tsv_multiqc_report_data/multiqc_general_stats.txt") %>%
   filter(str_detect(Sample, "unm")) %>%
   select(matches("Sample|post_adapterremoval-percent_gc|post_adapterremoval-avg_sequence_length")) %>%
   rename(seq_len_avg = `FastQC (post-AdapterRemoval)_mqc-generalstats-fastqc_post_adapterremoval-avg_sequence_length`,
@@ -116,7 +116,7 @@ rad_multiqc <- fread("~/projects1/microbiome_calculus/smoking_calculus/03-prepro
   rename(Library_ID = Sample)
 
 kil_codes <- fread("./00-documentation.backup/kil_codes.tsv")
-kil_multiqc <- fread("~/projects1/microbiome_calculus/smoking_calculus/03-preprocessing/kilteasheen/eager2/multiqc/multiqc_data/multiqc_general_stats.txt") %>%
+kil_multiqc <- fread("~/archgen/microbiome_calculus/smoking_calculus/03-preprocessing/kilteasheen/eager2/multiqc/multiqc_data/multiqc_general_stats.txt") %>%
   filter(str_detect(Sample, "SRR")) %>%
   select(matches("Sample|post_adapterremoval-percent_gc|post_adapterremoval-avg_sequence_length")) %>%
   full_join(., kil_codes) %>%
@@ -126,7 +126,7 @@ kil_multiqc <- fread("~/projects1/microbiome_calculus/smoking_calculus/03-prepro
   summarize(seq_len_avg = mean(avg_sequence_length),
             gc_avg = mean(`%GC`))
 
-ibe_multiqc <- fread("~/projects1/microbiome_calculus/iberian/03-preprocessing/screening/eager2/multiqc/multiqc_data/multiqc_fastqc_1.txt") %>%
+ibe_multiqc <- fread("~/archgen/projects1/microbiome_calculus/iberian/03-preprocessing/screening/eager2/multiqc/multiqc_data/multiqc_fastqc_1.txt") %>%
   filter(str_detect(Sample, "ELR|IVE|EXB|LIB|JAE|VLC")) %>%
   mutate(Library_ID = str_trunc(Sample, width = 12, side = "right", ellipsis = "")) %>%
   select(Library_ID, avg_sequence_length, `%GC`) %>%
@@ -151,7 +151,7 @@ full_metadata <- full_metadata %>%
 Make an additional table for the sub10M and sub75bp multiqc avg read length and avg GC content
 ```{r}
 # sub10M
-sub10M_multiqc <- fread("~/projects1/microbiome_calculus/smoking_calculus/03-preprocessing/depth_check/sub10M/FastQC/multiqc_data/multiqc_general_stats.txt") %>%
+sub10M_multiqc <- fread("~/archgen/microbiome_calculus/smoking_calculus/03-preprocessing/depth_check/sub10M/FastQC/multiqc_data/multiqc_general_stats.txt") %>%
   mutate(Library_ID = str_trunc(Sample, width = 12, side = "right", ellipsis = "")) %>%
   select(Library_ID, `FastQC_mqc-generalstats-fastqc-avg_sequence_length`, `FastQC_mqc-generalstats-fastqc-percent_gc`) %>%
   group_by(Library_ID) %>%
@@ -161,7 +161,7 @@ sub10M_multiqc <- fread("~/projects1/microbiome_calculus/smoking_calculus/03-pre
          Library_ID = str_replace_all(Library_ID, ".unm",""))
 
 # sub75bp
-sub75bp_multiqc <- fread("~/projects1/microbiome_calculus/smoking_calculus/03-preprocessing/read_len_check/sub75bp/FastQC/multiqc_data/multiqc_general_stats.txt") %>%
+sub75bp_multiqc <- fread("~/archgen/microbiome_calculus/smoking_calculus/03-preprocessing/read_len_check/sub75bp/FastQC/multiqc_data/multiqc_general_stats.txt") %>%
   mutate(Library_ID = str_trunc(Sample, width = 12, side = "right", ellipsis = "")) %>%
   select(Library_ID, `FastQC_mqc-generalstats-fastqc-avg_sequence_length`, `FastQC_mqc-generalstats-fastqc-percent_gc`) %>%
   group_by(Library_ID) %>%
