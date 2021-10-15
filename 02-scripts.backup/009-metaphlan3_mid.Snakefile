@@ -34,7 +34,12 @@ rule metaphlan3:
     threads: 12
     shell:
         """
-        /home/irina_marie_velsko/miniconda3/envs/humann3/bin/metaphlan {params.fastq} --input_type fastq --nproc 24 > {output}
+        set +u
+        source $HOME/miniconda3/etc/profile.d/conda.sh
+        conda activate mpa3
+        set -u
+
+        metaphlan {params.fastq} --input_type fastq --nproc 24 > {output}
         """
 
         
