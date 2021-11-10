@@ -1,5 +1,5 @@
 ---
-title: "MID/CMB, Radcliffe, Kilteasheen, Iberian medieval calculus MALT beta diversity"
+title: "Smoking calcululs Figure XX1"
 author: "Irina Velsko"
 date: "`r format(Sys.time(), '%b %d, %Y')`"
 output:
