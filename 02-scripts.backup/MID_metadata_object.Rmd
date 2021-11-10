@@ -81,8 +81,10 @@ full_metadata <- full_metadata %>%
   as_tibble() %>%
   # remove the MID samples that have no metadata
   # filter(!str_detect(Library_ID, "MID025.A0101|MID033.A0101|MID056.A0101|MID065.A0101|MID068.A0101|MID076.A0101|MID078.A0101")) %>%
-  mutate(Site = fct_relevel(Site, "Middenbeemster", "CMB", "Radcliffe", "Kilteasheen",
-                                   "ELR", "IVE","Jaen","VLC","Extraction_blank","Library_blank"),
+  mutate(Site = fct_relevel(Site, "Middenbeemster", "Convento de los Mercedarios de Burtzena", "Radcliffe", "Kilteasheen",
+                                   "El Raval", "Iglesia de la Virgen de la Estrella","Jaen","Valencia","Extraction_blank","Library_blank"),
+         Site_code = fct_relevel(Site_code, "MID", "CMB", "RAD", "KIL",
+                                   "ELR", "IVE","JAE","VLC","EXB","LIB","DEN","SOL"),
          Time_period = fct_relevel(Time_period, "Industrial","Medieval","Modern","Extraction_blank","Library_blank"),
          Region = fct_relevel(Region, "Netherlands","Spain","England", "Ireland","Iberia"),
          Periodontal_disease_present = fct_relevel(Periodontal_disease_present, "Yes","No","Unobservable","NR"),
@@ -200,10 +202,10 @@ full_metadata <- full_metadata %>%
 # lacroix_palette("PeachPear", n = 8, type = "continuous")
 # "#FF3200" "#EF8158" "#E9BD8E" "#CBDDA7" "#38BCAD" "#0B91B5" "#065FA3" "#172869"
 
-Site_colors <- c(Middenbeemster = "#311068", CMB = "#7B2382FF", Radcliffe = "#C83E73", Kilteasheen = "#E95562", ELR = "#FEA873",
-                      IVE = "#FED395", Jaen = "#41b6c4", VLC = "#a0dae1", Extraction_blank = "#252525", Library_blank = "#737373")
-Site_shapes <- c(Middenbeemster = 15, CMB = 16, Radcliffe = 17, Kilteasheen = 18, ELR = 25, IVE = 14, Jaen = 13, VLC = 13, Extraction_blank = 4, Library_blank = 3)
-Site_size <- c(Middenbeemster = 4.5, CMB = 4, Radcliffe = 4, Kilteasheen = 6, ELR = 4, IVE = 4, Jaen = 4, VLC = 4, Extraction_blank = 4, Library_blank = 4)
+Site_code_colors <- c(MID = "#311068", CMB = "#7B2382FF", RAD = "#C83E73", KIL = "#E95562", ELR = "#FEA873",
+                      IVE = "#FED395", JAE = "#41b6c4", VLC = "#a0dae1", EXB = "#252525", LIB = "#737373", DEN = "#252525", SOL = "#252525")
+Site_code_shapes <- c(Middenbeemster = 15, CMB = 16, Radcliffe = 17, Kilteasheen = 18, ELR = 25, IVE = 14, Jaen = 13, VLC = 13, Extraction_blank = 4, Library_blank = 3, Dentin = 3, Soil = 3)
+Site_code_size <- c(Middenbeemster = 4.5, CMB = 4, Radcliffe = 4, Kilteasheen = 6, ELR = 4, IVE = 4, Jaen = 4, VLC = 4, Extraction_blank = 4, Library_blank = 4, Dentin = 3, Soil = 3)
 
 Time_period_colors <- c(Industrial = "#311068", Medieval = "#C83E73", Modern = "#41b6c4", Extraction_blank = "#252525", Library_blank = "#737373", Soil = "black")
 Time_period_shapes <- c(Industrial = 19, Medieval = 17, Modern = 15, Extraction_blank = 4, Library_blank = 3)
@@ -241,7 +243,7 @@ alt_tooth_location_size <- c(Anterior = 4, `Anterior/Posterior` = 4.5, Posterior
 ```
 
 
-```{r save_data}
+```{r save_data, eval = F}
 save(full_metadata, 
      Site_colors, Site_shapes, Site_size,
      Time_period_colors, Time_period_shapes, Time_period_size,
