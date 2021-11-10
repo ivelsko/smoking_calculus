@@ -49,7 +49,7 @@ Full data
 # load the read length distribution tables of the reads mapped by MALT
 # comes from the sam files output by MALT
 
-maltmappedGC_list <- list.files(path = "~/projects1/microbiome_calculus/smoking_calculus/04-analysis/gc_rl_sub_mapped/output/", pattern = "gc.tsv", full.names = T)
+maltmappedGC_list <- list.files(path = "~/archgen/microbiome_calculus/smoking_calculus/04-analysis/gc_rl_sub_mapped/output/", pattern = "gc.tsv", full.names = T)
 
 maltmappedGC <- map_dfr(maltmappedGC_list, function(fn) {
   fread(fn, col.names = c("gc_pct", "No_reads"), sep = "\t") %>%
@@ -61,7 +61,7 @@ maltmappedGC <- map_dfr(maltmappedGC_list, function(fn) {
          Site = str_trunc(Library_ID, 3, side = "right", ellipsis = ""))
 
 
-maluntmappedRL_list <- list.files(path = "~/projects1/microbiome_calculus/smoking_calculus/04-analysis/gc_rl_sub_mapped/output/", pattern = "readlength.tsv", full.names = T)
+maluntmappedRL_list <- list.files(path = "~/archgen/microbiome_calculus/smoking_calculus/04-analysis/gc_rl_sub_mapped/output/", pattern = "readlength.tsv", full.names = T)
 
 maltmappedRL <- map_dfr(maluntmappedRL_list, function(fn) {
   fread(fn, col.names = c("read_length", "No_reads"), sep = "\t") %>%
@@ -98,7 +98,7 @@ mapped_rl_gc <- maltmappedGC %>%
 # run multiqc on the FastQC output
 # load the multiqc output
 
-unmapped_rl_gc <- fread("~/projects1/microbiome_calculus/smoking_calculus/04-analysis/gc_rl_sub_mapped/output/FastQC/multiqc_data/multiqc_general_stats.txt") %>%
+unmapped_rl_gc <- fread("~/archgen/microbiome_calculus/smoking_calculus/04-analysis/gc_rl_sub_mapped/output/FastQC/multiqc_data/multiqc_general_stats.txt") %>%
   select(Sample, `FastQC_mqc-generalstats-fastqc-percent_gc`,`FastQC_mqc-generalstats-fastqc-avg_sequence_length`) %>%
   mutate(Sample = str_replace_all(Sample, "_MALT_unmapped","")) %>%
   rename(Library_ID = Sample,
@@ -136,7 +136,7 @@ Sub10M data
 # run multiqc on the FastQC output
 # load the multiqc output
 
-rl_gc_10M <- fread("~/projects1/microbiome_calculus/smoking_calculus/04-analysis/malt_checks/sub10M/gc_rl/FastQC/multiqc_data/multiqc_general_stats.txt") %>%
+rl_gc_10M <- fread("~/archgen/microbiome_calculus/smoking_calculus/04-analysis/malt_checks/sub10M/gc_rl/FastQC/multiqc_data/multiqc_general_stats.txt") %>%
   select(Sample, `FastQC_mqc-generalstats-fastqc-percent_gc`,`FastQC_mqc-generalstats-fastqc-avg_sequence_length`) %>%
   separate(Sample, into = c("Sample","malt","Mapped"), extra = "merge", sep = "_") %>%
   select(-malt) %>%
@@ -177,7 +177,7 @@ Sub75bp data
 # run multiqc on the FastQC output
 # load the multiqc output
 
-rl_gc_75bp <- fread("~/projects1/microbiome_calculus/smoking_calculus/04-analysis/malt_checks/sub75bp/gc_rl/FastQC/multiqc_data/multiqc_general_stats.txt") %>%
+rl_gc_75bp <- fread("~/archgen/microbiome_calculus/smoking_calculus/04-analysis/malt_checks/sub75bp/gc_rl/FastQC/multiqc_data/multiqc_general_stats.txt") %>%
   select(Sample, `FastQC_mqc-generalstats-fastqc-percent_gc`,`FastQC_mqc-generalstats-fastqc-avg_sequence_length`) %>%
   separate(Sample, into = c("Sample","malt","Mapped"), extra = "merge", sep = "_") %>%
   select(-malt) %>%

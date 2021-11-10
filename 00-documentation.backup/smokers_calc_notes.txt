@@ -557,14 +557,47 @@ infoseq -auto -outfile gc_rl_test_out_gz.tsv -only -name -length -pgc abpOther_G
 
 for f in *.txt; do infoseq -auto -outfile $(basename $f .txt).gc_rl.tsv -only -name -length -pgc $f; done
 
+# also calculate the average GC content and read length of palaeofeces vs modern feces, and the FTA cards that Lena analyzed (different treatments affect GC content?)
+
+# palaeofeces
+/mnt/archgen/microbiome_coprolite/coprolite_evolution/03-data/ena_submission
+# modern feces
+/mnt/archgen/microbiome_coprolite/coprolite_evolution/03-data/publishedData
+# published palaeofeces
+/mnt/archgen/microbiome_coprolite/coprolite_evolution/03-data/published_paleofeces
+# FTA cards
+/mnt/archgen/projects1/users/semerau/ftacards/04_analysis/eager2/samtools/filter/
+
+
+bioawk -c fastx '{total_gc += gc($seq)}END{print total_gc / NR}' <fastq_file> > <fastq_file>.gz
+
+for f in /mnt/archgen/microbiome_coprolite/coprolite_evolution/03-data/ena_submission/*.gz; do
+bioawk -c fastx '{total_gc += gc($seq)}END{print total_gc / NR}' $f > $(basename $f .fastq.gz).gc.tsv
+done
+
+for f in /mnt/archgen/microbiome_coprolite/coprolite_evolution/03-data/publishedData/*.gz; do
+bioawk -c fastx '{total_gc += gc($seq)}END{print total_gc / NR}' $f > $(basename $f .fastq.gz).gc.tsv
+done
+
+for f in /mnt/archgen/microbiome_coprolite/coprolite_evolution/03-data/published_paleofeces/*.gz; do
+bioawk -c fastx '{total_gc += gc($seq)}END{print total_gc / NR}' $f > $(basename $f .fastq.gz).gc.tsv
+done
+
+for f in /mnt/archgen/projects1/users/semerau/ftacards/04_analysis/eager2/samtools/filter/*.gz; do
+bioawk -c fastx '{total_gc += gc($seq)}END{print total_gc / NR}' $f > $(basename $f .fastq.gz).gc.tsv
+done
+
+
 ################################################################
 MetaPhlAn3 on MID and CMB
 
 # here: /projects1/microbiome_calculus/smoking_calculus/04-analysis/metaphlan3
-snakemake -s ../../02-scripts.backup/009-metaphlan3_mid.Snakefile --cluster 'sbatch --mem 4G -p short -n {threads}' -j 4 -k --restart-times 3 -n
+# snakemake -s ../../02-scripts.backup/009-metaphlan3_mid.Snakefile --cluster 'sbatch --mem 4G -p short -n {threads}' -j 4 -k --restart-times 3 -n
+snakemake -s ../../02-scripts.backup/009-metaphlan3_mid.Snakefile --cluster-config /mnt/archgen/microbiome_calculus/abpCapture/02-scripts.backup/snakemake_default.config --cluster "qsub -pe smp 4 -l virtual_free={cluster.mem},h_vmem={cluster.mem} -o {cluster.out} -e {cluster.err}" -j 6 --latency-wait 20 -n
 
 # merge the tables
-merge_metaphlan_tables.py *.metaphlan3.tsv > ../../05-results.backup/abundance_table_mpa3.tsv
+conda activate mpa3
+merge_metaphlan_tables.py *.metaphlan3.tsv > ../../05-results.backup/mpa3_abundance_table.tsv
 
 
 ################################################################
@@ -579,6 +612,61 @@ wget https://raw.githubusercontent.com/jfy133/Hominid_Calculus_Microbiome_Evolut
 /mnt/archgen/microbiome_calculus/smoking_calculus/04-analysis/GRiD/HOMD
 
 snakemake -s ../../../02-scripts.backup/MID_GRiD_homd.Snakefile --cluster-config /mnt/archgen/microbiome_calculus/abpCapture/02-scripts.backup/snakemake_default.config --cluster "qsub -pe smp 4 -l virtual_free={cluster.mem},h_vmem={cluster.mem} -o {cluster.out} -e {cluster.err}" -j 1 --restart-times 1 --latency-wait 20 -n
+
+###############################
+# Get the extraction batches
+
+library(sidora.core)
+library(data.table)
+library(tidyverse)
+con <- get_pandora_connection("~/.credentials_sidora")
+libs <- get_df("TAB_Library", con)
+
+df_list <- get_df_list(c(
+  "TAB_Sample", "TAB_Extract"
+), con = con)
+exbs <- join_pandora_tables(df_list)
+exbs <- convert_all_ids_to_values(exbs, con)
+
+exbs_filtered <- exbs %>% select(sample.Type_Group, extract.Full_Extract_Id, extract.Batch)  %>% filter(str_detect(extract.Full_Extract_Id, "MID"), str_detect(sample.Type_Group, "Calculus"))
+
+exbs_trial <- exbs_filtered %>%
+  mutate(extract.Batch = "Ex01_ZE_2014-02-17")
+  %>%
+  format_as_update_existing()
+
+samples_updated <- samples_raw %>%
+  mutate(sample.Tags = "FoodTransforms") %>%
+  sidora.core::format_as_update_existing()
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

@@ -69,7 +69,7 @@ Read in the species table of sources from the DeepEvo project
 ```{r}
 source_table <- fread("./05-results.backup/Evolution-Comparison_MEGAN_20190410-ex_absolute_species_prokaryotes_summarised_refseq.txt") %>%
   rename(Species = `#Datasets`) %>%
-  select(matches("Species|SRR|ERR|ARS|JAE|VLC")) %>%
+  select(matches("Species|SRR|ERR|ARS")) %>%
   adorn_totals(where = "col") %>%
   filter(Total > 0) %>%
   select(-Total)
@@ -86,7 +86,7 @@ Combine the input data table and the source table. This needs to be normalized
 by sequencing depth
 ```{r}
 
-full_table_sourcetracker <- all_species_decontam %>%
+full_table_sourcetracker <- all_species_decontam_prev %>%
   full_join(., source_table) %>%
   select(-matches("EXB|LIB|CSN|CSL")) %>%
   replace(is.na(.), 0) %>%
@@ -156,9 +156,9 @@ st_table_rare <- st_table_rare %>%
 ```
 
 
-```{r}
+```{r, eval = F}
 # save the rarefied table for input to sourcetracker
-fwrite(st_table_rare, "./05-results.backup/shotgun_sourcetracker_table_noblanks_rarefied.txt", sep = "\t", quote = F)
+# fwrite(st_table_rare, "./05-results.backup/shotgun_sourcetracker_table_noblanks_rarefied.txt", sep = "\t", quote = F)
 
 ```
 

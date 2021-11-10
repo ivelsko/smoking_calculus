@@ -145,8 +145,8 @@ outliers <- c("EXB059.A2501","LIB058.A0103","LIB058.A0106","CSS","CSD")
 poor_samples <- fread("./05-results.backup/cuperdec_poor_samples.tsv") %>%
   pull(Sample)
 
-malt_otu_pca_table <- all_species_decontam %>%
-  select(matches("Species|MID")) %>%
+malt_otu_pca_table <- all_species_decontam_prev %>%
+  select(matches("Species|MID|CMB")) %>%
   select(-one_of(outliers)) %>%
   select(-one_of(poor_samples)) %>%
   gather("Library_ID","Counts",2:ncol(.)) %>%
@@ -179,7 +179,7 @@ mid_ordered <- full_source_results %>%
   gather("Sources", "Percent",2:ncol(.)) %>%
   mutate(Percent = Percent * 100) %>%
   mutate(Sources = fct_relevel(Sources, "Unknown","boneARS","sediment","skin","urbanGut","ruralGut","subPlaque","supPlaque","modernCalculus"),
-         SampleID = fct_relevel(SampleID, sample_order)) %>% # mid_pc1_sample_order
+         SampleID = fct_relevel(SampleID, samples_order_full)) %>% # mid_pc1_sample_order
   arrange(SampleID) %>%
     ggplot(., aes(x = SampleID, y = Percent, fill = Sources)) +
          geom_bar(stat = "identity") + # , color = "black"
@@ -192,8 +192,8 @@ mid_ordered <- full_source_results %>%
          ggtitle("Full sources")
 mid_ordered
 
-ggsave("~/Desktop/MID_st_ordered_plot_mid.pdf", plot = mid_ordered, device = "pdf",
-       scale = 1, width = 10, height = 5, units = c("in"), dpi = 300)
+# ggsave("~/Desktop/MID_st_ordered_plot_mid.pdf", plot = mid_ordered, device = "pdf",
+#        scale = 1, width = 10, height = 5, units = c("in"), dpi = 300)
 
 ```
 
@@ -215,10 +215,28 @@ reduced_source_results %>%
 
 ```
 
-Let's look at the species going into each source. Start iwth the reduced sources for simplicity
+```{r}
+full_source_results %>%
+  filter(str_detect(SampleID, "MID|CMB")) %>%
+  gather("Sources", "Percent",2:ncol(.)) %>%
+  mutate(Sources = fct_relevel(Sources, "Unknown","boneARS","sediment","skin","urbanGut","ruralGut","subPlaque","supPlaque","modernCalculus"),
+         SampleID = fct_relevel(SampleID, mid_pc1_sample_order)) %>%
+  ggplot(., aes(x = SampleID, y = Percent, fill = Sources)) +
+         geom_bar(stat = "identity") + # , color = "black"
+         theme_minimal(base_size = 14) +
+         scale_fill_manual(values = full_colors) +
+         theme(axis.text.x = element_text(angle = 90, hjust = 1),
+               axis.text = element_text(size = 8)) +
+         # scale_y_continuous(breaks=scales::pretty_breaks(n=6)) +
+         ylab("% attributed to source") +
+         ggtitle("Reduced sources")
+
+```
+
+Let's look at the species going into each source. Start with the reduced sources for simplicity
 ```{r}
 
-modernCalc_sources <- fread("~/projects1/microbiome_calculus/smoking_calculus/04-analysis/sourceTracker/shotgun/rarefied_table/shotgun_sourcetracker_table_rarefied_reduced_sources_log_20210122/full_results/sink_predictions_modernCalculus_contributions.txt") %>%
+modernCalc_sources <- fread("~/archgen/microbiome_calculus/smoking_calculus/04-analysis/sourceTracker/shotgun/rarefied_table/shotgun_sourcetracker_table_rarefied_reduced_sources_log_20210122/full_results/sink_predictions_modernCalculus_contributions.txt") %>%
   rename(Library_ID = SampleID) %>%
   gather("Species","Percent",2:ncol(.)) %>%
   spread(Library_ID, Percent) %>%
@@ -226,7 +244,7 @@ modernCalc_sources <- fread("~/projects1/microbiome_calculus/smoking_calculus/04
   filter(Total > 0) %>%
   select(-Total)
 
-plaque_sources <- fread("~/projects1/microbiome_calculus/smoking_calculus/04-analysis/sourceTracker/shotgun/rarefied_table/shotgun_sourcetracker_table_rarefied_reduced_sources_log_20210122/full_results/sink_predictions_plaque_contributions.txt") %>%
+plaque_sources <- fread("~/archgen/microbiome_calculus/smoking_calculus/04-analysis/sourceTracker/shotgun/rarefied_table/shotgun_sourcetracker_table_rarefied_reduced_sources_log_20210122/full_results/sink_predictions_plaque_contributions.txt") %>%
   rename(Library_ID = SampleID) %>%
   gather("Species","Percent",2:ncol(.)) %>%
   spread(Library_ID, Percent) %>%
@@ -234,7 +252,7 @@ plaque_sources <- fread("~/projects1/microbiome_calculus/smoking_calculus/04-ana
   filter(Total > 0) %>%
   select(-Total)
 
-stool_sources <- fread("~/projects1/microbiome_calculus/smoking_calculus/04-analysis/sourceTracker/shotgun/rarefied_table/shotgun_sourcetracker_table_rarefied_reduced_sources_log_20210122/full_results/sink_predictions_stool_contributions.txt") %>%
+stool_sources <- fread("~/archgen/microbiome_calculus/smoking_calculus/04-analysis/sourceTracker/shotgun/rarefied_table/shotgun_sourcetracker_table_rarefied_reduced_sources_log_20210122/full_results/sink_predictions_stool_contributions.txt") %>%
   rename(Library_ID = SampleID) %>%
   gather("Species","Percent",2:ncol(.)) %>%
   spread(Library_ID, Percent) %>%
@@ -242,7 +260,7 @@ stool_sources <- fread("~/projects1/microbiome_calculus/smoking_calculus/04-anal
   filter(Total > 0) %>%
   select(-Total)
 
-skin_sources <- fread("~/projects1/microbiome_calculus/smoking_calculus/04-analysis/sourceTracker/shotgun/rarefied_table/shotgun_sourcetracker_table_rarefied_reduced_sources_log_20210122/full_results/sink_predictions_skin_contributions.txt") %>%
+skin_sources <- fread("~/archgen/microbiome_calculus/smoking_calculus/04-analysis/sourceTracker/shotgun/rarefied_table/shotgun_sourcetracker_table_rarefied_reduced_sources_log_20210122/full_results/sink_predictions_skin_contributions.txt") %>%
   rename(Library_ID = SampleID) %>%
   gather("Species","Percent",2:ncol(.)) %>%
   spread(Library_ID, Percent) %>%
@@ -250,7 +268,7 @@ skin_sources <- fread("~/projects1/microbiome_calculus/smoking_calculus/04-analy
   filter(Total > 0) %>%
   select(-Total)
 
-sediment_sources <- fread("~/projects1/microbiome_calculus/smoking_calculus/04-analysis/sourceTracker/shotgun/rarefied_table/shotgun_sourcetracker_table_rarefied_reduced_sources_log_20210122/full_results/sink_predictions_sediment_contributions.txt") %>%
+sediment_sources <- fread("~/archgen/microbiome_calculus/smoking_calculus/04-analysis/sourceTracker/shotgun/rarefied_table/shotgun_sourcetracker_table_rarefied_reduced_sources_log_20210122/full_results/sink_predictions_sediment_contributions.txt") %>%
   rename(Library_ID = SampleID) %>%
   gather("Species","Percent",2:ncol(.)) %>%
   spread(Library_ID, Percent) %>%
@@ -258,7 +276,7 @@ sediment_sources <- fread("~/projects1/microbiome_calculus/smoking_calculus/04-a
   filter(Total > 0) %>%
   select(-Total)
 
-bone_sources <- fread("~/projects1/microbiome_calculus/smoking_calculus/04-analysis/sourceTracker/shotgun/rarefied_table/shotgun_sourcetracker_table_rarefied_reduced_sources_log_20210122/full_results/sink_predictions_bone_contributions.txt") %>%
+bone_sources <- fread("~/archgen/microbiome_calculus/smoking_calculus/04-analysis/sourceTracker/shotgun/rarefied_table/shotgun_sourcetracker_table_rarefied_reduced_sources_log_20210122/full_results/sink_predictions_bone_contributions.txt") %>%
   rename(Library_ID = SampleID) %>%
   gather("Species","Percent",2:ncol(.)) %>%
   spread(Library_ID, Percent) %>%
@@ -266,7 +284,7 @@ bone_sources <- fread("~/projects1/microbiome_calculus/smoking_calculus/04-analy
   filter(Total > 0) %>%
   select(-Total)
 
-unknown_sources <- fread("~/projects1/microbiome_calculus/smoking_calculus/04-analysis/sourceTracker/shotgun/rarefied_table/shotgun_sourcetracker_table_rarefied_reduced_sources_log_20210122/full_results/sink_predictions_Unknown_contributions.txt") %>%
+unknown_sources <- fread("~/archgen/microbiome_calculus/smoking_calculus/04-analysis/sourceTracker/shotgun/rarefied_table/shotgun_sourcetracker_table_rarefied_reduced_sources_log_20210122/full_results/sink_predictions_Unknown_contributions.txt") %>%
   rename(Library_ID = SampleID) %>%
   gather("Species","Percent",2:ncol(.)) %>%
   spread(Library_ID, Percent) %>%

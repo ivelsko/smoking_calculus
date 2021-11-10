@@ -25,7 +25,7 @@ knitr::opts_knit$set(root.dir = normalizePath(".."))
 
 ```{r load_data}
 # read in the species table
-mpa3_raw <- fread("./05-results.backup/MID_CMB_abundance_table_mpa3.tsv") %>%
+mpa3_raw <- fread("./05-results.backup/mpa3_abundance_table.tsv") %>%
   select(-NCBI_tax_id)
 
 # clean the file names
@@ -62,12 +62,21 @@ outliersF <- str_c(outliers, collapse = "|")
 ```
 
 ## Unfiltered data
+Now decontam the tables
 ```{r}
-mpa3_contaminants <- fread("./05-results.backup/contaminant_species_mpa3.tsv", sep = "\t")
+mpa3_contaminants <- fread("./05-results.backup/contaminant_species_mid_mpa3.tsv", sep = "\t") %>%
+  bind_rows(., fread("./05-results.backup/contaminant_species_kilteasheen_mpa3.tsv", sep = "\t")) %>%
+  bind_rows(., fread("./05-results.backup/contaminant_species_iberia_mpa3.tsv", sep = "\t")) %>%
+  unique()
 
 # remove contaminant species from nt table
 mpa3_species_decontam <- mpa3_sp %>%
   anti_join(., mpa3_contaminants)
+
+```
+
+
+```{r}
 
 malt_otu_pca_table <- mpa3_species_decontam %>%
   select(matches("Species|MID")) %>%
@@ -88,7 +97,6 @@ malt_pca_values <- malt_otu.pca$variates$X %>%
   inner_join(., full_metadata, by = "Library_ID")
 
 ```
-There is a point, point where bars jump from tall to much shorter, this number is used to determine numbers of components for pca (2 bars high, dropdown = leave at 2, only one bar = leave at 2), these contain most contaminations. Will leave 2 as number.
 
 Plot the PCA
 ```{r}
@@ -97,7 +105,7 @@ ggplot(malt_pca_values, aes(PC1, PC2, color = Region, shape = Region)) +
   geom_text(aes(label = Library_ID), size = 3) +
   theme_minimal()
 
-horseshoe <- ggplot(malt_pca_values, aes(PC1, PC2, color = Region, shape = Region)) +
+horseshoe <- ggplot(malt_pca_values, aes(PC1, PC2, color = Extraction_batch, shape = Region)) +
   geom_point(size = 2) +
   theme_minimal()
 
@@ -217,7 +225,7 @@ pc1_pws_species <- malt_otu.pca$loadings$X %>%
          slice_head(., n = 50) %>%
          pull(Species)
 
-all_species_decontam %>%
+mpa3_species_decontam %>%
   adorn_totals(where = "col") %>%
   select(Species, Total) %>%
   arrange(desc(Total)) %>%
@@ -232,7 +240,7 @@ pc1_neg_species <- malt_otu.pca$loadings$X %>%
          slice_tail(., n = 50) %>%
          pull(Species)
 
-all_species_decontam %>%
+mpa3_species_decontam %>%
   adorn_totals(where = "col") %>%
   select(Species, Total) %>%
   arrange(desc(Total)) %>%

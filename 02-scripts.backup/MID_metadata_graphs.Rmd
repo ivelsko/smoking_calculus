@@ -12,6 +12,7 @@ output:
 ```{r load_libraries, echo = F, message = F}
 library(knitr)
 library(data.table)
+library(microshades)
 library(tidyverse)
 
 ```
@@ -36,13 +37,14 @@ full_metadata %>%
 ```{r}
 
 plot1 <- full_metadata %>%
-  select(matches("Library_ID|Pipe|Perio")) %>%
+  select(matches("Library_ID|Pipe|Perio|calc")) %>%
   filter(str_detect(Library_ID, "MID")) %>%
   drop_na(Min_no_Pipe_notches) %>%
-  ggplot(., aes(x = Min_no_Pipe_notches, y = `%_positions_with_Periodontal`)) +
+  ggplot(., aes(x = Min_no_Pipe_notches, y = `%_positions_with_Periodontal`, color = Calc_sub_SI_score)) +
     geom_smooth(method = "lm", color = "black", fill = "grey80", size = 0.75) +
-    geom_point(size = 2, color = "grey50") +
+    geom_point(size = 2) +
     theme_minimal() +
+    # scale_colour_gradient(low = "blue", high = "red", na.value = NA) +
     theme(axis.text.x = element_text(angle = 0, hjust = 1, vjust = 0.5),
           text = element_text(size=12)) +
     ylab("% positions with periodontal disease") +
@@ -127,11 +129,72 @@ full_metadata %>%
 
 ```
 
+```{r plot_test}
+full_metadata %>%
+  filter(str_detect(Library_ID, "MID")) %>%
+  drop_na(Pipenotch) %>%
+  ggplot(., aes(x = factor(Max_Perio_Score), y = Age, color = Sex, shape = Pipenotch, size = `%AMTL`)) +
+    ggpointgrid::geom_pointrect(scale_x = 0.16, scale_y = 0.18) +
+    theme_minimal() +
+    scale_shape_manual(values = c(15, 7)) +
+    scale_color_manual(values = c("green","yellow","gray")) +
+    theme(axis.text = element_text(size = 10)) +
+    xlab("Max. periodontitis score") +
+    ylab("Age group")
+
+```
+
+```{r smoking_pd}
+hex_df <- default_hex(6, TRUE)
+
+full_metadata %>%
+  filter(str_detect(Library_ID, "MID")) %>%
+  drop_na(Pipenotch) %>%
+  ggplot(., aes(x = Pipenotch, y = Age, color = Peridontal_affect_score, shape = Sex, size = `%AMTL`)) +
+    ggpointgrid::geom_pointrect(scale_x = 0.14, scale_y = 0.22) +
+    theme_minimal() +
+    # scale_shape_manual(values = c(15, 7)) +
+    scale_colour_gradient(low = "blue", high = "red") +
+    # scale_color_manual(values = microshades_palette("micro_green")) +
+    theme(axis.text = element_text(size = 10)) +
+    xlab("Pipe notch(es)") +
+    ylab("Age group")
+
+```
+
+```{r smoking_caries}
+full_metadata %>%
+  filter(str_detect(Library_ID, "MID")) %>%
+  drop_na(Pipenotch) %>%
+  ggplot(., aes(x = Pipenotch, y = Age, color = `%teeth_with_caries`, shape = Sex, size = `%AMTL`)) +
+    ggpointgrid::geom_pointrect(scale_x = 0.14, scale_y = 0.22) +
+    theme_minimal() +
+    # scale_shape_manual(values = c(15, 7)) +
+    scale_colour_gradient(low = "blue", high = "red") +
+    theme(axis.text = element_text(size = 10)) +
+    xlab("Pipe notch(es)") +
+    ylab("Age group")
+
+```
+
+```{r}
+
+full_metadata %>%
+  filter(str_detect(Library_ID, "MID")) %>%
+  drop_na(Pipenotch) %>%
+  ggplot(., aes(x = Calculus_extracted_mg, y = `extract_conc_ng/mg`, color = calc_sup_SI_score, shape = Pipenotch)) +
+    geom_point(size = 2.5) +
+    theme_minimal() +
+    scale_shape_manual(values = c(12, 13)) +
+    # scale_color_manual(values = c("green","yellow","gray")) +
+    theme(axis.text = element_text(size = 10)) +
+    xlab("weight extracted calculus (mg)") +
+    ylab("extract concentration (ng/mg")
 
 
 
 
-
+```
 
 
 
