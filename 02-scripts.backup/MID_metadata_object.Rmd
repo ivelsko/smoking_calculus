@@ -245,7 +245,7 @@ alt_tooth_location_size <- c(Anterior = 4, `Anterior/Posterior` = 4.5, Posterior
 
 ```{r save_data, eval = F}
 save(full_metadata, 
-     Site_colors, Site_shapes, Site_size,
+     Site_code_colors, Site_code_shapes, Site_code_size,
      Time_period_colors, Time_period_shapes, Time_period_size,
      Region_colors, Region_shapes, Region_size,
      Periodontal_disease_present_colors, Periodontal_disease_present_shapes, Periodontal_disease_present_size,

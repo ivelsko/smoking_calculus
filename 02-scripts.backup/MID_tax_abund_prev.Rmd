@@ -86,7 +86,7 @@ outliersF <- str_c(outliers, collapse = "|")
 Find taxa that are in all samples
 ```{r prevalence}
 
-prev_sp_df <- all_species_decontam %>%
+prev_sp_df <- all_species_decontam_prev %>%
   select(matches("Species|MID")) %>%
   select(-one_of(outliers)) %>%
   select(-one_of(poor_samples)) %>%
@@ -106,7 +106,7 @@ prev_sp <- prev_sp_df %>%
 
 ```{r abundance}
 
-abund_sp <- all_species_decontam %>%
+abund_sp <- all_species_decontam_prev %>%
   select(matches("Species|MID")) %>%
   select(-one_of(outliers)) %>%
   select(-one_of(poor_samples)) %>%
