@@ -39,7 +39,7 @@ rule metaphlan3:
         conda activate mpa3
         set -u
 
-        metaphlan {params.fastq} --input_type fastq --nproc 24 > {output}
+        metaphlan {params.fastq} --input_type fastq --nproc 12 > {output}
         """
 
         
