@@ -25,11 +25,12 @@ knitr::opts_knit$set(root.dir = normalizePath(".."))
 Read in the full species and genus tables.
 ```{r load_data}
 # read in the species table
-mpa3_raw <- fread("./05-results.backup/abundance_table_mpa3.tsv") %>%
+mpa3_raw <- fread("./05-results.backup/mpa3_abundance_table.tsv") %>%
   select(-NCBI_tax_id)
 
 # clean the file names
 colnames(mpa3_raw) <- gsub(".metaphlan3","", colnames(mpa3_raw))
+colnames(mpa3_raw) <- gsub(".SG1","", colnames(mpa3_raw))
 
 # filter to have only species
 mpa3_sp <- mpa3_raw %>% 
@@ -91,7 +92,7 @@ taxatable <- load_taxa_table(mpa3_sp) # %>% print()
 ```{r metamap}
 metadata_map <- load_map(full_metadata,
                      sample_col = "Library_ID",
-                     source_col = "Site") # %>% print()
+                     source_col = "Site_code") # %>% print()
 
 ```
 
@@ -100,6 +101,11 @@ curves <- calculate_curve(taxatable, database = database) %>%
   print()
 
 plot_cuperdec(curves)
+
+
+curves %>%
+  filter(Sample == "CSD")
+
 
 ```
 
@@ -136,9 +142,9 @@ adaptive_rank_burnin_result <- adaptive_burnin_filter(curves, percent_threshold 
 cd_curve_plot <- plot_cuperdec(curves, metadata_map, adaptive_rank_burnin_result, restrict_x = 50)
 cd_curve_plot
 
-# 
-# ggsave("./06-publication/supplemental_figures/SXX1/SXX1_cuperdec_adaptive_59pct.png", plot = cd_curve_plot, device = "png",
-#        scale = 1, width = 7, height = 5, units = c("in"), dpi = 300)
+
+ggsave("./06-publication/supplemental_figures/SXX1/SXX1_cuperdec_adaptive_68pct.png", plot = cd_curve_plot, device = "png",
+       scale = 1, width = 7, height = 5, units = c("in"), dpi = 300)
 
 ```
 

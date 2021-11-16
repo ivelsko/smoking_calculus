@@ -12,6 +12,7 @@ output:
 ```{r load_libraries, echo = F, message = F}
 library(knitr)
 library(data.table)
+library(mixOmics)
 library(rstatix)
 library(vegan)
 library(compositions)
@@ -108,7 +109,7 @@ plot_box_whisker <- function(df, stat_info, metadata_group, fill_group) {
 
       df_X <- df %>%
               inner_join(full_metadata %>%
-                           select(Library_ID, Site, Region, Time_period, Sample_or_Control, Periodontal_disease_present, Caries_present, Sex, Age), by = "Library_ID")
+                           select(Library_ID, Site_code, Region, Time_period, Sample_or_Control, Periodontal_disease_present, Caries_present, Sex, Age), by = "Library_ID")
 
     stat_info_table = df_X[[stat_info]]
     metadata_group = df_X[[metadata_group]]
@@ -159,7 +160,7 @@ plot_box_whisker_mid <- function(df, stat_info, metadata_group, fill_group) {
 
 ```
 
-List the outliers from the plot in section `raw_plot` in `Cameroon_h-g_taxonomy.Rmd` and remove them from the taxonomy table. 
+List the outliers 
 ```{r outliers}
 outliers <- c("EXB059.A2501","LIB058.A0103","LIB058.A0106","CSS","CSD")
 poor_samples <- fread("./05-results.backup/cuperdec_poor_samples.tsv") %>%
@@ -197,18 +198,18 @@ mpa3_species_decontam.os <- presabs_table %>%
   rownames_to_column("Library_ID") %>%
   filter(!str_detect(Library_ID, "EXB|LIB")) 
 
-plot_box_whisker(mpa3_species_decontam.os, "Observed_species", "Site", "Site")
+plot_box_whisker(mpa3_species_decontam.os, "Observed_species", "Site_code", "Site_code")
 plot_box_whisker(mpa3_species_decontam.os, "Observed_species", "Region", "Region")
 
 # os_plot <-mpa3_species_decontam.os %>%
 #   inner_join(full_metadata %>%
-#                select(Library_ID, Site, Region, Time_period, Sample_or_Control, 
+#                select(Library_ID, Site_code, Region, Time_period, Sample_or_Control, 
 #                       Periodontal_disease_present, Caries_present, Sex, Age), by = "Library_ID") %>%
 # # remove blanks
 # filter(!str_detect(Library_ID, "EXB|LIB")) %>%
-#   ggplot(., aes(x = Site, y = Observed_species, fill = Site)) +
+#   ggplot(., aes(x = Site_code, y = Observed_species, fill = Site_code)) +
 #                          geom_boxplot() +
-#                          scale_fill_manual(values = Site_colors) +
+#                          scale_fill_manual(values = Site_code_colors) +
 #                          theme_minimal(base_size = 18) +
 #                          #scale_y_continuous(trans='log10') +
 #                          #scale_y_continuous(trans='pseudo_log') +
@@ -221,10 +222,10 @@ plot_box_whisker(mpa3_species_decontam.os, "Observed_species", "Region", "Region
 os_plot <- mpa3_species_decontam.os %>%
   inner_join(., full_metadata, by = "Library_ID") %>%
   # filter(!str_detect(Library_ID, "JAE|CMB")) %>%
-  ggplot(., aes(x = Site, y = Observed_species, fill = Site)) +
+  ggplot(., aes(x = Site_code, y = Observed_species, fill = Site_code)) +
   geom_boxplot(color = "grey30") +
   geom_point(alpha = 0.5, color = "grey30", position = position_jitterdodge()) +
-  scale_fill_manual(values = Site_colors) +
+  scale_fill_manual(values = Site_code_colors) +
   theme_minimal(base_size = 18) +
   theme(axis.text.x = element_text(angle = 45, hjust = 1),
         text = element_text(size=20)) +
@@ -256,7 +257,7 @@ mpa3_species_decontam_filtered.os <- presabs_table_f %>%
   select(Observed_species) %>%
   rownames_to_column("Library_ID")  
 
-plot_box_whisker(mpa3_species_decontam_filtered.os, "Observed_species", "Site", "Site")
+plot_box_whisker(mpa3_species_decontam_filtered.os, "Observed_species", "Site_code", "Site_code")
 plot_box_whisker(mpa3_species_decontam_filtered.os, "Observed_species", "Time_period", "Region")
 plot_box_whisker(mpa3_species_decontam_filtered.os, "Observed_species", "Region", "Time_period")
 plot_box_whisker(mpa3_species_decontam_filtered.os, "Observed_species", "Time_period", "Time_period")
@@ -264,15 +265,15 @@ plot_box_whisker(mpa3_species_decontam_filtered.os, "Observed_species", "Time_pe
 
 filtered_os <- mpa3_species_decontam_filtered.os %>%
   inner_join(., full_metadata, by = "Library_ID") %>%
-  ggplot(., aes(x = Site, y = Observed_species, fill = Site)) +
+  ggplot(., aes(x = Site_code, y = Observed_species, fill = Site_code)) +
   geom_boxplot(color = "grey30") +
   geom_point(alpha = 0.5, color = "grey30", position = position_jitterdodge(jitter.width = 2)) +
-  scale_fill_manual(values = Site_colors) +
+  scale_fill_manual(values = Site_code_colors) +
   theme_minimal(base_size = 18) +
   theme(axis.text.x = element_text(angle = 45, hjust = 1),
         text = element_text(size=20)) +
   ylab("Observed species") +
-  xlab("Site") +
+  xlab("Site_code") +
   ggtitle("Filtered") +
   theme(plot.title=element_text(size=10))
 filtered_os
@@ -290,7 +291,7 @@ plot1 <-  mpa3_species_decontam_filtered.os %>%
   theme(axis.text.x = element_text(angle = 45, hjust = 1),
         text = element_text(size=20)) +
   ylab("Observed species") +
-  xlab("Site") +
+  xlab("Site_code") +
   ggtitle("Filtered") +
   theme(plot.title=element_text(size=10))
 plot1
@@ -299,6 +300,21 @@ plot1
 
 
 ```
+
+```{r}
+mpa3_species_decontam %>% 
+  pivot_longer(!Species, names_to = "Library_ID", values_to = "Counts") %>% 
+  pivot_wider(names_from = "Species", values_from = "Counts") %>% 
+  select(Library_ID) %>%
+  left_join(., full_metadata %>% select(Library_ID, Site_code), by = "Library_ID") %>%
+  filter(!str_detect(Site_code, "EXB|LIB|DEN|SOL")) %>%
+  group_by(Site_code) %>%
+  count()
+  
+  
+```
+
+
 
 ```{r species_tails}
 
@@ -340,16 +356,16 @@ names(mpa3_species_decontam.shannon)[1] <- "Shannon_index"
 mpa3_species_decontam.shannon <- mpa3_species_decontam.shannon %>%
   rownames_to_column("Library_ID")
 
-plot_box_whisker(mpa3_species_decontam.shannon, "Shannon_index", "Site", "Site")
+plot_box_whisker(mpa3_species_decontam.shannon, "Shannon_index", "Site_code", "Site_code")
 plot_box_whisker(mpa3_species_decontam.shannon, "Shannon_index", "Region", "Region")
 
 shannon_sp_plot <-mpa3_species_decontam.shannon %>%
   inner_join(full_metadata %>%
-               select(Library_ID, Site, Region, Time_period, Sample_or_Control, 
+               select(Library_ID, Site_code, Region, Time_period, Sample_or_Control, 
                       Periodontal_disease_present, Caries_present, Sex, Age), by = "Library_ID") %>%
-  ggplot(., aes(x = Site, y = Shannon_index, fill = Site)) +
+  ggplot(., aes(x = Site_code, y = Shannon_index, fill = Site_code)) +
                          geom_boxplot() +
-                         scale_fill_manual(values = Site_colors) +
+                         scale_fill_manual(values = Site_code_colors) +
                          theme_minimal(base_size = 18) +
                          #scale_y_continuous(trans='log10') +
                          #scale_y_continuous(trans='pseudo_log') +
@@ -379,7 +395,7 @@ names(mpa3_species_decontam_filtered.shannon)[1] <- "Shannon_index"
 mpa3_species_decontam_filtered.shannon <- mpa3_species_decontam_filtered.shannon %>%
   rownames_to_column("Library_ID")
 
-plot_box_whisker(mpa3_species_decontam_filtered.shannon, "Shannon_index", "Site", "Site")
+plot_box_whisker(mpa3_species_decontam_filtered.shannon, "Shannon_index", "Site_code", "Site_code")
 plot_box_whisker(mpa3_species_decontam_filtered.shannon, "Shannon_index", "Time_period", "Region")
 plot_box_whisker(mpa3_species_decontam_filtered.shannon, "Shannon_index", "Region", "Time_period")
 plot_box_whisker(mpa3_species_decontam_filtered.shannon, "Shannon_index", "Time_period", "Time_period")
@@ -394,7 +410,7 @@ plot1 <-  mpa3_species_decontam_filtered.shannon %>%
   theme(axis.text.x = element_text(angle = 45, hjust = 1),
         text = element_text(size=20)) +
   ylab("Shannon index") +
-  xlab("Site") +
+  xlab("Site_code") +
   ggtitle("Filtered") +
   theme(plot.title=element_text(size=10))
 plot1
@@ -409,7 +425,7 @@ plot1
 plot1 <- mpa3_species_decontam_filtered.shannon %>%
   # mutate(Shannon_index = )
   inner_join(full_metadata %>%
-               select(Library_ID, Site, Region, Time_period, Sample_or_Control, 
+               select(Library_ID, Site_code, Region, Time_period, Sample_or_Control, 
                       Periodontal_disease_present, Caries_present, Sex, Age), by = "Library_ID") %>%
   ggplot(., aes(x = Shannon_index, color = Time_period)) +
   geom_density() +
@@ -442,16 +458,16 @@ names(evenness.species)[1] <- "Pileou_evenness"
 evenness.species <- evenness.species %>%
   rownames_to_column("Library_ID")
 
-plot_box_whisker(evenness.species, "Pileou_evenness", "Site", "Site")
+plot_box_whisker(evenness.species, "Pileou_evenness", "Site_code", "Site_code")
 plot_box_whisker(evenness.species, "Pileou_evenness", "Time_period", "Region")
 
 pe_sp_plot <-evenness.species %>%
   inner_join(full_metadata %>%
-               select(Library_ID, Site, Region, Time_period, Sample_or_Control, 
+               select(Library_ID, Site_code, Region, Time_period, Sample_or_Control, 
                       Periodontal_disease_present, Caries_present, Sex, Age), by = "Library_ID") %>%
-  ggplot(., aes(x = Site, y = Pileou_evenness, fill = Site)) +
+  ggplot(., aes(x = Site_code, y = Pileou_evenness, fill = Site_code)) +
                          geom_boxplot() +
-                         scale_fill_manual(values = Site_colors) +
+                         scale_fill_manual(values = Site_code_colors) +
                          theme_minimal(base_size = 18) +
                          #scale_y_continuous(trans='log10') +
                          #scale_y_continuous(trans='pseudo_log') +
@@ -470,7 +486,7 @@ names(evenness.species_filtered)[1] <- "Pileou_evenness"
 evenness.species_filtered <- evenness.species_filtered %>%
   rownames_to_column("Library_ID")
 
-plot_box_whisker(evenness.species_filtered, "Pileou_evenness", "Site", "Site")
+plot_box_whisker(evenness.species_filtered, "Pileou_evenness", "Site_code", "Site_code")
 plot_box_whisker(evenness.species_filtered, "Pileou_evenness", "Time_period", "Region")
 plot_box_whisker(evenness.species_filtered, "Pileou_evenness", "Region", "Time_period")
 plot_box_whisker(evenness.species_filtered, "Pileou_evenness", "Time_period", "Time_period")
@@ -536,11 +552,11 @@ mpa3_species_decontam_filtered.alpha <- mpa3_species_decontam_filtered.alpha %>%
   rownames_to_column("Library_ID"), by = "Library_ID")
 
 # now plot the observed species
-os_site <- plot_box_whisker(mpa3_species_decontam_filtered.alpha, "Observed_species", "Site", "Site")
+os_site <- plot_box_whisker(mpa3_species_decontam_filtered.alpha, "Observed_species", "Site_code", "Site_code")
 os_site
-shannon_site <- plot_box_whisker(mpa3_species_decontam_filtered.alpha, "Shannon_index", "Site", "Site")
+shannon_site <- plot_box_whisker(mpa3_species_decontam_filtered.alpha, "Shannon_index", "Site_code", "Site_code")
 shannon_site
-pe_site <- plot_box_whisker(mpa3_species_decontam_filtered.alpha, "Pileou_evenness", "Site", "Site")
+pe_site <- plot_box_whisker(mpa3_species_decontam_filtered.alpha, "Pileou_evenness", "Site_code", "Site_code")
 pe_site
 
 # ggsave("./06-publication/supplemental_figures/SXX6/panel_parts/Figure_SXX6_os_market_split.pdf", plot = os_market_split, device = "pdf",
@@ -1218,7 +1234,7 @@ metadata_nofactors <- fread("./00-documentation.backup/radcliffe_pfuT_metadata.t
 # order the CMC samples by Village
 site_order <- metadata_nofactors %>%
   as_tibble() %>%
-  mutate(Site = fct_relevel(Site, "Middenbeemster", "CMB", "Radcliffe", "Kilteasheen", "ELR", "IVE")) %>%
+  mutate(Site = fct_relevel(Site_code, "Middenbeemster", "CMB", "Radcliffe", "Kilteasheen", "ELR", "IVE")) %>%
   select(Library_ID, Site) %>%
   arrange(Site) %>%
   pull(Library_ID)
@@ -1760,12 +1776,12 @@ mpa3_species_decontam_top50_each_clr_long <- mpa3_species_decontam_top50_each_cl
   arrange(Species) %>%
   gather("Library_ID","CLR", 2:ncol(.)) %>%
   inner_join(., full_metadata %>%
-               select(Library_ID, Site), by = "Library_ID") %>%
-  inner_join(., Site_colors %>%
+               select(Library_ID, Site_code), by = "Library_ID") %>%
+  inner_join(., Site_code_colors %>%
                as_data_frame(.) %>%
                rename(Color = value) %>%
-               mutate(Site = c("Middenbeemster", "CMB", "Radcliffe", "Kilteasheen",
-                                   "ELR", "IVE","Jaen","VLC","Extraction_blank","Library_blank")), by = "Site") %>%
+               mutate(Site_code = c("MID", "CMB", "RAD", "KIL",
+                                   "ELR", "IVE","JAE","VLC","EXB","LIB","DEN","SOL")), by = "Site_code") %>%
   mutate(Library_ID = fct_relevel(Library_ID, mpa3_species_decontam_top50_each_clr_smp_order)) %>%
   arrange(Library_ID)
 
@@ -1805,12 +1821,12 @@ mpa3_species_decontam_top50_each_clr_long <- mpa3_species_decontam_top50_each_cl
   arrange(Species) %>%
   gather("Library_ID","CLR", 2:ncol(.)) %>%
   inner_join(., full_metadata %>%
-               select(Library_ID, Site), by = "Library_ID") %>%
-  inner_join(., Site_colors %>%
+               select(Library_ID, Site_code), by = "Library_ID") %>%
+  inner_join(., Site_code_colors %>%
                as_data_frame(.) %>%
                rename(Color = value) %>%
-               mutate(Site = c("Middenbeemster", "CMB", "Radcliffe", "Kilteasheen",
-                                   "ELR", "IVE","Jaen","VLC","Extraction_blank","Library_blank")), by = "Site") %>%
+               mutate(Site_code = c("MID", "CMB", "RAD", "KIL",
+                                   "ELR", "IVE","JAE","VLC","EXB","LIB", "DEN","SOL")), by = "Site_code") %>%
   mutate(Library_ID = fct_relevel(Library_ID, site_order)) %>%
   arrange(Library_ID)
 

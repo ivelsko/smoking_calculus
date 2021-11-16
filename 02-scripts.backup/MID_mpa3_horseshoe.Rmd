@@ -79,7 +79,7 @@ mpa3_species_decontam <- mpa3_sp %>%
 ```{r}
 
 malt_otu_pca_table <- mpa3_species_decontam %>%
-  select(matches("Species|MID")) %>%
+  select(matches("Species|MID|CMB")) %>%
   select(-one_of(outliers)) %>%
   select(-one_of(poor_samples_mpa3)) %>%
   gather("Library_ID","Counts",2:ncol(.)) %>%
@@ -98,21 +98,27 @@ malt_pca_values <- malt_otu.pca$variates$X %>%
 
 ```
 
-Plot the PCA
+Batch effects
 ```{r}
 # plot the PCA with Library_IDs
 ggplot(malt_pca_values, aes(PC1, PC2, color = Region, shape = Region)) +
   geom_text(aes(label = Library_ID), size = 3) +
   theme_minimal()
 
-horseshoe <- ggplot(malt_pca_values, aes(PC1, PC2, color = Extraction_batch, shape = Region)) +
+exb_batches <- ggplot(malt_pca_values, aes(PC1, PC2, color = Extraction_batch, shape = Region)) +
   geom_point(size = 2) +
   theme_minimal()
 
-horseshoe
+exb_batches
 
 # ggsave("~/Desktop/MID_horseshoe.pdf", plot = horseshoe, device = "pdf",
 #        scale = 1, width = 7, height = 5, units = c("in"), dpi = 300)
+
+lib_batches <- ggplot(malt_pca_values, aes(PC1, PC2, color = Library_batch, shape = Region)) +
+  geom_point(size = 2) +
+  theme_minimal()
+
+lib_batches
 
 ```
 

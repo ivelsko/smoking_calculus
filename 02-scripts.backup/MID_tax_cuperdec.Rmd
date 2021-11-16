@@ -56,19 +56,19 @@ Load metadata
 ```{r load_metadata}
 
 metadata <- fread("00-documentation.backup/MID_analysis_metadata.tsv") %>%
-  select(Site, Library_ID) %>%
+  select(Site_code, Library_ID) %>%
   full_join(., fread("./00-documentation.backup/radcliffe_pfuT_metadata.tsv") %>%
-            select(Site, Library_ID)) %>%
+            select(Site_code, Library_ID)) %>%
   full_join(., fread("./00-documentation.backup/kilteasheen_metadata.tsv") %>%
-            select(Site, Library_ID)) %>%
+            select(Site_code, Library_ID)) %>%
   full_join(., fread("./00-documentation.backup/iberian_medieval_metadata.tsv") %>%
-            select(Site, Library_ID))
+            select(Site_code, Library_ID))
 
 #set the columns of interest to factors
 metadata <- metadata %>%
   as_tibble() %>%
-  mutate(Site = fct_relevel(Site, "MID","CMB","Radcliffe","Kilteasheen","ELR",
-                                "IVE","Extraction_blank","Library_blank"))
+  mutate(Site_code = fct_relevel(Site_code, "MID","CMB","RAD","KIL","ELR",
+                                "IVE","JAE","VLC","EXB","LIB"))
 
 ```
 
@@ -104,7 +104,7 @@ taxatable <- load_taxa_table(all_raw) # %>% print()
 ```{r metamap}
 metadata_map <- load_map(metadata,
                      sample_col = "Library_ID",
-                     source_col = "Site") # %>% print()
+                     source_col = "Site_code") # %>% print()
 
 ```
 
