@@ -113,8 +113,6 @@ metadata_map <- load_map(metadata,
 curves <- calculate_curve(taxatable, database = database) %>%
   print()
 
-plot_cuperdec(curves)
-
 ```
 
 ```{r hard_rank_burnin}
@@ -208,8 +206,8 @@ st_full_plot_all <- full_source_results %>%
          ggtitle("Full sources")
 st_full_plot_all
 
-ggsave("./06-publication/supplemental_figures/SXX2/st_full_plot_all.pdf", plot = st_full_plot_all, device = "pdf",
-       scale = 1, width = 16, height = 5, units = c("in"), dpi = 300)
+# ggsave("./06-publication/supplemental_figures/SXX2/st_full_plot_all.pdf", plot = st_full_plot_all, device = "pdf",
+#        scale = 1, width = 16, height = 5, units = c("in"), dpi = 300)
 
 ```
 
@@ -252,8 +250,8 @@ horseshoe <- ggplot(malt_pca_values, aes(PC1, PC2, color = Site_code, shape = Si
   theme(legend.position = "top")
 horseshoe
 
-ggsave("./06-publication/supplemental_figures/SXX2/horseshoe.pdf", plot = horseshoe, device = "pdf",
-       scale = 1, width = 9.5, height = 5, units = c("in"), dpi = 300)
+# ggsave("./06-publication/supplemental_figures/SXX2/horseshoe.pdf", plot = horseshoe, device = "pdf",
+#        scale = 1, width = 9.5, height = 5, units = c("in"), dpi = 300)
 
 ```
 
@@ -278,8 +276,8 @@ mid_ST_ordered <- full_source_results %>%
          theme(legend.position = "top")
 mid_ST_ordered
 
-ggsave("./06-publication/supplemental_figures/SXX2/mid_ST_ordered.pdf", plot = mid_ST_ordered, device = "pdf",
-       scale = 1, width = 9.5, height = 5, units = c("in"), dpi = 300)
+# ggsave("./06-publication/supplemental_figures/SXX2/mid_ST_ordered.pdf", plot = mid_ST_ordered, device = "pdf",
+#        scale = 1, width = 9.5, height = 5, units = c("in"), dpi = 300)
 
 ```
 
@@ -370,8 +368,8 @@ heatmap_base <- ggplot(malt_otu_filt_pca_table_clr_long, aes(Species, Library_ID
 
 heatmap_base
 
-ggsave("./06-publication/supplemental_figures/SXX2/heatmap_ordered.pdf", plot = heatmap_base, device = "pdf",
-       scale = 1, width = 20, height = 9.5, units = c("in"), dpi = 300)
+# ggsave("./06-publication/supplemental_figures/SXX2/heatmap_ordered.pdf", plot = heatmap_base, device = "pdf",
+#        scale = 1, width = 20, height = 9.5, units = c("in"), dpi = 300)
 
 ```
 
