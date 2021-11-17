@@ -323,21 +323,33 @@ malt_pca_values <- malt_otu.pca$variates$X %>%
   rownames_to_column("Library_ID") %>%
   inner_join(., full_metadata, by = "Library_ID")
 
+```
+
+Minimum number of pipe notches
+```{r}
 # by minimum number of pipenotches 
-mid_minpipe_pc12 <- plot_pca_cont(mpa3_species_decontam_unfilt, "PC1", "PC2", "Min_no_Pipe_notches", "Pipenotch", 3, "Min # pipe notches")
-mid_minpipe_pc12
-# ggsave("~/Desktop/MID_pca_mid_minpipe_pc12.pdf", plot = mid_minpipe_pc12, device = "pdf",
-#        scale = 1, width = 9, height = 5, units = c("in"), dpi = 300)
-
-# by % positions with periodontal disease
-plot_pca_cont(mpa3_species_decontam_unfilt, "PC1", "PC2", "%_positions_with_Periodontal", "Pipenotch", 3, "% positions w/ PD")
-
-# by subgingival calculus score
-plot_pca_cont(mpa3_species_decontam_unfilt, "PC1", "PC2", "Calc_sub_SI_score", "Pipenotch", 3, "Sub calc SI score")
-
+minpipe_pc12 <- plot_pca_cont(mpa3_species_decontam_unfilt, "PC1", "PC2", "Min_no_Pipe_notches", "Pipenotch", 3, "Min # pipe notches")
+minpipe_pc12
 
 ```
 
+% of positions with periodontal disease
+```{r}
+# by % positions with periodontal disease
+pctpd_pc12 <- plot_pca_cont(mpa3_species_decontam_unfilt, "PC1", "PC2", "%_positions_with_Periodontal", "Pipenotch", 3, "% positions w/ PD")
+pctpd_pc12
+
+```
+
+Subgingival calculus score
+```{r}
+# by subgingival calculus score
+subcalc_pc12 <- plot_pca_cont(mpa3_species_decontam_unfilt, "PC1", "PC2", "Calc_sub_SI_score", "Pipenotch", 3, "Sub calc SI score")
+subcalc_pc12
+
+```
+
+Bi-plots
 ```{r biplots_mid_species}
 
 mpa3_species_decontam_unfilt <- mpa3_species_decontam %>%
@@ -377,16 +389,15 @@ pandoc.table(mpa3_species_decontam_filtered_nocontrols_biplot_121$plot_env$neg_1
 
 ```
 
-```{r plot_together}
+```{r plot_together, eval = F}
 
-mid_batches <- plot_grid(exb_batches, lib_batches,
-          nrow=2, labels = c("A", "B"), rel_widths = c(1, 1))
+beta_div <- plot_grid(minpipe_pc12, pctpd_pc12, 
+                         subcalc_pc12, mpa3_species_decontam_filtered_nocontrols_biplot_121,
+          nrow=2, labels = c("A", "B","C","D"), rel_widths = c(1, 1), scale = 0.95)
 
 
-# ggsave("./06-publication/supplemental_figures/SXX3/mid_batches.pdf", plot = mid_batches,
-#        device = "pdf", scale = 1, width = 8, height = 10, units = c("in"), dpi = 300)
-# ggsave("./06-publication/supplemental_figures/SXX3/mid_batches.png", plot = mid_batches,
-#        device = "png", scale = 1, width = 8, height = 10, units = c("in"), dpi = 300)
+# ggsave("./06-publication/main_figures/Figure_XX2/beta_div.pdf", plot = beta_div,
+#        device = "pdf", scale = 1, width = 12, height = 8.5, units = c("in"), dpi = 300)
 
 ```
 

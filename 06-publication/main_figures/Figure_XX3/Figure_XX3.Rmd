@@ -190,7 +190,7 @@ malt_rs %>%
   ungroup() %>%
   group_by(Library_ID) %>%
   mutate(Percent = Count_sum / sum(Count_sum)) %>%
-  filter(Clade_Consensus == "Anginosus" & Percent >= 0.75)
+  filter(Clade_Consensus == "Anginosus" & Percent >= 0.5)
 
 ```
 
