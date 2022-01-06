@@ -1,0 +1,657 @@
+---
+title: "MID/CMB Strep group distributions"
+author: "Irina Velsko"
+date: "`r format(Sys.time(), '%b %d, %Y')`"
+output:
+    github_document:
+        fig_width: 8
+        fig_height: 6
+        toc: true
+---
+
+```{r load_libraries, echo = F, message = F}
+library(knitr)
+library(data.table)
+library(janitor)
+library(tidyverse)
+library(cowplot)
+opts_chunk$set(echo=F, warning=F, message=F, dpi=150)
+```
+
+Set the working directory of the notebook to the parent directory of the 
+notebook itself.  
+
+```{r setup}
+knitr::opts_knit$set(root.dir = normalizePath(".."))
+```
+
+```{r strep_groups}
+# read in the updated Strep group table with dRep cluster groups added
+
+strep_groups <- fread("./00-documentation.backup/dRep_strep_groups.tsv") %>%
+  # remove the extrac column with the old dRep
+  select(-Clade_Consensus) %>%
+  # make a factor for plotting
+  mutate(dRep = fct_relevel(dRep, "Sanguinis","Mitis","Salivarius","Anginosus","Bovis","Pyogenic","Mutans","Other_oral","Other","Unknown"))
+
+
+```
+
+```{r metadata}
+
+load("./05-results.backup/Metadata_tables.RData")
+
+```
+
+
+```{r}
+# set colors to resemble James' figure
+
+clade_colors <- c("Sanguinis" = "#a50026",
+                  "Mitis" = "#d73027",
+                  "Salivarius" = "#f46d43",
+                  "Anginosus" = "#fee090",
+                  "Bovis" = "#abd9e9",
+                  "Pyogenic" = "#74add1",
+                  "Mutans" = "#4575b4",
+                  "Oral_other" = "#313695",
+                  "Other" = "#4d4d4d",
+                  "Unknown" = "#e0e0e0")
+
+genus_colors <- c("Streptococcus" = "#a50026", "Other" = "#e0e0e0")
+
+```
+
+
+## MALT RefSeq
+```{r load_MALT_RefSeq_data}
+
+# read in the species tables from Zandra's DA paper
+da_table <- fread("./00-documentation.backup/DA_MALT_RefSeq_species_table.tsv") %>%
+  rename(Species = `#Datasets`)
+
+colnames(da_table) <- gsub("_S0_L001_R1_001.fastq.combined.prefixed.fastq.extractunmapped.bam","", colnames(da_table))
+colnames(da_table) <- gsub(".SG1.1.2","", colnames(da_table))
+colnames(da_table) <- gsub(".SG1.1","", colnames(da_table))
+
+
+da_contaminants <- fread("./00-documentation.backup/DA_decontam_cRefSeq_species_bone_20210408.txt", sep = "\t")
+
+
+# we'll use the prevalence-filtered dataset
+malt_rs <- da_table %>%
+  select(matches("Species|CDM")) %>%
+  anti_join(da_contaminants)
+
+# metadata
+da_metadata <- fread("./00-documentation.backup/DA_metadata.tsv") %>%
+  mutate(Jawbone = str_replace_all(Jawbone, "Mandibula","Mandible"))
+# Order the FDI numbers
+FDI_order <- c("18", "17", "16", "15", "14", "13", "12", "11", # right maxilla
+               "21", "22", "23", "24", "25", "26", "27", "28", # left maxilla
+               "48", "47", "46", "45", "44", "43", "42", "41", # right mandible
+               "31", "32", "33", "34", "35", "36", "37", "38")
+
+```
+
+
+```{r malt_rs_graphs}
+
+# set the order of samples based on proportion of Sanguinis and agninosis
+# need to get the proportion of each for this
+# then arrange by proportion
+
+sample_order_rs <- malt_rs  %>%
+  filter(str_detect(Species, "Streptococcus")) %>%
+  # join with the Strep grup table for plotting
+  inner_join(., strep_groups) %>%
+  select(-Species) %>%
+  select(dRep, everything()) %>%
+  # long-format
+  gather("Library_ID","Counts", 2:ncol(.)) %>%
+  # sum together all species per group
+  group_by(Library_ID, dRep) %>%
+  summarize(Reads = sum(Counts)) %>%
+  # transpose
+  spread(dRep, Reads) %>%
+  # convert table to proportions
+  adorn_percentages(denominator = "row") %>%
+  # arrange by Sanguinis and for the ones w/o Sanguinis, by Anginosus
+  arrange(desc(Sanguinis), Anginosus)%>%
+  pull(Library_ID)
+
+
+malt_rs %>%
+  # remove the bone samples
+  select(-c("CDM045.Z0101","CDM047.Z0101","CDM053.J0101","CDM054.A0101")) %>%
+  filter(str_detect(Species, "Streptococcus")) %>%
+  # join with the Strep grup table for plotting
+  inner_join(., strep_groups) %>%
+  select(Species, dRep, everything()) %>%
+  # convert to long-format
+  gather("Library_ID","Counts", 3:ncol(.)) %>%
+  mutate(Library_ID = fct_relevel(Library_ID, sample_order_rs)) %>%
+  dplyr::group_by(Library_ID, dRep) %>%
+  summarize(Count_sum = sum(Counts)) %>%
+  ggplot(., aes(x = Library_ID, y = Count_sum, fill = dRep)) +
+         geom_bar(position = "fill", stat = "identity") + # , color = "black"
+         theme_minimal(base_size = 14) +
+         scale_fill_manual(values = clade_colors) +
+         theme(axis.text.x = element_text(angle = 90, hjust = 1),
+               axis.text = element_text(size = 8)) +
+         # scale_y_continuous(breaks=scales::pretty_breaks(n=6)) +
+         geom_hline(yintercept = 0.5, linetype = "dotted") +
+         ylab("Proportion Strep group") +
+         ggtitle("")
+
+```
+
+By individual sorted by tooth location
+```{r CM55}
+sample_order_cm55 <- da_metadata  %>%
+  filter(Individual == "CM55") %>%
+  mutate(ToothNr_FDI = as.character(ToothNr_FDI),
+         ToothNr_FDI = fct_relevel(ToothNr_FDI, FDI_order)) %>%
+  arrange(ToothNr_FDI) %>%
+  filter(Type != "Bone") %>%
+  select(LibraryID, Jawbone, ToothNr_FDI) %>%
+  rename(Library_ID = LibraryID)
+
+lib_order_cm55 <- da_metadata  %>%
+  filter(Individual == "CM55") %>%
+  mutate(ToothNr_FDI = as.character(ToothNr_FDI),
+         ToothNr_FDI = fct_relevel(ToothNr_FDI, FDI_order)) %>%
+  arrange(ToothNr_FDI) %>%
+  filter(Type != "Bone") %>%
+  select(LibraryID, Jawbone, ToothNr_FDI) %>%
+  rename(Library_ID = LibraryID) %>%
+  pull(Library_ID)
+
+
+cm55_gp <- malt_rs %>%
+  filter(str_detect(Species, "Streptococcus")) %>%
+  # join with the Strep grup table for plotting
+  inner_join(., strep_groups) %>%
+  select(Species, dRep, everything()) %>%
+  # convert to long-format
+  gather("Library_ID","Counts", 3:ncol(.)) %>%
+  inner_join(., sample_order_cm55, by = "Library_ID") %>%
+  dplyr::group_by(ToothNr_FDI, dRep) %>%
+  summarize(Count_sum = sum(Counts)) %>%
+  ungroup() %>%
+  ggplot(., aes(x = ToothNr_FDI, y = Count_sum, fill = dRep)) +
+         geom_bar(position = "fill", stat = "identity") + # , color = "black"
+         theme_minimal(base_size = 14) +
+         scale_fill_manual(values = clade_colors) +
+         theme(axis.text = element_text(size = 8)) +
+         scale_y_continuous(labels = function(x) paste0(x*100)) + # Multiply by 100
+         # geom_hline(yintercept = 0.5, linetype = "dotted") +
+         ylab("Percent") +
+         xlab("Tooth Nr. (FDI)") +
+         ggtitle("")
+cm55_gp
+
+# ggsave("./06-publication/main_figures/Figure_XX6/cm55_gp.pdf", plot = cm55_gp, device = "pdf",
+#        scale = 1, width = 9, height = 5, units = c("in"), dpi = 300)
+
+
+```
+
+```{r calc_strep_prop}
+
+strep_prop <- malt_rs %>%
+  # make a column with Strep or other
+  mutate(Genus = ifelse(str_detect(Species,"Strep"),"Streptococcus","Other")) %>%
+  # remove Species column leaving Genus column
+  select(Genus, everything()) %>%
+  select(-Species) %>%
+  # convert to long format
+  gather("Library_ID","Counts", 2:ncol(.)) %>%
+  group_by(Library_ID, Genus) %>%
+  # sum all Strep read counts and all Other read counts
+  summarize(Reads = sum(Counts)) %>%
+  spread(Genus, Reads) %>%
+  # convert to proportions
+  adorn_percentages() %>%
+  ungroup()
+
+
+```
+
+
+```{r genus_cm55}
+
+# individual teeth
+cm55_st <- strep_prop %>%
+  gather("Genus","Counts", 2:ncol(.)) %>%
+  inner_join(., sample_order_cm55, by = "Library_ID") %>%
+  arrange(ToothNr_FDI) %>%
+  mutate(Library_ID = fct_relevel(Library_ID, lib_order_cm55)) %>%
+  # arrange(ToothNr_FDI) %>%
+  ggplot(., aes(x = ToothNr_FDI, y = Counts, fill = Genus)) +
+         geom_bar(position = "fill", stat = "identity") + # , color = "black"
+         # geom_text(aes(label = "15"), vjust= 0, hjust = 0, size = 2) +
+         theme_minimal(base_size = 14) +
+         scale_fill_manual(values = genus_colors) +
+         theme(axis.text.x = element_text(angle = 0, hjust = 0.5),
+               axis.text = element_text(size = 8)) +
+         scale_y_continuous(labels = function(x) paste0(x*100)) + # Multiply by 100
+         # geom_hline(yintercept = 0.5, linetype = "dotted") +
+         ylab("Percent") +
+         xlab("Tooth Nr. (FDI)") +
+         ggtitle("")
+cm55_st
+
+# average across teeth
+strep_prop %>%
+  gather("Genus","Counts", 2:ncol(.)) %>%
+  inner_join(., sample_order_cm55, by = "Library_ID") %>%
+  group_by(Genus) %>%
+  summarize(Avg_Proportion = mean(Counts),
+            SD_Proportion = sd(Counts)) %>%
+  ungroup() %>%
+  mutate(Sample = "one") %>%
+  ggplot(., aes(x = Sample, y = Avg_Proportion, fill = Genus)) +
+         geom_bar(position = "stack", stat = "identity") + # , color = "black"
+         geom_errorbar(aes(ymin=Avg_Proportion-SD_Proportion, ymax=Avg_Proportion+SD_Proportion), width=.2) +
+         theme_minimal(base_size = 14) +
+         scale_fill_manual(values = genus_colors) +
+         theme(axis.text = element_text(size = 12),
+               axis.text.x = element_blank()) +
+         scale_y_continuous(labels = function(x) paste0(x*100), limits = c(0, 1)) + # Multiply by 100
+         ylab("Percent") +
+         xlab("Average")
+         ggtitle("")
+
+
+# ggsave("./06-publication/main_figures/Figure_XX6/cm55_st.pdf", plot = cm55_st, device = "pdf",
+#        scale = 1, width = 9, height = 5, units = c("in"), dpi = 300)
+
+```
+
+
+```{r CM59}
+sample_order_cm59 <- da_metadata  %>%
+  filter(Individual == "CM59") %>%
+  mutate(ToothNr_FDI = as.character(ToothNr_FDI),
+         ToothNr_FDI = fct_relevel(ToothNr_FDI, FDI_order)) %>%
+  arrange(ToothNr_FDI) %>%
+  filter(Type != "Bone") %>%
+  select(LibraryID, Jawbone, ToothNr_FDI) %>%
+  rename(Library_ID = LibraryID)
+
+lib_order_cm59 <- da_metadata  %>%
+  filter(Individual == "CM59") %>%
+  mutate(ToothNr_FDI = as.character(ToothNr_FDI),
+         ToothNr_FDI = fct_relevel(ToothNr_FDI, FDI_order)) %>%
+  arrange(ToothNr_FDI) %>%
+  filter(Type != "Bone") %>%
+  select(LibraryID, Jawbone, ToothNr_FDI) %>%
+  rename(Library_ID = LibraryID) %>%
+  pull(Library_ID)
+
+
+cm59_gp <- malt_rs %>%
+  filter(str_detect(Species, "Streptococcus")) %>%
+  # join with the Strep grup table for plotting
+  inner_join(., strep_groups) %>%
+  select(Species, dRep, everything()) %>%
+  # convert to long-format
+  gather("Library_ID","Counts", 3:ncol(.)) %>%
+  inner_join(., sample_order_cm59, by = "Library_ID") %>%
+  dplyr::group_by(ToothNr_FDI, dRep) %>%
+  summarize(Count_sum = sum(Counts)) %>%
+  ungroup() %>%
+  ggplot(., aes(x = ToothNr_FDI, y = Count_sum, fill = dRep)) +
+         geom_bar(position = "fill", stat = "identity") + # , color = "black"
+         theme_minimal(base_size = 14) +
+         scale_fill_manual(values = clade_colors) +
+         theme(axis.text = element_text(size = 8)) +
+         scale_y_continuous(labels = function(x) paste0(x*100)) + # Multiply by 100
+         # geom_hline(yintercept = 0.5, linetype = "dotted") +
+         ylab("Percent") +
+         xlab("Tooth Nr. (FDI)") +
+         ggtitle("")
+cm59_gp
+
+```
+
+
+```{r genus_cm59}
+# individual teeth
+cm59_st <- strep_prop %>%
+  gather("Genus","Counts", 2:ncol(.)) %>%
+  inner_join(., sample_order_cm59, by = "Library_ID") %>%
+  arrange(ToothNr_FDI) %>%
+  mutate(Library_ID = fct_relevel(Library_ID, lib_order_cm59)) %>%
+  # arrange(ToothNr_FDI) %>%
+  ggplot(., aes(x = ToothNr_FDI, y = Counts, fill = Genus)) +
+         geom_bar(position = "fill", stat = "identity") + # , color = "black"
+         # geom_text(aes(label = "15"), vjust= 0, hjust = 0, size = 2) +
+         theme_minimal(base_size = 14) +
+         scale_fill_manual(values = genus_colors) +
+         theme(axis.text.x = element_text(angle = 0, hjust = 0.5),
+               axis.text = element_text(size = 8)) +
+         scale_y_continuous(labels = function(x) paste0(x*100)) + # Multiply by 100
+         # geom_hline(yintercept = 0.5, linetype = "dotted") +
+         ylab("Percent") +
+         xlab("Tooth Nr. (FDI)") +
+         ggtitle("")
+cm59_st
+
+# average across teeth
+strep_prop %>%
+  gather("Genus","Counts", 2:ncol(.)) %>%
+  inner_join(., sample_order_cm59, by = "Library_ID") %>%
+  group_by(Genus) %>%
+  summarize(Avg_Proportion = mean(Counts),
+            SD_Proportion = sd(Counts)) %>%
+  ungroup() %>%
+  mutate(Sample = "one") %>%
+  ggplot(., aes(x = Sample, y = Avg_Proportion, fill = Genus)) +
+         geom_bar(position = "stack", stat = "identity") + # , color = "black"
+         geom_errorbar(aes(ymin=Avg_Proportion-SD_Proportion, ymax=Avg_Proportion+SD_Proportion), width=.2) +
+         theme_minimal(base_size = 14) +
+         scale_fill_manual(values = genus_colors) +
+         theme(axis.text = element_text(size = 8),
+               axis.text.x = element_blank()) +
+         scale_y_continuous(labels = function(x) paste0(x*100), limits = c(0, 1)) + # Multiply by 100
+         ylab("Percent") +
+         xlab("Average") +
+         ggtitle("")
+
+
+```
+
+
+```{r CM82}
+sample_order_cm82 <- da_metadata  %>%
+  filter(Individual == "CM82") %>%
+  mutate(ToothNr_FDI = as.character(ToothNr_FDI),
+         ToothNr_FDI = fct_relevel(ToothNr_FDI, FDI_order)) %>%
+  arrange(ToothNr_FDI) %>%
+  filter(Type != "Bone") %>%
+  select(LibraryID, Jawbone, ToothNr_FDI) %>%
+  rename(Library_ID = LibraryID)
+
+lib_order_cm82 <- da_metadata  %>%
+  filter(Individual == "CM82") %>%
+  mutate(ToothNr_FDI = as.character(ToothNr_FDI),
+         ToothNr_FDI = fct_relevel(ToothNr_FDI, FDI_order)) %>%
+  arrange(ToothNr_FDI) %>%
+  filter(Type != "Bone") %>%
+  select(LibraryID, Jawbone, ToothNr_FDI) %>%
+  rename(Library_ID = LibraryID) %>%
+  pull(Library_ID)
+
+
+cm82_gp <- malt_rs %>%
+  filter(str_detect(Species, "Streptococcus")) %>%
+  # join with the Strep grup table for plotting
+  inner_join(., strep_groups) %>%
+  select(Species, dRep, everything()) %>%
+  # convert to long-format
+  gather("Library_ID","Counts", 3:ncol(.)) %>%
+  inner_join(., sample_order_cm82, by = "Library_ID") %>%
+  dplyr::group_by(ToothNr_FDI, dRep) %>%
+  summarize(Count_sum = sum(Counts)) %>%
+  ungroup() %>%
+  ggplot(., aes(x = ToothNr_FDI, y = Count_sum, fill = dRep)) +
+         geom_bar(position = "fill", stat = "identity") + # , color = "black"
+         theme_minimal(base_size = 14) +
+         scale_fill_manual(values = clade_colors) +
+         theme(axis.text = element_text(size = 8)) +
+         scale_y_continuous(labels = function(x) paste0(x*100)) + # Multiply by 100
+         # geom_hline(yintercept = 0.5, linetype = "dotted") +
+         ylab("Percent") +
+         xlab("Tooth Nr. (FDI)") +
+         ggtitle("")
+cm82_gp
+
+```
+
+```{r genus_cm82}
+
+# individual teeth
+cm82_st <- strep_prop %>%
+  gather("Genus","Counts", 2:ncol(.)) %>%
+  inner_join(., sample_order_cm82, by = "Library_ID") %>%
+  arrange(ToothNr_FDI) %>%
+  mutate(Library_ID = fct_relevel(Library_ID, lib_order_cm82)) %>%
+  # arrange(ToothNr_FDI) %>%
+  ggplot(., aes(x = ToothNr_FDI, y = Counts, fill = Genus)) +
+         geom_bar(position = "fill", stat = "identity") + # , color = "black"
+         # geom_text(aes(label = "15"), vjust= 0, hjust = 0, size = 2) +
+         theme_minimal(base_size = 14) +
+         scale_fill_manual(values = genus_colors) +
+         theme(axis.text.x = element_text(angle = 0, hjust = 0.5),
+               axis.text = element_text(size = 8)) +
+         scale_y_continuous(labels = function(x) paste0(x*100)) + # Multiply by 100
+         # geom_hline(yintercept = 0.5, linetype = "dotted") +
+         xlab("Tooth Nr. (FDI)") +
+         ylab("Percent") +
+         ggtitle("")
+cm82_st
+
+# average across all teeth
+strep_prop %>%
+  gather("Genus","Counts", 2:ncol(.)) %>%
+  inner_join(., sample_order_cm82, by = "Library_ID") %>%
+  group_by(Genus) %>%
+  summarize(Avg_Proportion = mean(Counts),
+            SD_Proportion = sd(Counts)) %>%
+  ungroup() %>%
+  mutate(Sample = "one") %>%
+  ggplot(., aes(x = Sample, y = Avg_Proportion, fill = Genus)) +
+         geom_bar(position = "stack", stat = "identity") + # , color = "black"
+         geom_errorbar(aes(ymin=Avg_Proportion-SD_Proportion, ymax=Avg_Proportion+SD_Proportion), width=.2) +
+         theme_minimal(base_size = 14) +
+         scale_fill_manual(values = genus_colors) +
+         theme(axis.text = element_text(size = 8),
+               axis.text.x = element_blank()) +
+         scale_y_continuous(labels = function(x) paste0(x*100), limits = c(0, 1)) + # Multiply by 100
+         ylab("Percent") +
+         xlab("Average") +
+         ggtitle("")
+
+```
+
+```{r CM165}
+sample_order_cm165 <- da_metadata  %>%
+  filter(Individual == "CM165") %>%
+  mutate(ToothNr_FDI = as.character(ToothNr_FDI),
+         ToothNr_FDI = fct_relevel(ToothNr_FDI, FDI_order)) %>%
+  arrange(ToothNr_FDI) %>%
+  filter(Type != "Bone") %>%
+  select(LibraryID, Jawbone, ToothNr_FDI) %>%
+  rename(Library_ID = LibraryID)
+
+lib_order_cm165 <- da_metadata  %>%
+  filter(Individual == "CM165") %>%
+  mutate(ToothNr_FDI = as.character(ToothNr_FDI),
+         ToothNr_FDI = fct_relevel(ToothNr_FDI, FDI_order)) %>%
+  arrange(ToothNr_FDI) %>%
+  filter(Type != "Bone") %>%
+  select(LibraryID, Jawbone, ToothNr_FDI) %>%
+  rename(Library_ID = LibraryID) %>%
+  pull(Library_ID)
+
+
+cm165_gp <- malt_rs %>%
+  filter(str_detect(Species, "Streptococcus")) %>%
+  # join with the Strep grup table for plotting
+  inner_join(., strep_groups) %>%
+  select(Species, dRep, everything()) %>%
+  # convert to long-format
+  gather("Library_ID","Counts", 3:ncol(.)) %>%
+  inner_join(., sample_order_cm165, by = "Library_ID") %>%
+  dplyr::group_by(ToothNr_FDI, dRep) %>%
+  summarize(Count_sum = sum(Counts)) %>%
+  ungroup() %>%
+  # inner_join(., sample_order_cm165, by = "Library_ID") %>%
+  # arrange(ToothNr_FDI) %>%
+  # mutate(Library_ID = fct_relevel(Library_ID, lib_order_cm165)) %>%
+  ggplot(., aes(x = ToothNr_FDI, y = Count_sum, fill = dRep)) +
+         geom_bar(position = "fill", stat = "identity") + # , color = "black"
+         theme_minimal(base_size = 14) +
+         scale_fill_manual(values = clade_colors) +
+         theme(axis.text.x = element_text(angle = 0, hjust = 0.5),
+         axis.text = element_text(size = 8)) +
+         scale_y_continuous(labels = function(x) paste0(x*100)) + # Multiply by 100
+         # geom_hline(yintercept = 0.5, linetype = "dotted") +
+         ylab("Percent") +
+         xlab("Tooth Nr. (FDI)") +
+         ggtitle("")
+cm165_gp
+
+```
+
+```{r genus_cm165}
+
+# individual teeth
+cm165_st <- strep_prop %>%
+  gather("Genus","Counts", 2:ncol(.)) %>%
+  inner_join(., sample_order_cm165, by = "Library_ID") %>%
+  arrange(ToothNr_FDI) %>%
+  mutate(Library_ID = fct_relevel(Library_ID, lib_order_cm165)) %>%
+  # arrange(ToothNr_FDI) %>%
+  ggplot(., aes(x = ToothNr_FDI, y = Counts, fill = Genus)) +
+         geom_bar(position = "fill", stat = "identity") + # , color = "black"
+         # geom_text(aes(label = "15"), vjust= 0, hjust = 0, size = 2) +
+         theme_minimal(base_size = 14) +
+         scale_fill_manual(values = genus_colors) +
+         theme(axis.text.x = element_text(angle = 0, hjust = 0.5),
+               axis.text = element_text(size = 8)) +
+         scale_y_continuous(labels = function(x) paste0(x*100)) + # Multiply by 100
+         # geom_hline(yintercept = 0.5, linetype = "dotted") +
+         ylab("Percent") +
+         xlab("Tooth Nr. (FDI)") +
+         ggtitle("")
+cm165_st
+
+# average across all teeth
+strep_prop %>%
+  gather("Genus","Counts", 2:ncol(.)) %>%
+  inner_join(., sample_order_cm165, by = "Library_ID") %>%
+  group_by(Genus)%>%
+  summarize(Avg_Proportion = mean(Counts),
+            SD_Proportion = sd(Counts)) %>%
+  ungroup() %>%
+  # mutate(up = Avg_Proportion+SD_Proportion, 
+  #        down = Avg_Proportion-SD_Proportion)
+  mutate(Sample = "one") %>%
+  ggplot(., aes(x = Sample, y = Avg_Proportion, fill = Genus)) +
+         geom_bar(position = "stack", stat = "identity") + # , color = "black"
+         geom_errorbar(aes(ymin=Avg_Proportion-SD_Proportion, ymax=Avg_Proportion+SD_Proportion), width = 0.2) +
+         theme_minimal(base_size = 14) +
+         scale_fill_manual(values = genus_colors) +
+         theme(axis.text = element_text(size = 8),
+               axis.text.x = element_blank()) +
+         scale_y_continuous(labels = function(x) paste0(x*100), limits = c(0, 1)) + # Multiply by 100
+         ylab("Percent") +
+         xlab("Average") +
+         ggtitle("")
+
+
+
+```
+
+
+```{r supp_fig_sxx7}
+
+supp_sxx7 <- plot_grid(cm55_gp, cm59_gp, cm82_gp, cm165_gp,
+                      cm55_st, cm59_st, cm82_st, cm165_st,
+          nrow=2, labels = c("A", "B","C","D"), rel_widths = c(1), scale = 0.95)
+
+supp_sxx7
+
+# ggsave("./06-publication/supplemental_figures/XX7/Supp_Figure_XX7.pdf", plot = supp_sxx7,
+#        device = "pdf", scale = 1, width = 12, height = 8.5, units = c("in"), dpi = 300)
+
+
+```
+
+
+
+## Map % onto jaws like in DA paper
+Add the Strep proportion information to the `ili mapping file for upload into `ili
+```{r, eval = F}
+# the image to use for ili is ili_jaws.png, exported from dental_arcade_empty_mapping.svg with Inkscape
+# the coordinates come from the svg
+
+# read in the ili mapping file
+ili_mapping <- fread("./00-documentation.backup/ili_mapping_coordinates.csv")
+
+```
+
+Don't run this b/c it'll overwrite the proper coordinates
+```{r eval = F}
+# add strep group proportions to ili mapping file
+new_ili <- malt_rs %>%
+  # remove the bone samples
+  select(-c("CDM045.Z0101","CDM047.Z0101","CDM053.J0101","CDM054.A0101")) %>%
+  filter(str_detect(Species, "Streptococcus")) %>%
+  # join with the Strep grup table for plotting
+  inner_join(., strep_groups) %>%
+  select(Species, dRep, everything()) %>%
+  # convert to long-format
+  gather("Library_ID","Counts", 3:ncol(.)) %>%
+  mutate(Library_ID = fct_relevel(Library_ID, sample_order_rs)) %>%
+  dplyr::group_by(Library_ID, dRep) %>%
+  summarize(Count_sum = sum(Counts)) %>%
+  ungroup() %>%
+  group_by(Library_ID) %>%
+  mutate(Percent = Count_sum / sum(Count_sum) * 100) %>%
+  ungroup() %>%
+  select(Library_ID, dRep, Percent) %>%
+  pivot_wider(names_from = "dRep", values_from = "Percent") %>%
+  # rename Library_ID to sample to match ili input file
+  rename(sample = Library_ID) %>%
+  full_join(., ili_mapping, by = "sample") %>%
+  # and re-order the columns
+  select(sample, x, y, z, Radii, Individual, ToothNr_FDI, ToothSide, ToothClass, ToothPosition, Jawbone, DepositMass_mg, everything())
+
+# fwrite(new_ili, "05-results.backup/ili_metadata.csv", sep = ",", quote = F)
+
+```
+
+
+
+
+
+
+
+
+
+This was to try in R, but doesn't seem to be working
+```{r}
+library(grConvert)
+
+convertPicture("~/Downloads/dental_arcade_empty_mapping.pdf", "~/Downloads/dental_arcade_empty_mapping.svg")
+
+```
+
+```{r}
+
+library(grImport2)
+
+jaw <- readPicture("~/Downloads/dental_arcade_empty_mapping.svg")
+
+grid.picture(jaw, ext = "clipbbox")
+
+
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+

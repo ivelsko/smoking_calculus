@@ -1,0 +1,135 @@
+---
+title: "MID/CMB, Radcliffe, Kilteasheen, Iberian medieval calculus MALT beta diversity"
+author: "Irina Velsko"
+date: "`r format(Sys.time(), '%b %d, %Y')`"
+output:
+    github_document:
+        fig_width: 8
+        fig_height: 6
+        toc: true
+---
+
+
+```{r load_libraries, echo = F, message = F}
+library(knitr)
+library(data.table)
+library(tidyverse)
+```
+
+Set the working directory of the notebook to the parent directory of the 
+notebook itself.  
+
+```{r setup}
+knitr::opts_knit$set(root.dir = normalizePath(".."))
+```
+
+
+```{r load_data}
+
+# load the taxonomy tables that have been decontaminated and the column headers are cleaned up
+load("./05-results.backup/Taxonomy_tables.RData")
+
+# Strep groups
+# read in the Strep group table James made for the Deep Evo project
+
+strep_groups <- fread("./00-documentation.backup/25-streptococcus_cladegroup_amylasegroup_database.tsv") %>%
+  select(Taxon, Clade_Consensus) %>%
+  rename(Species = Taxon) %>%
+  mutate(Species = str_replace_all(Species, "_", " "),
+         Clade_Consensus = str_replace_all(Clade_Consensus, "NA","Unknown"),
+         Clade_Consensus = str_replace_all(Clade_Consensus, "sanguinis","Sanguinis"),
+         Clade_Consensus = str_replace_all(Clade_Consensus, "mitis","Mitis"),
+         Clade_Consensus = str_replace_all(Clade_Consensus, "salivarius","Salivarius"),
+         Clade_Consensus = str_replace_all(Clade_Consensus, "anginosus","Anginosus"),
+         Clade_Consensus = str_replace_all(Clade_Consensus, "bovis","Bovis"),
+         Clade_Consensus = str_replace_all(Clade_Consensus, "pyogenic","Pyogenic"),
+         Clade_Consensus = str_replace_all(Clade_Consensus, "mutans","Mutans")) %>%
+  mutate(Clade_Consensus = fct_relevel(Clade_Consensus, "Sanguinis","Mitis","Salivarius","Anginosus","Bovis","Pyogenic","Mutans","Unknown"))
+
+```
+
+Select only the Streptococcus species from the species table
+```{r}
+
+all_strep <- all_species_decontam_prev %>% select(Species) %>% filter(str_detect(Species, "Streptococcus"))
+
+```
+
+Join the Strep species table and the Strep group table to see how many detected
+Strep species have/don't have a group designation
+```{r}
+all_strep <- all_strep %>%
+  full_join(., strep_groups, by = "Species")
+
+```
+
+There are 2 Strep species that are part of the Mitis group that are currently
+not included there (australis, peroris). Add them, and then make the remaining unnamed Strep species
+"Unknown" group.
+```{r}
+
+updated_strep <- all_strep %>%
+  filter(is.na(Clade_Consensus)) %>%
+  select(Species) %>%
+  mutate(Clade_Consensus = c("Mitis","Mitis","Unknown","Unknown","Unknown","Unknown","Unknown","Unknown","Unknown","Unknown","Unknown","Unknown","Unknown","Unknown","Unknown","Unknown","Unknown","Unknown","Unknown","Unknown")) %>%
+  bind_rows(., all_strep %>%
+              drop_na(Clade_Consensus)) %>%
+  arrange(Species) %>%
+  filter(!str_detect(Species, "1171 SSPC|2 1 36FAA|263 SSPC|400 SSPC"))
+
+```
+
+Save the updated table
+```{r, eval = F}
+
+fwrite(updated_strep, "./00-documentation.backup/updated_strep_groups.tsv", quote = F, sep = "\t")
+
+```
+
+Read in the NCBI Genome list of unnamed Strep at the scaffold, chromosome, or complete level
+```{r}
+
+ncbi_strep <- fread("./00-documentation.backup/unnamed_Streptococcus.csv", sep = ",") %>%
+  rename(Species = `#Organism Name`) %>%
+  mutate(Species = str_replace(Species, " str. F0407",""),
+         Species = str_replace(Species, " str. 73H25AP",""))
+
+```
+
+```{r}
+
+ftps <- updated_strep %>%
+  filter(Clade_Consensus == "Unknown") %>%
+  left_join(., ncbi_strep, by = "Species") %>%
+  select(Species, `RefSeq FTP`)
+
+```
+
+Read in the files downloaded from NCBI with additional missing information
+```{r}
+more_species <- fread("00-documentation.backup/Strep_unknown_downloads.csv") %>%
+  rename(Species = `#Organism Name`)
+
+no_updates <- fread("00-documentation.backup/Strep_unknowns_ftp_list.csv")
+
+```
+
+
+```{r, eval = F}
+ftpsU <- ftps %>%
+  bind_rows(., more_species  %>%
+            select(Species, `RefSeq FTP`)) %>%
+  bind_rows(., no_updates %>%
+              select(Species, `RefSeq FTP`)) %>%
+  arrange(Species) %>%
+  mutate_all(na_if,"") %>%
+  drop_na()
+
+# fwrite(ftpsU, "./00-documentation.backup/unknown_strep_ftp_list.tsv", sep = "\t", quote = F)
+
+```
+
+
+
+
+
