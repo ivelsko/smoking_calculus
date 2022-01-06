@@ -281,7 +281,11 @@ IC_species_p_es <- species_wilcox_pvals %>%
   select(Index, Category, everything()) %>%
   arrange(p.adj)
   
-IC_species_p_es
+IC_species_p_es %>%
+  filter(Category == "Site_code",
+         Index == "Observed_species") %>%
+  filter(p.adj <= 0.05) %>%
+  filter(group1 == "JAE" | group2 == "JAE")
 
 # fwrite(IC_species_p_es, "./06-publication/supplemental_tables/alphadiv_wilcox_mpa3_sp.tsv", sep = "\t", quote = F)
 # fwrite(IC_species_p_es, "~/Desktop/mid_alpha_stats.tsv", sep = "\t", quote = F)
@@ -328,7 +332,7 @@ ggplot(., aes(x = Site_code, y = Observed_species, fill = Site_code)) +
   scale_fill_manual(values = Site_code_colors) +
   theme(axis.text = element_text(size = 14)) +
   theme(legend.position = "none") +
-  xlab("Time period") +
+  xlab("Site code") +
   ylab("Observed species") +
   theme(axis.title.x = element_text(vjust=-1.5)) +
   theme(axis.title.y = element_text(vjust=1.9))
@@ -374,7 +378,7 @@ ggplot(., aes(x = Site_code, y = Shannon_index, fill = Site_code)) +
   scale_fill_manual(values = Site_code_colors) +
   theme(axis.text = element_text(size = 14)) +
   theme(legend.position = "none") +
-  xlab("Time period") +
+  xlab("Site code") +
   ylab("Shannon index") +
   theme(axis.title.x = element_text(vjust=-1.5)) +
   theme(axis.title.y = element_text(vjust=1.9))
@@ -382,7 +386,7 @@ shannon
 
 ```
 
-```{r plot_together}
+```{r plot_together, eval = F}
 
 raincloud_alpha <- plot_grid(obssp, shannon,
           nrow=1, labels = c("A", "B"), rel_widths = c(1, 1), scale = 0.9)

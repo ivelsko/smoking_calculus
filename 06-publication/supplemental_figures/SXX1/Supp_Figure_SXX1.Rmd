@@ -283,7 +283,7 @@ mpa3_species_decontam_unfilt <- mpa3_species_decontam %>%
 tune.pca(mpa3_species_decontam_unfilt, logratio = 'CLR')
 
 # define Time Period shapes for plotting
-Time_period_shapes <- c(Industrial = 21, Medieval = 24, Modern = 22, Extraction_blank = 23, Library_blank = 23)
+Time_period_shapes <- c(Industrial = 21, Medieval = 24, Modern = 22, Extraction_blank = 23, Library_blank = 21)
 
 # perform and plot a PCA to see how the data cluster
 pc1pc2 <- plot_pca(mpa3_species_decontam_unfilt, "PC1", "PC2", "Site_code", "Time_period", 3)

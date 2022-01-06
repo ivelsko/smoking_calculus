@@ -29,19 +29,11 @@ knitr::opts_knit$set(root.dir = normalizePath("../../../"))
 ```{r strep_groups}
 # read in the Strep group table James made for the Deep Evo project
 
-strep_groups <- fread("./00-documentation.backup/25-streptococcus_cladegroup_amylasegroup_database.tsv") %>%
-  select(Taxon, Clade_Consensus) %>%
-  rename(Species = Taxon) %>%
-  mutate(Species = str_replace_all(Species, "_", " "),
-         Clade_Consensus = str_replace_all(Clade_Consensus, "NA","Unknown"),
-         Clade_Consensus = str_replace_all(Clade_Consensus, "sanguinis","Sanguinis"),
-         Clade_Consensus = str_replace_all(Clade_Consensus, "mitis","Mitis"),
-         Clade_Consensus = str_replace_all(Clade_Consensus, "salivarius","Salivarius"),
-         Clade_Consensus = str_replace_all(Clade_Consensus, "anginosus","Anginosus"),
-         Clade_Consensus = str_replace_all(Clade_Consensus, "bovis","Bovis"),
-         Clade_Consensus = str_replace_all(Clade_Consensus, "pyogenic","Pyogenic"),
-         Clade_Consensus = str_replace_all(Clade_Consensus, "mutans","Mutans")) %>%
-  mutate(Clade_Consensus = fct_relevel(Clade_Consensus, "Sanguinis","Mitis","Salivarius","Anginosus","Bovis","Pyogenic","Mutans","Unknown"))
+strep_groups <- fread("./00-documentation.backup/dRep_strep_groups.tsv") %>%
+  # remove the extrac column with the old dRep
+  select(-Clade_Consensus) %>%
+  # make a factor for plotting
+  mutate(dRep = fct_relevel(dRep, "Sanguinis","Mitis","Salivarius","Anginosus","Bovis","Pyogenic","Mutans","Other_oral","Other","Unknown"))
 
 ```
 
@@ -62,10 +54,11 @@ clade_colors <- c("Sanguinis" = "#a50026",
                   "Bovis" = "#abd9e9",
                   "Pyogenic" = "#74add1",
                   "Mutans" = "#4575b4",
-                  # "NA" = "#313695",
-                  "Unknown" = "grey50")
+                  "Oral_other" = "#313695",
+                  "Other" = "#4d4d4d",
+                  "Unknown" = "#e0e0e0")
 
-genus_colors <- c("Streptococcus" = "#a50026", "Other" = "#313695")
+genus_colors <- c("Streptococcus" = "#a50026", "Other" = "#e0e0e0")
 
 ```
 
@@ -137,14 +130,14 @@ sample_order_rs <- malt_rs  %>%
   # join with the Strep grup table for plotting
   inner_join(., strep_groups) %>%
   select(-Species) %>%
-  select(Clade_Consensus, everything()) %>%
+  select(dRep, everything()) %>%
   # long-format
   gather("Library_ID","Counts", 2:ncol(.)) %>%
   # sum together all species per group
-  group_by(Library_ID, Clade_Consensus) %>%
+  group_by(Library_ID, dRep) %>%
   summarize(Reads = sum(Counts)) %>%
   # transpose
-  spread(Clade_Consensus, Reads) %>%
+  spread(dRep, Reads) %>%
   # convert table to proportions
   adorn_percentages(denominator = "row") %>%
   # arrange by Sanguinis and for the ones w/o Sanguinis, by Anginosus
@@ -156,22 +149,25 @@ strepgroups <- malt_rs %>%
   filter(str_detect(Species, "Streptococcus")) %>%
   # join with the Strep grup table for plotting
   inner_join(., strep_groups) %>%
-  select(Species, Clade_Consensus, everything()) %>%
+  select(Species, dRep, everything()) %>%
   # convert to long-format
   gather("Library_ID","Counts", 3:ncol(.)) %>%
   mutate(Library_ID = fct_relevel(Library_ID, sample_order_rs)) %>%
-  dplyr::group_by(Library_ID, Clade_Consensus) %>%
+  dplyr::group_by(Library_ID, dRep) %>%
   summarize(Count_sum = sum(Counts)) %>%
-  ggplot(., aes(x = Library_ID, y = Count_sum, fill = Clade_Consensus)) +
+  ggplot(., aes(x = Library_ID, y = Count_sum, fill = dRep)) +
          geom_bar(position = "fill", stat = "identity") + # , color = "black"
          theme_minimal(base_size = 14) +
          scale_fill_manual(values = clade_colors) +
-         theme(axis.text.x = element_text(angle = 90, hjust = 1),
-               axis.text = element_text(size = 8)) +
+         # theme(axis.text.x = element_blank()) +
+         theme(axis.text.x = element_text(angle = 90, hjust = 0.5),
+               axis.text = element_text(size = 10)) +
          # scale_y_continuous(breaks=scales::pretty_breaks(n=6)) +
-         geom_hline(yintercept = 0.75, linetype = "dotted") +
-         ylab("Proportion Strep group") +
-         ggtitle("")
+         # geom_hline(yintercept = 0.75, linetype = "dotted") +
+         scale_y_continuous(labels = function(x) paste0(x*100)) + # Multiply by 100
+         ylab("Percent") +
+         labs(fill = "Group") +
+         xlab("Sample")
 strepgroups
 
 ```
@@ -181,48 +177,19 @@ malt_rs %>%
   filter(str_detect(Species, "Streptococcus")) %>%
   # join with the Strep grup table for plotting
   inner_join(., strep_groups) %>%
-  select(Species, Clade_Consensus, everything()) %>%
+  select(Species, dRep, everything()) %>%
   # convert to long-format
   gather("Library_ID","Counts", 3:ncol(.)) %>%
   mutate(Library_ID = fct_relevel(Library_ID, sample_order_rs)) %>%
-  dplyr::group_by(Library_ID, Clade_Consensus) %>%
+  dplyr::group_by(Library_ID, dRep) %>%
   summarize(Count_sum = sum(Counts)) %>%
   ungroup() %>%
   group_by(Library_ID) %>%
   mutate(Percent = Count_sum / sum(Count_sum)) %>%
-  filter(Clade_Consensus == "Anginosus" & Percent >= 0.5)
+  filter(dRep == "Anginosus" & Percent >= 0.5)
 
 ```
 
-
-```{r}
-
-#plot ordered by horseshoe
-malt_rs %>%
-  filter(str_detect(Species, "Streptococcus")) %>%
-  # join with the Strep grup table for plotting
-  inner_join(., strep_groups) %>%
-  select(Species, Clade_Consensus, everything()) %>%
-  # convert to long-format
-  gather("Library_ID","Counts", 3:ncol(.)) %>%
-  mutate(Library_ID = fct_relevel(Library_ID, mid_pc1_sample_order)) %>%
-  mutate(Library_ID = fct_rev(Library_ID)) %>%
-  dplyr::group_by(Library_ID, Clade_Consensus) %>%
-  summarize(Count_sum = sum(Counts)) %>%
-  ggplot(., aes(x = Library_ID, y = Count_sum, fill = Clade_Consensus)) +
-         geom_bar(position = "fill", stat = "identity") + # , color = "black"
-         theme_minimal(base_size = 14) +
-         scale_fill_manual(values = clade_colors) +
-         theme(axis.text.x = element_text(angle = 90, hjust = 1),
-               axis.text = element_text(size = 8)) +
-         # scale_y_continuous(breaks=scales::pretty_breaks(n=6)) +
-         ylab("Proportion Strep group") +
-         # labs(fill = 'Group') +
-         # guides(fill=guide_legend(title="Group")) +
-         ggtitle("")
-
-
-```
 
 
 ```{r rs_strep_proportion}
@@ -251,16 +218,53 @@ streponly <- strep_prop %>%
          geom_bar(stat = "identity") + # , color = "black"
          theme_minimal(base_size = 14) +
          scale_fill_manual(values = genus_colors) +
-         theme(axis.text.x = element_text(angle = 90, hjust = 1),
-               axis.text = element_text(size = 8)) +
-         # scale_y_continuous(breaks=scales::pretty_breaks(n=6)) +
-         ylab("Proportion Strep group") +
-         ggtitle("")
+         theme(axis.text.x = element_blank(),
+               axis.text = element_text(size = 10)) +
+         scale_y_continuous(labels = function(x) paste0(x*100)) + # Multiply by 100
+         ylab("Percent") +
+         xlab("Sample")
 streponly
 
 
 ```
 
+```{r rs_strep_proportion_50}
+
+strep_prop <- malt_rs %>%
+  # make a column with Strep or other
+  mutate(Genus = ifelse(str_detect(Species,"Strep"),"Streptococcus","Other")) %>%
+  # remove Species column leaving Genus column
+  select(Genus, everything()) %>%
+  select(-Species) %>%
+  # convert to long format
+  gather("Library_ID","Counts", 2:ncol(.)) %>%
+  group_by(Library_ID, Genus) %>%
+  # sum all Strep read counts and all Other read counts
+  summarize(Reads = sum(Counts)) %>%
+  spread(Genus, Reads) %>%
+  # convert to proportions
+  adorn_percentages() %>%
+  ungroup()
+
+strep50 <- strep_prop %>%
+  gather("Genus","Counts", 2:ncol(.)) %>%
+  filter(Genus == "Streptococcus") %>%
+  mutate(Library_ID = fct_relevel(Library_ID, sample_order_rs)) %>%
+  arrange(Library_ID) %>%
+  ggplot(., aes(x = Library_ID, y = Counts, fill = Genus)) +
+         geom_bar(stat = "identity") + # , color = "black"
+         theme_minimal(base_size = 14) +
+         scale_fill_manual(values = genus_colors) +
+         theme(axis.text.x = element_blank(),
+               axis.text = element_text(size = 10)) +
+         ylim(0, 0.5) +
+         # scale_y_continuous(labels = function(x) paste0(x*100)) + # Multiply by 100
+         ylab("Percent") +
+         xlab("Sample")
+strep50
+
+
+```
 
 ```{r plot_together}
 
@@ -269,9 +273,9 @@ strep_groups <- plot_grid(strepgroups, streponly,
 
 
 ggsave("./06-publication/main_figures/Figure_XX3/strep_groups.pdf", plot = strep_groups,
-       device = "pdf", scale = 1, width = 8, height = 10, units = c("in"), dpi = 300)
+       device = "pdf", scale = 1, width = 8, height = 5, units = c("in"), dpi = 300)
 ggsave("./06-publication/main_figures/Figure_XX3/strep_groups.png", plot = strep_groups,
-       device = "png", scale = 1, width = 8, height = 10, units = c("in"), dpi = 300)
+       device = "png", scale = 1, width = 8, height = 5, units = c("in"), dpi = 300)
 
 ```
 

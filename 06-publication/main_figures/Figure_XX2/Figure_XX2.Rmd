@@ -20,6 +20,7 @@ library(compositions)
 library(vegan)
 library(janitor)
 library(pander)
+library(flextable)
 library(tidyverse)
 library(gplots)
 library(ggrepel)
@@ -388,6 +389,28 @@ pandoc.table(mpa3_species_decontam_filtered_nocontrols_biplot_121$plot_env$neg_1
 
 
 ```
+
+```{r table}
+
+biplot_table <- as_data_frame(mpa3_species_decontam_filtered_nocontrols_biplot_121$plot_env$pws_10) %>%
+  arrange(desc(PC1)) %>%
+  select(Taxon) %>%
+  mutate(`PC1 Order` = rep(1:10)) %>%
+  bind_rows(., as_data_frame(mpa3_species_decontam_filtered_nocontrols_biplot_121$plot_env$neg_10) %>%
+            arrange((PC1)) %>%
+            select(Taxon) %>%
+            mutate(`PC1 Order` = rep(-1:-10))) %>%
+  select(`PC1 Order`, Taxon) %>%
+  rename(Species = Taxon)
+  
+ft <- flextable(biplot_table) %>%
+  set_table_properties(layout = "autofit") %>%
+  italic(j = "Species", italic = TRUE)
+
+# save_as_image(ft, "./06-publication/main_figures/Figure_XX2/beta_div_PC_table.pdf")
+
+```
+
 
 ```{r plot_together, eval = F}
 
