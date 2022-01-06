@@ -639,20 +639,63 @@ samples_updated <- samples_raw %>%
   mutate(sample.Tags = "FoodTransforms") %>%
   sidora.core::format_as_update_existing()
 
+###############################
+# For Strep group fill-in-the-unknowns, download a file of all NCBI unnamed Streptococcus assemblies at the scaffold, chromosome, or complete levels
+# from here https://www.ncbi.nlm.nih.gov/genome/browse/#!/prokaryotes/13548/
+# called prokaryotes.csv. Rename it to unnamed_Streptococcus.csv and move to 00-documentation.backup
 
+# see how many in the unnamed Strep group list are in this list and get the ftp info in MID_ungrouped_Strep.Rmd
 
+# also download at most 20 genomes of other species in other groups at the 'complete' genome level
+# always take genomes w/o plasmids
+# if there are >20 complete, take the first 20 w/o plasmids
+# if there are <20 complete, fill up to 20 with chromosome, then scaffold
+# don't use contig level unless necessary to get to 20, or there are <20 in total
+# these can be found in /mnt/archgen/microbiome_calculus/abpCapture/01-data.backup/probe_design/reference_genomes/<name>Group/<species>
 
+# rename the fasta files in the <name>Group folders so they include the species name
+rename 's/genomic/genomic_australis/' *.fna
+rename 's/genomic/genomic_infantis/' *.fna
+rename 's/genomic/genomic_mitis/' *.fna
+rename 's/genomic/genomic_oralis/' *.fna
+rename 's/genomic/genomic_parasanguinis/' *.fna
+rename 's/genomic/genomic_peroris/' *.fna
+rename 's/genomic/genomic_pseudopneumoniae/' *.fna
+rename 's/genomic/genomic_agalactiae/' *
+rename 's/genomic/genomic_dysgalactiae/' *
+rename 's/genomic/genomic_equi/' *
+rename 's/genomic/genomic_pyogenes/' *
+rename 's/genomic/genomic_uberis/' *
+rename 's/genomic/genomic_downei/' *
+rename 's/genomic/genomic_criceti/' *
+rename 's/genomic/genomic_gallolyticus/' *
+rename 's/genomic/genomic_equinus/' *
+rename 's/genomic/genomic_infantarius/' *
+rename 's/genomic/genomic_mutans/' *
+rename 's/genomic/genomic_ratti/' *
+rename 's/genomic/genomic_macacae/' *
 
+# now 
+ls /mnt/archgen/microbiome_calculus/abpCapture/01-data.backup/probe_design/reference_genomes/sanguinisGroup/*/*.fasta > grouped_Strep_genomes.tsv
+ls /mnt/archgen/microbiome_calculus/abpCapture/01-data.backup/probe_design/reference_genomes/sanguinisGroup/*/*.fna >> grouped_Strep_genomes.tsv
+ls /mnt/archgen/microbiome_calculus/abpCapture/01-data.backup/probe_design/reference_genomes/mitisGroup/*/*.fna >> grouped_Strep_genomes.tsv
+ls /mnt/archgen/microbiome_calculus/abpCapture/01-data.backup/probe_design/reference_genomes/anginosusGroup/*/*.fasta >> grouped_Strep_genomes.tsv
+ls /mnt/archgen/microbiome_calculus/abpCapture/01-data.backup/probe_design/reference_genomes/salivariusGroup/*/*.fasta >> grouped_Strep_genomes.tsv
+ls /mnt/archgen/microbiome_calculus/abpCapture/01-data.backup/probe_design/reference_genomes/pyogenicGroup/*/*.fasta >> grouped_Strep_genomes.tsv
+ls /mnt/archgen/microbiome_calculus/abpCapture/01-data.backup/probe_design/reference_genomes/bovisGroup/*/*.fna >> grouped_Strep_genomes.tsv
+ls /mnt/archgen/microbiome_calculus/abpCapture/01-data.backup/probe_design/reference_genomes/downeiGroup/*/*.fna >> grouped_Strep_genomes.tsv
+ls /mnt/archgen/microbiome_calculus/abpCapture/01-data.backup/probe_design/reference_genomes/mutansGroup/*/*.fna >> grouped_Strep_genomes.tsv
 
+# now go through grouped_Strep_genomes.tsv and select only the 1st 20 of each species (take all if <20)
+# save the new file as grouped_Strep_genomes_20.tsv
+cat unplaced_Strep_genomes.tsv grouped_Strep_genomes_20.tsv > Strep_genomes_for_dRep.tsv
 
+# run dRep to cluster ungrouped Strep genomes by ANI to try to place them in the known oral strep groups
+dRep compare -p 24 dRep_ANImf_out/ -g genome_path.tsv --S_algorithm ANImf -pa 0.95 -sa 0.99
+dRep compare -p 24 dRep_gANI_out/ -g genome_path.tsv --S_algorithm gANI -pa 0.95 -sa 0.99
 
-
-
-
-
-
-
-
+# run in snakemake here: /mnt/archgen/microbiome_calculus/abpCapture/01-data.backup/probe_design/reference_genomes/dRep
+snakemake -s /mnt/archgen/microbiome_calculus/smoking_calculus/02-scripts.backup/010-dRep_Strep_nunknowns.Snakefile --cluster-config /mnt/archgen/microbiome_calculus/abpCapture/02-scripts.backup/snakemake_default.config --cluster "qsub -pe smp 24 -l virtual_free={cluster.mem},h_vmem={cluster.mem} -o {cluster.out} -e {cluster.err}" -j 1 --latency-wait 30 -n
 
 
 
