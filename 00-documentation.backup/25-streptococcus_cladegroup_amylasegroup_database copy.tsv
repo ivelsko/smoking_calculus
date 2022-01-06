@@ -1,0 +1,88 @@
+Taxon	Species	Clade_Consensus	dRep
+Streptococcus_infantis	Streptococcus_infantis	mitis	mitis
+Streptococcus_mitis	Streptococcus_mitis	mitis	mitis
+Streptococcus_oralis	Streptococcus_oralis	mitis	mitis
+Streptococcus_parasanguinis	Streptococcus_parasanguinis	mitis	mitis
+Streptococcus_salivarius	Streptococcus_salivarius	salivarius	salivarius
+Streptococcus_gordonii	Streptococcus_gordonii	sanguinis	sanguinis
+Streptococcus_cristatus	Streptococcus_cristatus	sanguinis	sanguinis
+Streptococcus_anginosus	Streptococcus_anginosus	anginosus	anginosus
+Streptococcus_constellatus	Streptococcus_constellatus	anginosus	anginosus
+Streptococcus_equinus	Streptococcus_equinus	bovis	bovis
+Streptococcus_gallolyticus	Streptococcus_gallolyticus	bovis	bovis
+Streptococcus_infantarius	Streptococcus_infantarius	bovis	bovis
+Streptococcus_macedonicus	Streptococcus_macedonicus	bovis	bovis
+Streptococcus_pasteurianus	Streptococcus_pasteurianus	bovis	bovis
+Streptococcus_criceti	Streptococcus_criceti	downei	downei
+Streptococcus_pneumoniae	Streptococcus_pneumoniae	mitis	mitis
+Streptococcus_pseudopneumoniae	Streptococcus_pseudopneumoniae	mitis	mitis
+Streptococcus_acidominimus	Streptococcus_acidominimus	NA	
+Streptococcus_caballi	Streptococcus_caballi	NA	
+Streptococcus_devriesei	Streptococcus_devriesei	NA	
+Streptococcus_entericus	Streptococcus_entericus	NA	
+Streptococcus_ferus	Streptococcus_ferus	NA	
+Streptococcus_halotolerans	Streptococcus_halotolerans	NA	
+Streptococcus_himalayensis	Streptococcus_himalayensis	NA	
+Streptococcus_lutetiensis	Streptococcus_lutetiensis	NA	
+Streptococcus_marmota	Streptococcus_marmota	NA	
+Streptococcus_marmotae	Streptococcus_marmotae	NA	
+Streptococcus_massiliensis	Streptococcus_massiliensis	NA	
+Streptococcus_merionis	Streptococcus_merionis	NA	
+Streptococcus_orisratti	Streptococcus_orisratti	NA	
+Streptococcus_ovis	Streptococcus_ovis	NA	
+Streptococcus_pantholopis	Streptococcus_pantholopis	NA	
+Streptococcus_pluranimalium	Streptococcus_pluranimalium	NA	
+Streptococcus_sp._1171_SSPC		NA	
+Streptococcus_sp._2_1_36FAA		NA	
+Streptococcus_sp._263_SSPC		NA	
+Streptococcus_sp._400_SSPC		NA	
+Streptococcus_sp._A12		NA	
+Streptococcus_sp._C300		NA	
+Streptococcus_sp._ChDC_B345		NA	
+Streptococcus_sp._ChDC_B353		NA	
+Streptococcus_sp._DD04		NA	
+Streptococcus_sp._DD10		NA	
+Streptococcus_sp._DD12		NA	
+Streptococcus_sp._DD13		NA	
+Streptococcus_sp._F0441		NA	
+Streptococcus_sp._HMSC061D01		NA	
+Streptococcus_sp._HMSC062B01		NA	
+Streptococcus_sp._HMSC062D07		NA	
+Streptococcus_sp._HMSC062H02		NA	
+Streptococcus_sp._HMSC063B03		NA	
+Streptococcus_sp._HMSC066F01		NA	
+Streptococcus_sp._HMSC071D03		NA	
+Streptococcus_sp._HMSC072D03		NA	
+Streptococcus_sp._HMSC072D05		NA	
+Streptococcus_sp._HMSC072D07		NA	
+Streptococcus_sp._HMSC072G04		NA	
+Streptococcus_sp._HMSC073A12		NA	
+Streptococcus_sp._HMSC077F03		NA	
+Streptococcus_sp._HMSC10A01		NA	
+Streptococcus_sp._HPH0090		NA	
+Streptococcus_sp._I-G2	Streptococcus ilei	NA	
+Streptococcus_sp._I-P16	Streptococcus ilei	NA	
+Streptococcus_sp._M143		NA	
+Streptococcus_sp._NLAE-zl-C503		NA	
+Streptococcus_sp._NPS_308		NA	
+Streptococcus_sp._oral_taxon_058		NA	
+Streptococcus_sp._oral_taxon_064		NA	
+Streptococcus_sp._oral_taxon_071		NA	
+Streptococcus_sp._oral_taxon_431		NA	
+Streptococcus_sp._VT_162		NA	
+Streptococcus_troglodytae	Streptococcus_troglodytae	NA	
+Streptococcus_agalactiae	Streptococcus_agalactiae	pyogenic	pyogenic
+Streptococcus_canis	Streptococcus_canis	pyogenic	pyogenic
+Streptococcus_dysgalactiae	Streptococcus_dysgalactiae	pyogenic	pyogenic
+Streptococcus_equi	Streptococcus_equi	pyogenic	pyogenic
+Streptococcus_iniae	Streptococcus_iniae	pyogenic	pyogenic
+Streptococcus_parauberis	Streptococcus_parauberis	pyogenic	pyogenic
+Streptococcus_pyogenes	Streptococcus_pyogenes	pyogenic	pyogenic
+Streptococcus_uberis	Streptococcus_uberis	pyogenic	pyogenic
+Streptococcus_thermophilus	Streptococcus_thermophilus	salivarius	salivarius
+Streptococcus_vestibularis	Streptococcus_vestibularis	salivarius	salivarius
+Streptococcus_suis	Streptococcus_suis	unknown	
+Streptococcus_intermedius	Streptococcus_intermedius	anginosus	anginosus
+Streptococcus_mutans	Streptococcus_mutans	mutans	mutans
+Streptococcus_sobrinus	Streptococcus_sobrinus	NA	
+Streptococcus_sanguinis	Streptococcus_sanguinis	sanguinis	sanguinis
