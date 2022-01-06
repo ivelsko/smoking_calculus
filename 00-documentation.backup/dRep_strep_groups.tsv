@@ -1,0 +1,104 @@
+Species	Clade_Consensus	dRep
+Streptococcus anginosus	Anginosus	Anginosus
+Streptococcus constellatus	Anginosus	Anginosus
+Streptococcus intermedius	Anginosus	Anginosus
+Streptococcus equinus	Bovis	Bovis
+Streptococcus gallolyticus	Bovis	Bovis
+Streptococcus infantarius	Bovis	Bovis
+Streptococcus macedonicus	Bovis	Bovis
+Streptococcus pasteurianus	Bovis	Bovis
+Streptococcus criceti	downei	downei
+Streptococcus australis	Mitis	Mitis
+Streptococcus infantis	Mitis	Mitis
+Streptococcus mitis	Mitis	Mitis
+Streptococcus oralis	Mitis	Mitis
+Streptococcus parasanguinis	Mitis	Mitis
+Streptococcus peroris	Mitis	Mitis
+Streptococcus pneumoniae	Mitis	Mitis
+Streptococcus pseudopneumoniae	Mitis	Mitis
+Streptococcus mutans	Mutans	Mutans
+Streptococcus agalactiae	Pyogenic	Pyogenic
+Streptococcus canis	Pyogenic	Pyogenic
+Streptococcus dysgalactiae	Pyogenic	Pyogenic
+Streptococcus equi	Pyogenic	Pyogenic
+Streptococcus iniae	Pyogenic	Pyogenic
+Streptococcus parauberis	Pyogenic	Pyogenic
+Streptococcus pyogenes	Pyogenic	Pyogenic
+Streptococcus uberis	Pyogenic	Pyogenic
+Streptococcus salivarius	Salivarius	Salivarius
+Streptococcus thermophilus	Salivarius	Salivarius
+Streptococcus vestibularis	Salivarius	Salivarius
+Streptococcus cristatus	Sanguinis	Sanguinis
+Streptococcus gordonii	Sanguinis	Sanguinis
+Streptococcus sanguinis	Sanguinis	Sanguinis
+Streptococcus acidominimus	Unknown	Other
+Streptococcus caballi	Unknown	Other
+Streptococcus devriesei	Unknown	Mutans
+Streptococcus entericus	Unknown	Bovis
+Streptococcus ferus	Unknown	Mutans
+Streptococcus halotolerans	Unknown	Oral_other
+Streptococcus himalayensis	Unknown	Other
+Streptococcus lutetiensis	Unknown	Bovis
+Streptococcus marmota	Unknown	Other
+Streptococcus marmotae	Unknown	Other
+Streptococcus massiliensis	Unknown	Anginosus
+Streptococcus merionis	Unknown	Other
+Streptococcus orisratti	Unknown	Other
+Streptococcus ovis	Unknown	Other
+Streptococcus pantholopis	Unknown	Other
+Streptococcus pluranimalium	Unknown	Other
+Streptococcus sobrinus	Unknown	Downei
+Streptococcus sp. 1171_SSPC	Unknown	Mitis
+Streptococcus sp. 2_1_36FAA	Unknown	Sanguinis
+Streptococcus sp. 263_SSPC	Unknown	Other
+Streptococcus sp. 400_SSPC	Unknown	Mitis
+Streptococcus sp. A12	Unknown	Mitis
+Streptococcus sp. C300	Unknown	Mitis
+Streptococcus sp. ChDC B345	Unknown	Mitis
+Streptococcus sp. ChDC B353	Unknown	Mitis
+Streptococcus sp. DD04	Unknown	Sanguinis
+Streptococcus sp. DD10	Unknown	Oral_other
+Streptococcus sp. DD12	Unknown	Other
+Streptococcus sp. DD13	Unknown	Oral_other
+Streptococcus sp. F0441	Unknown	Mitis
+Streptococcus sp. HMSC034B05	Unknown	Anginosus
+Streptococcus sp. HMSC034E03	Unknown	Mitis
+Streptococcus sp. HMSC056C01	Unknown	Mitis
+Streptococcus sp. HMSC061D01	Unknown	Anginosus
+Streptococcus sp. HMSC061D10	Unknown	Mitis
+Streptococcus sp. HMSC062B01	Unknown	Sanguinis
+Streptococcus sp. HMSC062D07	Unknown	Mitis
+Streptococcus sp. HMSC062H02	Unknown	Mitis
+Streptococcus sp. HMSC063B03	Unknown	Mitis
+Streptococcus sp. HMSC066E07	Unknown	Anginosus
+Streptococcus sp. HMSC066F01	Unknown	Mitis
+Streptococcus sp. HMSC067A03	Unknown	Anginosus
+Streptococcus sp. HMSC067H01	Unknown	Mitis
+Streptococcus sp. HMSC070B10	Unknown	Mitis
+Streptococcus sp. HMSC071D03	Unknown	Mitis
+Streptococcus sp. HMSC071H03	Unknown	Anginosus
+Streptococcus sp. HMSC072D03	Unknown	Salivarius
+Streptococcus sp. HMSC072D05	Unknown	Mitis
+Streptococcus sp. HMSC072D07	Unknown	Mitis
+Streptococcus sp. HMSC072G04	Unknown	Mitis
+Streptococcus sp. HMSC073A12	Unknown	Anginosus
+Streptococcus sp. HMSC074B11	Unknown	Mitis
+Streptococcus sp. HMSC076C08	Unknown	Mitis
+Streptococcus sp. HMSC077D04	Unknown	Mitis
+Streptococcus sp. HMSC077F03	Unknown	Mitis
+Streptococcus sp. HMSC10A01	Unknown	Sanguinis
+Streptococcus sp. HMSC34B10	Unknown	Mitis
+Streptococcus sp. HPH0090	Unknown	Mitis
+Streptococcus sp. I-G2	Unknown	Mitis
+Streptococcus sp. I-P16	Unknown	Mitis
+Streptococcus sp. M143	Unknown	Mitis
+Streptococcus sp. M334	Unknown	Mitis
+Streptococcus sp. NLAE-zl-C503	Unknown	Mitis
+Streptococcus sp. NPS 308	Unknown	Mitis
+Streptococcus sp. oral taxon 058	Unknown	Mitis
+Streptococcus sp. oral taxon 064	Unknown	Mitis
+Streptococcus sp. oral taxon 071	Unknown	Mitis
+Streptococcus sp. oral taxon 431	Unknown	Mitis
+Streptococcus sp. VT 162	Unknown	Mitis
+Streptococcus suis	Unknown	Other
+Streptococcus troglodytae	Unknown	Mutans

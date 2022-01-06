@@ -1,0 +1,17 @@
+species	Species	RefSeq FTP	Formerly
+caballi	Streptococcus caballi	https://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/000/379/985/GCF_000379985.1_ASM37998v1/GCF_000379985.1_ASM37998v1_genomic.gbff.gz	none
+devriesei	Streptococcus devriesei	https://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/000/423/725/GCF_000423725.1_ASM42372v1/GCF_000423725.1_ASM42372v1_genomic.gbff.gz	none
+entericus	Streptococcus entericus	https://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/000/380/025/GCF_000380025.1_ASM38002v1/GCF_000380025.1_ASM38002v1_genomic.gbff.gz	none
+ferus	Streptococcus ferus	https://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/900/475/025/GCF_900475025.1_41906_G01/GCF_900475025.1_41906_G01_genomic.gbff.gz	none
+halotolerans	Streptococcus halotolerans	https://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/001/598/035/GCF_001598035.1_ASM159803v1/GCF_001598035.1_ASM159803v1_genomic.gbff.gz	none
+marmotae	Streptococcus marmotae	https://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/001/623/565/GCF_001623565.1_ASM162356v1/GCF_001623565.1_ASM162356v1_genomic.gbff.gz	none
+massiliensis	Streptococcus massiliensis	https://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/900/459/365/GCF_900459365.1_45296_H02/GCF_900459365.1_45296_H02_genomic.gbff.gz	none
+orisratti	Streptococcus orisratti	https://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/000/380/105/GCF_000380105.1_ASM38010v1/GCF_000380105.1_ASM38010v1_genomic.gbff.gz	none
+ovis	Streptococcus ovis	https://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/000/380/125/GCF_000380125.1_ASM38012v1/GCF_000380125.1_ASM38012v1_genomic.gbff.gz	none
+pantholopis	Streptococcus pantholopis	https://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/001/642/085/GCF_001642085.1_ASM164208v1/GCF_001642085.1_ASM164208v1_genomic.gbff.gz	none
+troglodytae	Streptococcus troglodytae	https://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/002/355/215/GCF_002355215.1_ASM235521v1/GCF_002355215.1_ASM235521v1_genomic.gbff.gz	none
+gwangjuense	Streptococcus gwangjuense	https://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/003/627/155/GCF_003627155.1_ASM362715v1/GCF_003627155.1_ASM362715v1_genomic.gbff.gz	Streptococcus sp. ChDC B345
+chosunense	Streptococcus chosunense	https://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/003/626/515/GCF_003626515.1_ASM362651v1/GCF_003626515.1_ASM362651v1_genomic.gbff.gz	Streptococcus sp. ChDC B353
+ilei	Streptococcus ilei		Streptococcus sp. I-G2
+ilei	Streptococcus ilei		Streptococcus sp. I-P16
+Streptococcus sp. VT 162	Streptococcus sp. VT 162	https://ftp.ncbi.nlm.nih.gov/genomes/all/GCA/000/688/775/GCA_000688775.2_ASM68877v2/GCA_000688775.2_ASM68877v2_genomic.gbff.gz	none
