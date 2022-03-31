@@ -14,6 +14,7 @@ library(knitr)
 library(data.table)
 library(microshades)
 library(tidyverse)
+library(patchwork)
 
 ```
 
@@ -35,7 +36,7 @@ smpd <- full_metadata %>%
   ggplot(., aes(x = Pipenotch, y = Age, fill = Peridontal_affect_score, shape = Sex, size = `%AMTL`)) +
     ggpointgrid::geom_pointrect(scale_x = 0.10, scale_y = 0.22, color = "black", stroke = 0.5) +
     theme_minimal(base_size = 14) +
-    scale_size_continuous(range = c(2,6)) +
+    scale_size_continuous(range = c(3,10)) +
     scale_shape_manual(values = c(21, 23, 22)) +
     scale_fill_gradient(low = "blue", high = "red") +
     # scale_color_manual(values = microshades_palette("micro_green")) +
@@ -44,8 +45,8 @@ smpd <- full_metadata %>%
     ylab("Age group")
 smpd
 
-ggsave("./06-publication/main_figures/Figure_XX1/smpd.pdf", plot = smpd, device = "pdf",
-       scale = 1, width = 8, height = 5, units = c("in"), dpi = 300)
+# ggsave("./06-publication/main_figures/Figure_XX1/smpd.pdf", plot = smpd, device = "pdf",
+#        scale = 1, width = 8, height = 5, units = c("in"), dpi = 300)
 
 ```
 
@@ -56,10 +57,10 @@ smc <- full_metadata %>%
   ggplot(., aes(x = Pipenotch, y = Age, fill = `%teeth_with_caries`, shape = Sex, size = `%AMTL`)) +
     ggpointgrid::geom_pointrect(scale_x = 0.10, scale_y = 0.22, color = "black", stroke = 0.5) +
     theme_minimal(base_size = 14) +
-    scale_size_continuous(range = c(2,8)) +
+    scale_size_continuous(range = c(3,10)) +
     scale_shape_manual(values = c(21, 23, 22)) +
     scale_fill_gradient(low = "blue", high = "red") +
-    theme(axis.text = element_text(size = 10)) +
+    theme(axis.text = element_text(size = 14)) +
     xlab("Pipe notch(es)") +
     ylab("Age group")
 smc
@@ -76,7 +77,7 @@ smcs <- full_metadata %>%
   ggplot(., aes(x = Pipenotch, y = Age, fill = Calc_sub_SI_score, shape = Sex, size = `%AMTL`)) +
     ggpointgrid::geom_pointrect(scale_x = 0.10, scale_y = 0.22, color = "black", stroke = 0.5) +
     theme_minimal(base_size = 14) +
-    scale_size_continuous(range = c(2,8)) +
+    scale_size_continuous(range = c(3,10)) +
     scale_shape_manual(values = c(21, 23, 22)) +
     scale_fill_gradient(low = "blue", high = "red") +
     theme(axis.text = element_text(size = 14)) +
@@ -84,12 +85,19 @@ smcs <- full_metadata %>%
     ylab("Age group")
 smcs
 
-ggsave("./06-publication/main_figures/Figure_XX1/smcs.pdf", plot = smcs, device = "pdf",
-       scale = 1, width = 8, height = 5, units = c("in"), dpi = 300)
+# ggsave("./06-publication/main_figures/Figure_XX1/smcs.pdf", plot = smcs, device = "pdf",
+#        scale = 1, width = 8, height = 5, units = c("in"), dpi = 300)
 
 ```
 
+```{r plot_together}
+metaplot <- smpd + smcs
+metaplot
 
+ggsave("./06-publication/main_figures/Figure_XX1/metaplot.pdf", plot = metaplot,
+       device = "pdf", scale = 1, width = 21, height = 8, units = c("in"), dpi = 300)
+
+```
 
 
 
