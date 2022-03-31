@@ -104,7 +104,7 @@ mpa3_species_decontam <- mpa3_species_decontam %>%
 List the outliers 
 ```{r outliers}
 outliers <- c("EXB059.A2501","LIB058.A0103","LIB058.A0106","CSS","CSD")
-poor_samples <- fread("./05-results.backup/cuperdec_poor_samples.tsv") %>%
+poor_samples <- fread("./05-results.backup/cuperdec_mpa3_poor_samples.tsv") %>%
   pull(Sample)
 
 outliersF <- str_c(outliers, collapse = "|")
@@ -293,6 +293,7 @@ IC_species_p_es
 Observed species, by Time Period
 ```{r raincloud_plots_os_tp}
 obssp <- mpa3_species_decontam_filtered.alpha_meta %>%
+  mutate(Time_period = fct_relevel(Time_period, "Medieval","Industrial","Modern")) %>%
 ggplot(., aes(x = Time_period, y = Observed_species, fill = Time_period)) + 
   ## add half-violin from {ggdist} package
   ggdist::stat_halfeye(
@@ -307,7 +308,7 @@ ggplot(., aes(x = Time_period, y = Observed_species, fill = Time_period)) +
     point_colour = NA
   ) + 
   geom_boxplot(
-    width = .12, 
+    width = .12,
     ## remove outliers
     outlier.color = NA, ## `outlier.shape = NA` works as well
     color = "grey30"
@@ -315,12 +316,12 @@ ggplot(., aes(x = Time_period, y = Observed_species, fill = Time_period)) +
   ## add dot plots from {ggdist} package
   ggdist::stat_dots(
     ## orientation to the left
-    side = "left", 
+    side = "left",
     ## move geom to the left
-    justification = 1.1, 
-    ## adjust grouping (binning) of observations 
+    justification = 1.1,
+    ## adjust grouping (binning) of observations
     binwidth = 1.0
-  ) + 
+  ) +
   ## remove white space on the left
   coord_cartesian(xlim = c(1.2, NA)) +
   theme_minimal(base_size = 14) +
@@ -338,7 +339,9 @@ obssp
 Shannon index, by Time Period
 ```{r raincloud_plots_sh}
 
-shannon <- ggplot(mpa3_species_decontam_filtered.alpha_meta, aes(x = Time_period, y = Shannon_index, fill = Time_period)) + 
+shannon <- mpa3_species_decontam_filtered.alpha_meta %>%
+  mutate(Time_period = fct_relevel(Time_period, "Medieval","Industrial","Modern")) %>%
+  ggplot(., aes(x = Time_period, y = Shannon_index, fill = Time_period)) + 
   ## add half-violin from {ggdist} package
   ggdist::stat_halfeye(
     ## custom bandwidth
@@ -380,7 +383,7 @@ shannon
 
 ```
 
-```{r plot_together}
+```{r plot_together. eval = F}
 
 raincloud_alpha <- plot_grid(obssp, shannon,
           nrow=1, labels = c("A", "B"), rel_widths = c(1, 1), scale = 0.9)

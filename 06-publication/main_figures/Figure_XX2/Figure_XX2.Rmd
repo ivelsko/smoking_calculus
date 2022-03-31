@@ -324,6 +324,8 @@ malt_pca_values <- malt_otu.pca$variates$X %>%
   rownames_to_column("Library_ID") %>%
   inner_join(., full_metadata, by = "Library_ID")
 
+
+
 ```
 
 Minimum number of pipe notches
@@ -418,11 +420,117 @@ beta_div <- plot_grid(minpipe_pc12, pctpd_pc12,
                          subcalc_pc12, mpa3_species_decontam_filtered_nocontrols_biplot_121,
           nrow=2, labels = c("A", "B","C","D"), rel_widths = c(1, 1), scale = 0.95)
 
+beta_div
 
-# ggsave("./06-publication/main_figures/Figure_XX2/beta_div.pdf", plot = beta_div,
-#        device = "pdf", scale = 1, width = 12, height = 8.5, units = c("in"), dpi = 300)
+ggsave("./06-publication/main_figures/Figure_XX2/beta_div.pdf", plot = beta_div,
+       device = "pdf", scale = 1, width = 12, height = 9.5, units = c("in"), dpi = 300)
+
+```
+
+## Canonical correlation analysis
+```{r pca_species_mid}
+mpa3_species_decontam_mid <- mpa3_species_decontam %>%
+  select(-one_of(outliers_mpa3)) %>%
+  select(-one_of(poor_samples_mpa3)) %>%
+  select(matches("Species|MID")) %>%
+  gather("Library_ID","Counts",2:ncol(.)) %>% 
+  mutate(Counts = Counts +1) %>%
+  spread(Species,Counts) %>%
+  column_to_rownames("Library_ID")
+
+```
+
+```{r mid_pc_correlations}
+# Compute Canonical Correlation Analysis (CCA) 
+# between all pairs of selected variables
+# returns absolute correlation value
+
+# rename vriables to look nice in figures
+mid_pca_values_select <- mid_pca_values %>%
+  select(Library_ID, PC1, PC2, seq_len_avg, gc_avg, No_reads_total, Sanguinis, Anginosus, Age_n, Sex_n, Pipenotch_n, `%AMTL`, `%teeth_with_caries`, calc_sup_SI_score, Peridontal_affect_score, `%_positions_with_Periodontal`, Max_Perio_Score, Calculus_extracted_mg, `extract_conc_ng/mg`, `extract_conc_ng/uL`, `extract_conc_after_storage_ng/uL`, `DNA_molecules_per_library_x10^6`,Calc_sub_SI_score, `%teeth_with_calc`, `%_positions_perioapical`) %>%
+  rename(`Seq length` = seq_len_avg,
+         GC = gc_avg,
+         `Total reads` = No_reads_total,
+         Age = Age_n,
+         Sex = Sex_n,
+         Pipenotch = Pipenotch_n,
+         `% AMTL` = `%AMTL`,
+         `% Caries` = `%teeth_with_caries`,
+         `Supra calc score` = calc_sup_SI_score,
+         `Perio score` = Peridontal_affect_score,
+         `% Perio` = `%_positions_with_Periodontal`,
+         `Max perio score` = Max_Perio_Score,
+         `Extracted weight (mg)` = Calculus_extracted_mg,
+         `Pre-storage [extract] (ng/mg)` = `extract_conc_ng/mg`,
+         `Pre-storage [extract] (ng/uL)` = `extract_conc_ng/uL`,
+         `Post-storage [extract] (ng/uL)` = `extract_conc_after_storage_ng/uL`,
+         `[Library] (molecules)` = `DNA_molecules_per_library_x10^6`,
+         `Sub calc score` = Calc_sub_SI_score,
+         `% Calculus` = `%teeth_with_calc`,
+         `% Perioapical` = `%_positions_perioapical`)
+
+# select variables
+form <- ~ PC1 + PC2 + `Seq length` + GC + `Total reads` + Sanguinis + Anginosus + Age + Sex + Pipenotch + `% AMTL` + `% Caries` + `Supra calc score` + `Perio score` + `% Perio` + `Max perio score` + `Extracted weight (mg)` + `Pre-storage [extract] (ng/mg)` + `Pre-storage [extract] (ng/uL)` + `Post-storage [extract] (ng/uL)` + `[Library] (molecules)` + `Sub calc score` + `% Calculus` + `% Perioapical`
+
+# compute CCA
+C_mid = canCorPairs( form, mid_pca_values_select)
+
+```
+
+```{r pearson_corr_mid}
+# test for significant differences in diversity between the metadata categories
+pearson_mid <- mid_pca_values %>%
+rstatix::cor_test(., PC1, PC2, seq_len_avg, gc_avg, No_reads_total, Sanguinis, Anginosus, Age_n, Sex_n, Pipenotch_n, `%AMTL`, `%teeth_with_caries`, calc_sup_SI_score, Peridontal_affect_score, `%_positions_with_Periodontal`, Max_Perio_Score, Calculus_extracted_mg, `extract_conc_ng/mg`, `extract_conc_ng/uL`, `extract_conc_after_storage_ng/uL`, `DNA_molecules_per_library_x10^6`,Calc_sub_SI_score, `%teeth_with_calc`, `%_positions_perioapical`, method="pearson")
+
+pearson_mid %>%
+  mutate(same = var1 == var2) %>%
+  filter(same == FALSE) %>%
+  select(-same) %>%
+  filter(p <= 0.001) %>%
+  filter(cor > 0.40 | cor < -0.40) %>%
+  distinct(statistic, .keep_all = TRUE)
+  
+```
+
+```{r}
+
+C_mid %>%
+  as_data_frame(.) %>%
+  mutate(names = rownames(C_mid)) %>%
+  select(names, everything()) %>%
+  pivot_longer(!names, names_to = "Corrs", values_to = "values") %>%
+  filter(values != 1) %>%
+  filter(values >= 0.4) %>%
+  distinct(values, .keep_all = TRUE)
+
+```
+
+```{r}
+
+colorset <- c("#ffffff","#e8e2ee","#d1c6dc","#baaacb","#a48fba","#8d74aa","#775b99","#604289","#492978","#311068")
+
+pvals_mid <- mid_pca_values_select %>%
+  column_to_rownames("Library_ID") %>%
+  as.matrix(.) %>%
+  corrplot::cor.mtest(., method="pearson")
+
+mid_corr_plot <- C_mid %>%
+  corrplot::corrplot(., p.mat = pvals_mid$p, order = "hclust", type = "upper", col = colorset, is.corr = FALSE, cl.cex = 0.95, diag = FALSE, #tl.srt = 45,
+                     tl.col = 'black', sig.level = c(0.001), pch.cex = 1.2, insig = 'label_sig', pch.col = 'grey20')
+mid_corr_plot
 
 ```
 
 
+```{r, eval = F}
+svg(file = "./06-publication/main_figures/Figure_XX2/mid_corr_plot.svg") 
+
+C_mid %>%
+  corrplot::corrplot(., p.mat = pvals_mid$p, order = "hclust", type = "upper", col = colorset, is.corr = FALSE, cl.cex = 0.95, diag = FALSE, #tl.srt = 45,
+                     tl.col = 'black', sig.level = c(0.001), pch.cex = 1.2, insig = 'label_sig', pch.col = 'grey20')
+
+
+dev.off()
+
+```
 
