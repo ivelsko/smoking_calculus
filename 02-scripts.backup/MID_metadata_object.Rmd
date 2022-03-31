@@ -192,8 +192,8 @@ all_sub_rl_gc <- full_rl_gc %>%
 Now join the subsampled GC and read length data to the full metadata table
 ```{r}
 full_metadata <- full_metadata %>%
-  full_join(., all_sub_rl_gc) %>%
-  filter(Library_ID != "MID052.A0101") # it has no other metadata, I don't know why
+  full_join(., all_sub_rl_gc) 
+# note that MID052.A0101 has no other metadata, I don't know why
 
 ```
 
@@ -256,7 +256,7 @@ save(full_metadata,
      alt_tooth_location_colors,alt_tooth_location_shapes,alt_tooth_location_size,
      file = "./05-results.backup/Metadata_tables.RData")
 
-fwrite(full_metadata, "05-results.backup/full_metadata.tsv")
+fwrite(full_metadata, "00-documentation.backup/full_combined_metadata.tsv", sep = "\t", quote = F, na = "NA")
 
 ```
 

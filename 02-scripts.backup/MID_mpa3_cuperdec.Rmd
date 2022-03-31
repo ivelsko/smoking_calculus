@@ -151,10 +151,11 @@ ggsave("./06-publication/supplemental_figures/SXX1/SXX1_cuperdec_adaptive_68pct.
 ```{r discard_list, eval = F}
 # this will not have any CMC samples
 discard_list <- adaptive_rank_burnin_result %>% filter(!Passed) %>%
-  filter(!str_detect(Sample, "EXB|LIB")) # these are blanks, dentin, or soil
+  filter(!str_detect(Sample, "EXB|LIB")) %>% # these are blanks, dentin, or soil
+  select(Sample)
 discard_list
 
-# fwrite(discard_list, "./05-results.backup/cuperdec_mpa3_poor_samples.tsv", sep = "\t", quote = F)
+fwrite(discard_list, "./05-results.backup/cuperdec_mpa3_poor_samples.tsv", sep = "\t", quote = F)
 
 # list the controls that passed to know which to remove before running decontam
 adaptive_rank_burnin_result %>% filter(Passed) %>%

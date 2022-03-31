@@ -3,8 +3,31 @@
 ################################################################
 
 # eager2 to process data
+#Lena Semerau, 01.07.2020
 
+nextflow run nf-core/eager \
+-profile shh,sdag \
+-r dev \
+--paired-end \
+--input '/projects1/microbiome_calculus/smokers/00-documentation.backup/eager2_smokers_input_table_new.tsv' \
+--fasta /projects1/Reference_Genomes/Human/hs37d5/hs37d5.fa \
+--bam_index /projects1/Reference_Genomes/Human/hs37d5/hs37d5.fa \
+--seq_dict /projects1/Reference_Genomes/Human/hs37d5/hs37d5.dict \
+--fasta_index /projects1/Reference_Genomes/Human/hs37d5/hs37d5.fa.fai \
+--skip_preseq \
+--bwaalnn 0.02 \
+--bwaalnl 1024 \
+--run_bam_filtering \
+--bam_discard_unmapped \
+--bam_unmapped_type fastq \
+--run_metagenomic_screening \
+--metagenomic_tool malt \
+--database /projects1/malt/databases/raw/refseq-bac-arch-homo-2018_11/ \
+-name smokers_calculus \
+--outdir /projects1/microbiome_calculus/smokers/03-preprocessing/ \
+-work-dir /projects1/microbiome_calculus/smokers/03-preprocessing/work/
 
+# Radcliffe data
 # use the KappaHiFiUracil+ data b/c the enzyme is a proofreading one and it should show damage patterns
 # also it seems to be slightly deeper sequenced than the PFU turbo library sequence data
 # run fastQC on the files here to see if they still have internal index sequences that need to be removed: 
@@ -696,6 +719,45 @@ dRep compare -p 24 dRep_gANI_out/ -g genome_path.tsv --S_algorithm gANI -pa 0.95
 
 # run in snakemake here: /mnt/archgen/microbiome_calculus/abpCapture/01-data.backup/probe_design/reference_genomes/dRep
 snakemake -s /mnt/archgen/microbiome_calculus/smoking_calculus/02-scripts.backup/010-dRep_Strep_nunknowns.Snakefile --cluster-config /mnt/archgen/microbiome_calculus/abpCapture/02-scripts.backup/snakemake_default.config --cluster "qsub -pe smp 24 -l virtual_free={cluster.mem},h_vmem={cluster.mem} -o {cluster.out} -e {cluster.err}" -j 1 --latency-wait 30 -n
+
+###########################
+HUMAnN3
+###########################
+# work here /mnt/archgen/microbiome_calculus/smoking_calculus/04-analysis/humann3/
+# run humann3 with this
+snakemake -s ../../02-scripts.backup/011-humann3_mid.Snakefile --cluster-config /mnt/archgen/microbiome_calculus/abpCapture/02-scripts.backup/snakemake_default.config --cluster "qsub -pe smp 16 -l virtual_free={cluster.mem},h_vmem={cluster.mem} -o {cluster.out} -e {cluster.err}" -j 10 --latency-wait 20 -n
+
+conda activate humann3
+
+# gene families
+humann_join_tables -i output/ -o genefamilies_joined.tsv --file_name unmapped_genefamilies
+humann_renorm_table --input genefamilies_joined.tsv --output genefamilies_joined_cpm.tsv --units cpm
+humann_regroup_table --input genefamilies_joined_cpm.tsv --output genefamilies_joined_cpm_ur90rxn.tsv --groups uniref90_rxn
+humann_rename_table --input genefamilies_joined_cpm_ur90rxn.tsv --output genefamilies_joined_cpm_ur90rxn_names.tsv -n metacyc-rxn
+
+# pathway abundance
+humann_join_tables -i output/ -o pathabundance_joined.tsv --file_name unmapped_pathabundance
+humann_renorm_table --input pathabundance_joined.tsv --output pathabundance_joined_cpm.tsv --units cpm
+
+# copy tables into the 05-results folder 
+cp *.tsv ../../05-results.backup/
+
+# To determine the # of reads that were aligned (or rather unaligned) by HUMAnN3
+# working dir /mnt/archgen/microbiome_calculus/Cameroon_plaque/04-analysis/humann2/all_data_combined/input
+ls *.gz > samples.list
+touch samples.lines
+for f in *.gz; do zcat $f | wc -l >> samples.lines; done
+# add a header to each file (SampleID, Lines)
+paste samples.list samples.lines > ../../../05-results.backup/sample_lines.tsv 
+# check that these numbers, divided by 4, are the same as those in the metadata file column Individual_Seq_Depth_NonHuman
+# if they are, use that metadata column for the R analyses, otherwise figure out why that column is wrong and fix it to match these. Use it with the correct numbers
+
+cd ../snakemake_tmp/
+touch files.names unaligned.pcts
+for f in *.o; do grep "genefamilies.tsv" $f | sed 's/\/mnt\/archgen\/microbiome_calculus\/Cameroon_plaque\/04-analysis\/humann2\/all_data_combined\/output\///g' >> files.names; done
+for f in *.o; do grep "Unaligned reads after translated alignment:" $f | sed 's/Unaligned\ reads\ after\ translated\ alignment\://g' | sed 's/\ \%//g' >> unaligned.pcts; done
+# add a header to each file (SampleID, UnalignedPct)
+paste files.names unaligned.pcts > ../../../../05-results.backup/humann2_alignment_stats.tsv
 
 
 

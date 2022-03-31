@@ -99,7 +99,7 @@ sampling_sites_europe <- ggplot(data = world) +
   scale_color_manual(values = c("black","grey50"))
 sampling_sites_europe
 
-ggsave("~/Desktop/mid_sampling_map_europe.pdf", plot = sampling_sites_europe, device = "pdf",
+ggsave("./06-publication/main_figures/Figure_XX5/sample_site_map.pdf", plot = sampling_sites_europe, device = "pdf",
        scale = 1, width = 5, height = 5, units = c("in"), dpi = 300)
 
 ```

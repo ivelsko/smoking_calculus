@@ -186,6 +186,7 @@ malt_rs %>%
 
 ```
 
+
 ```{r save_rs_order, eval = F}
 
 sample_order_rs %>%
@@ -254,6 +255,57 @@ strep_prop %>%
          # scale_y_continuous(breaks=scales::pretty_breaks(n=6)) +
          ylab("Proportion Strep group") +
          ggtitle("")
+
+```
+
+
+```{r sanguinis_anginosus}
+
+aardvark <- malt_rs %>%
+  # make a column with Strep or other
+  mutate(Genus_inc = ifelse(str_detect(Species,"Streptococcus"),"Streptococcus", "NonStrep")) %>%
+  left_join(., strep_groups , by = "Species") %>%
+  # remove Species column leaving Genus column
+  mutate(Genus = replace_na(as.character(dRep), "NonStrep")) %>%
+  select(Genus, everything()) %>%
+  select(-matches("Species|dRep|Genus_inc")) %>%
+  # convert to long format
+  gather("Library_ID","Counts", 2:ncol(.)) %>%
+  group_by(Library_ID, Genus) %>%
+  # sum all Strep read counts and all Other read counts
+  summarize(Reads = sum(Counts)) %>%
+  spread(Genus, Reads) %>%
+  # convert to proportions
+  adorn_percentages() %>%
+  ungroup() %>%
+  # rearrange column order
+  select(Library_ID, NonStrep, Sanguinis, Anginosus, everything()) %>%
+  # now sum counts for columns we're not interested in 
+  mutate(OtherStrep = select(., Bovis:Salivarius) %>% rowSums()) %>%
+  # rearrange column order again and drop the unwanted columns
+  select(Library_ID, NonStrep, Sanguinis, Anginosus, OtherStrep) %>%
+  pivot_longer(!Library_ID, names_to = "Genus", values_to = "Counts") %>%
+  # order the Library ID by 
+  mutate(Library_ID = fct_relevel(Library_ID, sample_order_rs),
+         Counts = Counts + 0.0001) %>%
+         # Genus = fct_relevel(Genus, "NonStrep","OtherStrep","Sanguinis","Anginosus")) %>%
+  filter(str_detect(Genus, "Sanguinis|Anginosus")) 
+
+aardvark%>%
+  arrange(Library_ID) %>%
+  # filter(Counts != 0) %>%
+  mutate(Library_ID = fct_drop(Library_ID)) %>%
+  ggplot(., aes(x = Library_ID, y = Counts, shape = Genus, bg = Genus)) +
+         geom_point(size = 3, color = "grey50") + # , color = "black"
+         theme_minimal(base_size = 14) +
+         scale_fill_manual(values = c("#fee090","#a50026")) +
+         scale_shape_manual(values = c(21,24)) +
+         theme(axis.text.x = element_text(angle = 90, hjust = 1),
+               axis.text = element_text(size = 8)) +
+         scale_y_log10() +
+         ylab("Proportion Strep group") +
+         ggtitle("")
+
 
 ```
 

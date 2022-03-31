@@ -565,8 +565,8 @@ supp_sxx7 <- plot_grid(cm55_gp, cm59_gp, cm82_gp, cm165_gp,
 
 supp_sxx7
 
-# ggsave("./06-publication/supplemental_figures/XX7/Supp_Figure_XX7.pdf", plot = supp_sxx7,
-#        device = "pdf", scale = 1, width = 12, height = 8.5, units = c("in"), dpi = 300)
+ggsave("./06-publication/supplemental_figures/SXX7/Supp_Figure_XX7.pdf", plot = supp_sxx7,
+       device = "pdf", scale = 1, width = 22, height = 8.5, units = c("in"), dpi = 300)
 
 
 ```

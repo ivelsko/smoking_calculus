@@ -253,6 +253,32 @@ colnames(ars_bone_sp) <- gsub("_S0_L003_R1_001.fastq.combined.fq.prefixed.extrac
 
 ```
 
+```{r deep_evo_tm7}
+
+deep_evo <- fread("./05-results.backup/Evolution-Comparison_MEGAN_20190410-ex_absolute_species_prokaryotes_summarised_refseq.txt") %>%
+  rename(Species = `#Datasets`) %>%
+  select(-matches("ERR|SRR|SRS|LIB|EXB|ARS")) %>%
+  pivot_longer(!Species, names_to = "Library_ID", values_to = "Counts") %>%
+  mutate(Library_ID = str_replace_all(Library_ID, "_S0_L000_R1_000.fastq.merged.prefixed.hg19unmapped",""),
+         Library_ID = str_replace_all(Library_ID, "_S0_L001_R1_001.fastq.combined.fq.prefixed.extractunmapped.bam",""),
+         Library_ID = str_replace_all(Library_ID, "_S0_L000_R1_000.fastq.merged","")) %>%
+  pivot_wider(names_from = "Library_ID", values_from = "Counts") %>%
+# find samples with TM7/Saccharibacterium
+  filter(str_detect(Species, "TM7|Saccharibacteria")) %>%
+  pivot_longer(!Species, names_to = "Library_ID", values_to = "TM7x counts") %>%
+  # select(-Species) %>%
+  # add metadata for time period of each sample
+  left_join(., fread("./00-documentation.backup/02-calculus_microbiome-deep_evolution-individualscontrolssources_metadata_20200219.tsv") %>%
+           rename(Library_ID = `#SampleID`) %>%
+           filter(!str_detect(Library_ID, "ERR|SRR|SRS|LIB|EXB|ARS")) %>%
+           select(matches("Library_ID|Host_Gen"))) %>%
+  select(Species,Host_General,Library_ID, `TM7x counts`) %>%
+  arrange(Host_General, desc(`TM7x counts`)) 
+
+
+```
+
+
 ```{r deep_evo_meta}
 deep_evo_metadata <- fread("./00-documentation.backup/02-calculus_microbiome-deep_evolution-individualscontrolssources_metadata_20200219.tsv") %>%
   rename(Library_ID = `#SampleID`) %>%

@@ -194,6 +194,8 @@ save(all_species_raw,
      all_species_decontam_freq,
      file = "./05-results.backup/Taxonomy_tables.RData")
 
+
+fwrite(all_species_raw, "./05-results.backup/malt_refseq_species.tsv", sep = "\t", quote = F)
 ```
 
 
