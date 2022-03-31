@@ -70,7 +70,7 @@ sampling_sites_europe <- ggplot(data = world) +
   scale_color_manual(values = c("black","grey50"))
 sampling_sites_europe
 
-ggsave("./06-publication/main_figures/Figure_XX5/sample_site_map.pdf", plot = sampling_sites_europe, device = "pdf",
+ggsave("./06-publication/main_figures/Figure_4/sample_site_map.pdf", plot = sampling_sites_europe, device = "pdf",
        scale = 1, width = 5, height = 5, units = c("in"), dpi = 300)
 
 ```
@@ -642,7 +642,7 @@ no_methano <- plot_grid(nomethano_beta, nomethano_gc, nomethano_bi,
           ncol = 1, labels = c("A", "B","C"), rel_widths = c(1), scale = 0.95)
 no_methano
 
-# ggsave("./06-publication/supplemental_figures/SXX5/no_methano.pdf", plot = no_methano,
+# ggsave("./06-publication/supplemental_figures/S4/no_methano.pdf", plot = no_methano,
 #        device = "pdf", scale = 1, width = 6, height = 15, units = c("in"), dpi = 300)
 
 
@@ -720,7 +720,7 @@ rain
 beta_div <- time_period + pc1_neg_plot + gc + box
 beta_div
 
-# ggsave("./06-publication/main_figures/Figure_XX5/beta_div_all.pdf", plot = beta_div,
+# ggsave("./06-publication/main_figures/Figure_4/beta_div_all.pdf", plot = beta_div,
 #        device = "pdf", scale = 1, width = 11, height = 8.5, units = c("in"), dpi = 300)
 
 ```
@@ -924,7 +924,7 @@ C_all %>%
 ```
 
 ```{r, eval = F}
-svg(file = "./06-publication/main_figures/Figure_XX5/all_corr_plot.svg") 
+svg(file = "./06-publication/main_figures/Figure_4/all_corr_plot.svg") 
 
 C_all %>%
   corrplot::corrplot(., p.mat = pvals_all$p, order = "hclust", type = "upper", col = colorset, is.corr = FALSE, cl.cex = 1.5, diag = FALSE, tl.cex = 1.7,

@@ -45,7 +45,7 @@ smpd <- full_metadata %>%
     ylab("Age group")
 smpd
 
-# ggsave("./06-publication/main_figures/Figure_XX1/smpd.pdf", plot = smpd, device = "pdf",
+# ggsave("./06-publication/main_figures/Figure_1/smpd.pdf", plot = smpd, device = "pdf",
 #        scale = 1, width = 8, height = 5, units = c("in"), dpi = 300)
 
 ```
@@ -65,7 +65,7 @@ smc <- full_metadata %>%
     ylab("Age group")
 smc
 
-# ggsave("./06-publication/main_figures/Figure_XX1/smc.pdf", plot = smc, device = "pdf",
+# ggsave("./06-publication/main_figures/Figure_1/smc.pdf", plot = smc, device = "pdf",
 #        scale = 1, width = 10, height = 7, units = c("in"), dpi = 300)
 
 ```
@@ -85,7 +85,7 @@ smcs <- full_metadata %>%
     ylab("Age group")
 smcs
 
-# ggsave("./06-publication/main_figures/Figure_XX1/smcs.pdf", plot = smcs, device = "pdf",
+# ggsave("./06-publication/main_figures/Figure_1/smcs.pdf", plot = smcs, device = "pdf",
 #        scale = 1, width = 8, height = 5, units = c("in"), dpi = 300)
 
 ```
@@ -94,7 +94,7 @@ smcs
 metaplot <- smpd + smcs
 metaplot
 
-ggsave("./06-publication/main_figures/Figure_XX1/metaplot.pdf", plot = metaplot,
+ggsave("./06-publication/main_figures/Figure_1/metaplot.pdf", plot = metaplot,
        device = "pdf", scale = 1, width = 21, height = 8, units = c("in"), dpi = 300)
 
 ```

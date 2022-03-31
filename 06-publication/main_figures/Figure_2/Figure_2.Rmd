@@ -1,5 +1,5 @@
 ---
-title: "Smoking calculus Figure XX2 - Beta-diversity"
+title: "Smoking calculus Figure 2 - Beta-diversity"
 author: "Irina Velsko"
 date: "`r format(Sys.time(), '%b %d, %Y')`"
 output:
@@ -409,7 +409,7 @@ ft <- flextable(biplot_table) %>%
   set_table_properties(layout = "autofit") %>%
   italic(j = "Species", italic = TRUE)
 
-# save_as_image(ft, "./06-publication/main_figures/Figure_XX2/beta_div_PC_table.pdf")
+# save_as_image(ft, "./06-publication/main_figures/Figure_2/beta_div_PC_table.pdf")
 
 ```
 
@@ -422,7 +422,7 @@ beta_div <- plot_grid(minpipe_pc12, pctpd_pc12,
 
 beta_div
 
-ggsave("./06-publication/main_figures/Figure_XX2/beta_div.pdf", plot = beta_div,
+ggsave("./06-publication/main_figures/Figure_2/beta_div.pdf", plot = beta_div,
        device = "pdf", scale = 1, width = 12, height = 9.5, units = c("in"), dpi = 300)
 
 ```
@@ -523,7 +523,7 @@ mid_corr_plot
 
 
 ```{r, eval = F}
-svg(file = "./06-publication/main_figures/Figure_XX2/mid_corr_plot.svg") 
+svg(file = "./06-publication/main_figures/Figure_2/mid_corr_plot.svg") 
 
 C_mid %>%
   corrplot::corrplot(., p.mat = pvals_mid$p, order = "hclust", type = "upper", col = colorset, is.corr = FALSE, cl.cex = 0.95, diag = FALSE, #tl.srt = 45,

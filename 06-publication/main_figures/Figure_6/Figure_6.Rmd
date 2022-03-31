@@ -140,7 +140,7 @@ cm55_gp <- malt_rs %>%
          ggtitle("")
 cm55_gp
 
-# ggsave("./06-publication/main_figures/Figure_XX6/cm55_gp.pdf", plot = cm55_gp, device = "pdf",
+# ggsave("./06-publication/main_figures/Figure_6/cm55_gp.pdf", plot = cm55_gp, device = "pdf",
 #        scale = 1, width = 9, height = 5, units = c("in"), dpi = 300)
 
 
@@ -192,7 +192,7 @@ cm55_st <- strep_prop %>%
          ggtitle("")
 cm55_st
 
-# ggsave("./06-publication/main_figures/Figure_XX6/cm55_st.pdf", plot = cm55_st, device = "pdf",
+# ggsave("./06-publication/main_figures/Figure_6/cm55_st.pdf", plot = cm55_st, device = "pdf",
 #        scale = 1, width = 9, height = 5, units = c("in"), dpi = 300)
 
 ```
@@ -283,10 +283,10 @@ da_fig <- plot_grid(cm55_st, cm55_gp,
           nrow=2, labels = c("A", "B","C","D"), rel_widths = c(1, 3), scale = 0.95)
 
 da_fig
-ggsave("./06-publication/main_figures/Figure_XX6/DA_strep_dist.pdf", plot = da_fig,
+ggsave("./06-publication/main_figures/Figure_6/DA_strep_dist.pdf", plot = da_fig,
        device = "pdf", scale = 1, width = 12, height = 8.5, units = c("in"), dpi = 300)
 
-ggsave("./06-publication/main_figures/Figure_XX6/DA_strep_dist.png", plot = da_fig,
+ggsave("./06-publication/main_figures/Figure_6/DA_strep_dist.png", plot = da_fig,
        device = "png", scale = 1, width = 12, height = 8.5, units = c("in"), dpi = 300)
 
 
