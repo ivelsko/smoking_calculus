@@ -143,8 +143,8 @@ cd_curve_plot <- plot_cuperdec(curves, metadata_map, adaptive_rank_burnin_result
 cd_curve_plot
 
 
-ggsave("./06-publication/supplemental_figures/SXX1/SXX1_cuperdec_adaptive_68pct.png", plot = cd_curve_plot, device = "png",
-       scale = 1, width = 7, height = 5, units = c("in"), dpi = 300)
+# ggsave("./06-publication/supplemental_figures/SXX1/SXX1_cuperdec_adaptive_68pct.png", plot = cd_curve_plot, device = "png",
+#        scale = 1, width = 7, height = 5, units = c("in"), dpi = 300)
 
 ```
 

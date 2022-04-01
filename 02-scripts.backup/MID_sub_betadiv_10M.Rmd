@@ -121,12 +121,12 @@ full_metadata <- full_metadata %>%
 plot_pca_names <- function(df, pc1, pc2, metadata_group) {
     metadata_group_colors <- get(paste(metadata_group, "_colors", sep = ""))
 
-    exp_var <- paste0(round(df$explained_variance * 100, 2), "%")
+    exp_var <- paste0(round(df$prop_expl_var$X * 100, 2), "%")
     df_X <- df$variates$X %>%
               as.data.frame() %>%
               rownames_to_column("Library_ID") %>%
               inner_join(full_metadata %>%
-                           select(Library_ID, Site, Region, Time_period, Sample_or_Control, Periodontal_disease_present, Caries_present, Sex, Age, Tooth_location), by = "Library_ID")
+                           select(Library_ID, Site_code, Region, Time_period, Sample_or_Control, Periodontal_disease_present, Caries_present, Sex, Age, Tooth_location), by = "Library_ID")
     
     metadata_group = df_X[[metadata_group]]
     
@@ -183,7 +183,7 @@ plot_pca <- function(df, pc1, pc2, color_group, shape_group, ncomps) {
 
     pca.list <- mixOmics::pca(df, ncomp = ncomps, logratio = 'CLR')
 
-    exp_var <- paste0(round(pca.list$explained_variance * 100, 2), "%")
+    exp_var <- paste0(round(pca.list$prop_expl_var$X * 100, 2), "%")
     df_X <- pca.list$variates$X %>%
               as.data.frame() %>%
               rownames_to_column("Library_ID") %>%
@@ -245,7 +245,7 @@ plot_pca_mid <- function(df, pc1, pc2, color_group, shape_group, ncomps, title_t
 
     pca.list <- mixOmics::pca(df, ncomp = ncomps, logratio = 'CLR')
 
-    exp_var <- paste0(round(pca.list$explained_variance * 100, 2), "%")
+    exp_var <- paste0(round(pca.list$prop_expl_var$X * 100, 2), "%")
     df_X <- pca.list$variates$X %>%
               as.data.frame() %>%
               rownames_to_column("Library_ID") %>%
@@ -308,7 +308,7 @@ plot_pca_cont <- function(df, pc1, pc2, color_group, shape_group, ncomps, title_
 
     pca.list <- mixOmics::pca(df, ncomp = ncomps, logratio = 'CLR')
 
-    exp_var <- paste0(round(pca.list$explained_variance * 100, 2), "%")
+    exp_var <- paste0(round(pca.list$prop_expl_var$X * 100, 2), "%")
     df_X <- pca.list$variates$X %>%
               as.data.frame() %>%
               rownames_to_column("Library_ID") %>%
@@ -376,7 +376,7 @@ plot_pca_bi <- function(df, pc1, pc2, metadata_group, columntitle) {
    
     arrow_pc <- enquo(columntitle)
     
-    exp_var <- paste0(round(df$explained_variance * 100, 2), "%") # explained variance for x- and y-labels
+    exp_var <- paste0(round(df$prop_expl_var$X * 100, 2), "%") # explained variance for x- and y-labels
     
     # select only the PCs from the PCA and add metadata
     df_X <- df$variates$X %>%
@@ -508,8 +508,8 @@ sub10M_species_decontam_unfilt <- sub10M_species_decontam %>%
 tune.pca(sub10M_species_decontam_unfilt, logratio = 'CLR')
 
 # perform and plot a PCA to see how the data cluster
-plot_pca(sub10M_species_decontam_unfilt, "PC1", "PC2", "Site", "Time_period", 3)
-plot_pca(sub10M_species_decontam_unfilt, "PC3", "PC2", "Site", "Time_period", 3)
+plot_pca(sub10M_species_decontam_unfilt, "PC1", "PC2", "Site_code", "Time_period", 3)
+plot_pca(sub10M_species_decontam_unfilt, "PC3", "PC2", "Site_code", "Time_period", 3)
 
 # decontaminated and filtered
 sub10M_species_decontam_filtered <- sub10M_species_decontam %>%
@@ -529,9 +529,9 @@ sub10M_species_decontam_filtered <- sub10M_species_decontam %>%
 tune.pca(sub10M_species_decontam_filtered, logratio = 'CLR')
 
 # perform and plot a PCA to see how the data cluster
-plot_pca(sub10M_species_decontam_filtered, "PC1", "PC2", "Site", "Time_period", 3)
+plot_pca(sub10M_species_decontam_filtered, "PC1", "PC2", "Site_code", "Time_period", 3)
 
-plot_pca(sub10M_species_decontam_filtered, "PC3", "PC2", "Site", "Time_period", 3)
+plot_pca(sub10M_species_decontam_filtered, "PC3", "PC2", "Site_code", "Time_period", 3)
 
 
 # ggsave("./06-publication/supplemental_figures/SXX28/SXX28_all_samples_sp_pca12.pdf", plot = all_samples_sp_pca12, device = "pdf",
@@ -586,7 +586,7 @@ sub10M_species_decontam_noblanks <- sub10M_species_decontam %>%
 plot_pca(sub10M_species_decontam_noblanks, "PC1", "PC2", "Region", "Time_period", 3)
 plot_pca(sub10M_species_decontam_noblanks, "PC3", "PC2", "Region", "Time_period", 3)
 
-plot_pca(sub10M_species_decontam_noblanks, "PC1", "PC2", "Site", "Time_period", 3)
+plot_pca(sub10M_species_decontam_noblanks, "PC1", "PC2", "Site_code", "Time_period", 3)
 plot_pca(sub10M_species_decontam_noblanks, "PC1", "PC2", "Time_period", "Time_period", 3)
 plot_pca(sub10M_species_decontam_noblanks, "PC1", "PC2", "Sex", "Time_period", 3)
 plot_pca(sub10M_species_decontam_noblanks, "PC1", "PC2", "Periodontal_disease_present", "Time_period", 3)
@@ -620,11 +620,11 @@ tune.pca(sub10M_species_decontam_filtered_noblanks, logratio = 'CLR')
 
 # perform and plot a PCA to see how the data cluster
 # by Site
-plot_pca(sub10M_species_decontam_filtered_noblanks, "PC1", "PC2", "Site", "Time_period", 3)
+plot_pca(sub10M_species_decontam_filtered_noblanks, "PC1", "PC2", "Site_code", "Time_period", 3)
 
-plot_pca(sub10M_species_decontam_filtered_noblanks, "PC1", "PC3", "Site", "Time_period", 3)
-plot_pca(sub10M_species_decontam_filtered_noblanks, "PC2", "PC3", "Site", "Time_period", 3)
-plot_pca(sub10M_species_decontam_filtered_noblanks, "PC3", "PC2", "Site", "Time_period", 3)
+plot_pca(sub10M_species_decontam_filtered_noblanks, "PC1", "PC3", "Site_code", "Time_period", 3)
+plot_pca(sub10M_species_decontam_filtered_noblanks, "PC2", "PC3", "Site_code", "Time_period", 3)
+plot_pca(sub10M_species_decontam_filtered_noblanks, "PC3", "PC2", "Site_code", "Time_period", 3)
 
 
 # ggsave("~/Desktop/MID_pca_all_pc12.pdf", plot = mid_all_pc12, device = "pdf",
@@ -677,8 +677,8 @@ all_seqdepth_pc12 <- malt_species_decontam_filtered_noblanks.pca.varmet %>%
     geom_point(size = 3) +
     scale_shape_manual(values = Time_period_shapes) +
     scale_color_viridis_c(option = "A") +
-    xlab(paste("PC1 - ", 100*(round(malt_species_decontam_filtered_noblanks.pca$explained_variance[1], 2)), "%", sep = "")) +
-    ylab(paste("PC2 - ", 100*(round(malt_species_decontam_filtered_noblanks.pca$explained_variance[2], 2)), "%", sep = "")) +
+    xlab(paste("PC1 - ", 100*(round(malt_species_decontam_filtered_noblanks.pca$prop_expl_var$X[1], 2)), "%", sep = "")) +
+    ylab(paste("PC2 - ", 100*(round(malt_species_decontam_filtered_noblanks.pca$prop_expl_var$X[2], 2)), "%", sep = "")) +
     theme_minimal(base_size = 14) +
     labs(colour = "Seq. depth\n(reads)", shape = "Time period") +
     theme(legend.title = element_text(size = 10))
@@ -693,8 +693,8 @@ malt_species_decontam_filtered_noblanks.pca.varmet %>%
     geom_point(size = 3) +
     scale_shape_manual(values = Time_period_shapes) +
     scale_color_viridis_c(option = "A") +
-    xlab(paste("PC1 - ", 100*(round(malt_species_decontam_filtered_noblanks.pca$explained_variance[1], 2)), "%", sep = "")) +
-    ylab(paste("PC2 - ", 100*(round(malt_species_decontam_filtered_noblanks.pca$explained_variance[2], 2)), "%", sep = "")) +
+    xlab(paste("PC1 - ", 100*(round(malt_species_decontam_filtered_noblanks.pca$prop_expl_var$X[1], 2)), "%", sep = "")) +
+    ylab(paste("PC2 - ", 100*(round(malt_species_decontam_filtered_noblanks.pca$prop_expl_var$X[2], 2)), "%", sep = "")) +
     theme_minimal(base_size = 14) +
     labs(colour = "Log10\n(Seq. depth)", shape = "Time period") +
     theme(legend.title = element_text(size = 10))
@@ -705,8 +705,8 @@ all_extract_pc12 <- malt_species_decontam_filtered_noblanks.pca.varmet %>%
     geom_point(size = 3) +
     scale_shape_manual(values = Time_period_shapes) +
     scale_color_viridis_c(option = "A") +
-    xlab(paste("PC1 - ", 100*(round(malt_species_decontam_filtered_noblanks.pca$explained_variance[1], 2)), "%", sep = "")) +
-    ylab(paste("PC2 - ", 100*(round(malt_species_decontam_filtered_noblanks.pca$explained_variance[2], 2)), "%", sep = "")) +
+    xlab(paste("PC1 - ", 100*(round(malt_species_decontam_filtered_noblanks.pca$prop_expl_var$X[1], 2)), "%", sep = "")) +
+    ylab(paste("PC2 - ", 100*(round(malt_species_decontam_filtered_noblanks.pca$prop_expl_var$X[2], 2)), "%", sep = "")) +
     theme_minimal(base_size = 14) +
     labs(colour = "[DNA Extract]\n(ng/uL)", shape = "Time period") +
     theme(legend.title = element_text(size = 10))
@@ -721,8 +721,8 @@ malt_species_decontam_filtered_noblanks.pca.varmet %>%
     geom_point(size = 3) +
     scale_shape_manual(values = Time_period_shapes) +
     scale_color_viridis_c(option = "A") +
-    xlab(paste("PC1 - ", 100*(round(malt_species_decontam_filtered_noblanks.pca$explained_variance[1], 2)), "%", sep = "")) +
-    ylab(paste("PC2 - ", 100*(round(malt_species_decontam_filtered_noblanks.pca$explained_variance[2], 2)), "%", sep = "")) +
+    xlab(paste("PC1 - ", 100*(round(malt_species_decontam_filtered_noblanks.pca$prop_expl_var$X[1], 2)), "%", sep = "")) +
+    ylab(paste("PC2 - ", 100*(round(malt_species_decontam_filtered_noblanks.pca$prop_expl_var$X[2], 2)), "%", sep = "")) +
     theme_minimal(base_size = 14) +
     labs(colour = "[DNA Extract]\n(ng/uL) - log10", shape = "Time period") +
     theme(legend.title = element_text(size = 10))
@@ -733,8 +733,8 @@ malt_species_decontam_filtered_noblanks.pca.varmet %>%
     geom_point(size = 2.5) +
     scale_shape_manual(values = Time_period_shapes) +
     scale_color_viridis_c(option = "A") +
-    xlab(paste("PC1 - ", 100*(round(malt_species_decontam_filtered_noblanks.pca$explained_variance[1], 2)), "%", sep = "")) +
-    ylab(paste("PC2 - ", 100*(round(malt_species_decontam_filtered_noblanks.pca$explained_variance[2], 2)), "%", sep = "")) +
+    xlab(paste("PC1 - ", 100*(round(malt_species_decontam_filtered_noblanks.pca$prop_expl_var$X[1], 2)), "%", sep = "")) +
+    ylab(paste("PC2 - ", 100*(round(malt_species_decontam_filtered_noblanks.pca$prop_expl_var$X[2], 2)), "%", sep = "")) +
     theme_minimal(base_size = 14) +
     labs(colour = "Avg. GC content (%)", shape = "Time period") +
     theme(legend.title = element_text(size = 10))
@@ -745,8 +745,8 @@ malt_species_decontam_filtered_noblanks.pca.varmet %>%
     geom_point(size = 2.5) +
     scale_shape_manual(values = Time_period_shapes) +
     scale_color_viridis_c(option = "A") +
-    xlab(paste("PC1 - ", 100*(round(malt_species_decontam_filtered_noblanks.pca$explained_variance[1], 2)), "%", sep = "")) +
-    ylab(paste("PC2 - ", 100*(round(malt_species_decontam_filtered_noblanks.pca$explained_variance[2], 2)), "%", sep = "")) +
+    xlab(paste("PC1 - ", 100*(round(malt_species_decontam_filtered_noblanks.pca$prop_expl_var$X[1], 2)), "%", sep = "")) +
+    ylab(paste("PC2 - ", 100*(round(malt_species_decontam_filtered_noblanks.pca$prop_expl_var$X[2], 2)), "%", sep = "")) +
     theme_minimal(base_size = 14) +
     labs(colour = "Avg. read length (bp)", shape = "Time period") +
     theme(legend.title = element_text(size = 10))
@@ -757,8 +757,8 @@ malt_species_decontam_filtered_noblanks.pca.varmet %>%
     geom_point(size = 2.5) +
     scale_shape_manual(values = Time_period_shapes) +
     scale_color_viridis_c(option = "A") +
-    xlab(paste("PC3 - ", 100*(round(malt_species_decontam_filtered_noblanks.pca$explained_variance[3], 2)), "%", sep = "")) +
-    ylab(paste("PC2 - ", 100*(round(malt_species_decontam_filtered_noblanks.pca$explained_variance[2], 2)), "%", sep = "")) +
+    xlab(paste("PC3 - ", 100*(round(malt_species_decontam_filtered_noblanks.pca$prop_expl_var$X[3], 2)), "%", sep = "")) +
+    ylab(paste("PC2 - ", 100*(round(malt_species_decontam_filtered_noblanks.pca$prop_expl_var$X[2], 2)), "%", sep = "")) +
     theme_minimal(base_size = 14) +
     labs(colour = "Avg. mapped GC content (%)", shape = "Time period") +
     theme(legend.title = element_text(size = 10))
@@ -769,8 +769,8 @@ malt_species_decontam_filtered_noblanks.pca.varmet %>%
     geom_point(size = 2.5) +
     scale_shape_manual(values = Time_period_shapes) +
     scale_color_viridis_c(option = "A") +
-    xlab(paste("PC3 - ", 100*(round(malt_species_decontam_filtered_noblanks.pca$explained_variance[3], 2)), "%", sep = "")) +
-    ylab(paste("PC2 - ", 100*(round(malt_species_decontam_filtered_noblanks.pca$explained_variance[2], 2)), "%", sep = "")) +
+    xlab(paste("PC3 - ", 100*(round(malt_species_decontam_filtered_noblanks.pca$prop_expl_var$X[3], 2)), "%", sep = "")) +
+    ylab(paste("PC2 - ", 100*(round(malt_species_decontam_filtered_noblanks.pca$prop_expl_var$X[2], 2)), "%", sep = "")) +
     theme_minimal(base_size = 14) +
     labs(colour = "Avg. mapped read length (bp)", shape = "Time period") +
     theme(legend.title = element_text(size = 10))
@@ -780,7 +780,7 @@ malt_species_decontam_filtered_noblanks.pca.varmet %>%
 ```{r}
 
 # by Site
-plot_pca(sub10M_species_decontam_filtered_noblanks, "PC3", "PC2", "Site", "Time_period", 3)
+plot_pca(sub10M_species_decontam_filtered_noblanks, "PC3", "PC2", "Site_code", "Time_period", 3)
 # by Region
 plot_pca(sub10M_species_decontam_filtered_noblanks, "PC3", "PC2", "Region", "Time_period", 3)
 
@@ -809,8 +809,8 @@ malt_species_decontam_filtered_noblanks.pca.varmet %>%
     geom_point(size = 2) +
     scale_shape_manual(values = Time_period_shapes) +
     scale_color_viridis_c(option = "A") +
-    xlab(paste("PC3 - ", 100*(round(malt_species_decontam_filtered_noblanks.pca$explained_variance[3], 2)), "%", sep = "")) +
-    ylab(paste("PC2 - ", 100*(round(malt_species_decontam_filtered_noblanks.pca$explained_variance[2], 2)), "%", sep = "")) +
+    xlab(paste("PC3 - ", 100*(round(malt_species_decontam_filtered_noblanks.pca$prop_expl_var$X[3], 2)), "%", sep = "")) +
+    ylab(paste("PC2 - ", 100*(round(malt_species_decontam_filtered_noblanks.pca$prop_expl_var$X[2], 2)), "%", sep = "")) +
     theme_minimal(base_size = 14) +
     labs(colour = "Seq. depth\n(reads)", shape = "Time period") +
     theme(legend.title = element_text(size = 10))
@@ -821,8 +821,8 @@ malt_species_decontam_filtered_noblanks.pca.varmet %>%
     geom_point(size = 2) +
     scale_shape_manual(values = Time_period_shapes) +
     scale_color_viridis_c(option = "A") +
-    xlab(paste("PC3 - ", 100*(round(malt_species_decontam_filtered_noblanks.pca$explained_variance[3], 2)), "%", sep = "")) +
-    ylab(paste("PC2 - ", 100*(round(malt_species_decontam_filtered_noblanks.pca$explained_variance[2], 2)), "%", sep = "")) +
+    xlab(paste("PC3 - ", 100*(round(malt_species_decontam_filtered_noblanks.pca$prop_expl_var$X[3], 2)), "%", sep = "")) +
+    ylab(paste("PC2 - ", 100*(round(malt_species_decontam_filtered_noblanks.pca$prop_expl_var$X[2], 2)), "%", sep = "")) +
     theme_minimal(base_size = 14) +
     labs(colour = "Log10\n(Seq. depth)", shape = "Time period") +
     theme(legend.title = element_text(size = 10))
@@ -833,8 +833,8 @@ malt_species_decontam_filtered_noblanks.pca.varmet %>%
     geom_point(size = 2) +
     scale_shape_manual(values = Time_period_shapes) +
     scale_color_viridis_c(option = "A") +
-    xlab(paste("PC3 - ", 100*(round(malt_species_decontam_filtered_noblanks.pca$explained_variance[3], 2)), "%", sep = "")) +
-    ylab(paste("PC2 - ", 100*(round(malt_species_decontam_filtered_noblanks.pca$explained_variance[2], 2)), "%", sep = "")) +
+    xlab(paste("PC3 - ", 100*(round(malt_species_decontam_filtered_noblanks.pca$prop_expl_var$X[3], 2)), "%", sep = "")) +
+    ylab(paste("PC2 - ", 100*(round(malt_species_decontam_filtered_noblanks.pca$prop_expl_var$X[2], 2)), "%", sep = "")) +
     theme_minimal(base_size = 14) +
     labs(colour = "[DNA Extract]\n(ng/uL)", shape = "Time period") +
     theme(legend.title = element_text(size = 10))
@@ -846,8 +846,8 @@ malt_species_decontam_filtered_noblanks.pca.varmet %>%
     geom_point(size = 2) +
     scale_shape_manual(values = Time_period_shapes) +
     scale_color_viridis_c(option = "A") +
-    xlab(paste("PC3 - ", 100*(round(malt_species_decontam_filtered_noblanks.pca$explained_variance[3], 2)), "%", sep = "")) +
-    ylab(paste("PC2 - ", 100*(round(malt_species_decontam_filtered_noblanks.pca$explained_variance[2], 2)), "%", sep = "")) +
+    xlab(paste("PC3 - ", 100*(round(malt_species_decontam_filtered_noblanks.pca$prop_expl_var$X[3], 2)), "%", sep = "")) +
+    ylab(paste("PC2 - ", 100*(round(malt_species_decontam_filtered_noblanks.pca$prop_expl_var$X[2], 2)), "%", sep = "")) +
     theme_minimal(base_size = 14) +
     labs(colour = "[DNA Extract]\n(ng/uL) - log10", shape = "Time period") +
     theme(legend.title = element_text(size = 10))
@@ -858,8 +858,8 @@ malt_species_decontam_filtered_noblanks.pca.varmet %>%
     geom_point(size = 2.5) +
     scale_shape_manual(values = Time_period_shapes) +
     scale_color_viridis_c(option = "A") +
-    xlab(paste("PC3 - ", 100*(round(malt_species_decontam_filtered_noblanks.pca$explained_variance[3], 2)), "%", sep = "")) +
-    ylab(paste("PC2 - ", 100*(round(malt_species_decontam_filtered_noblanks.pca$explained_variance[2], 2)), "%", sep = "")) +
+    xlab(paste("PC3 - ", 100*(round(malt_species_decontam_filtered_noblanks.pca$prop_expl_var$X[3], 2)), "%", sep = "")) +
+    ylab(paste("PC2 - ", 100*(round(malt_species_decontam_filtered_noblanks.pca$prop_expl_var$X[2], 2)), "%", sep = "")) +
     theme_minimal(base_size = 14) +
     labs(colour = "Avg. GC content (%)", shape = "Time period") +
     theme(legend.title = element_text(size = 10))
@@ -870,8 +870,8 @@ malt_species_decontam_filtered_noblanks.pca.varmet %>%
     geom_point(size = 2.5) +
     scale_shape_manual(values = Time_period_shapes) +
     scale_color_viridis_c(option = "A") +
-    xlab(paste("PC3 - ", 100*(round(malt_species_decontam_filtered_noblanks.pca$explained_variance[3], 2)), "%", sep = "")) +
-    ylab(paste("PC2 - ", 100*(round(malt_species_decontam_filtered_noblanks.pca$explained_variance[2], 2)), "%", sep = "")) +
+    xlab(paste("PC3 - ", 100*(round(malt_species_decontam_filtered_noblanks.pca$prop_expl_var$X[3], 2)), "%", sep = "")) +
+    ylab(paste("PC2 - ", 100*(round(malt_species_decontam_filtered_noblanks.pca$prop_expl_var$X[2], 2)), "%", sep = "")) +
     theme_minimal(base_size = 14) +
     labs(colour = "Avg. read length (bp)", shape = "Time period") +
     theme(legend.title = element_text(size = 10))
@@ -882,8 +882,8 @@ malt_species_decontam_filtered_noblanks.pca.varmet %>%
     geom_point(size = 2.5) +
     scale_shape_manual(values = Time_period_shapes) +
     scale_color_viridis_c(option = "A") +
-    xlab(paste("PC3 - ", 100*(round(malt_species_decontam_filtered_noblanks.pca$explained_variance[3], 2)), "%", sep = "")) +
-    ylab(paste("PC2 - ", 100*(round(malt_species_decontam_filtered_noblanks.pca$explained_variance[2], 2)), "%", sep = "")) +
+    xlab(paste("PC3 - ", 100*(round(malt_species_decontam_filtered_noblanks.pca$prop_expl_var$X[3], 2)), "%", sep = "")) +
+    ylab(paste("PC2 - ", 100*(round(malt_species_decontam_filtered_noblanks.pca$prop_expl_var$X[2], 2)), "%", sep = "")) +
     theme_minimal(base_size = 14) +
     labs(colour = "Avg. mapped GC content (%)", shape = "Time period") +
     theme(legend.title = element_text(size = 10))
@@ -894,8 +894,8 @@ malt_species_decontam_filtered_noblanks.pca.varmet %>%
     geom_point(size = 2.5) +
     scale_shape_manual(values = Time_period_shapes) +
     scale_color_viridis_c(option = "A") +
-    xlab(paste("PC3 - ", 100*(round(malt_species_decontam_filtered_noblanks.pca$explained_variance[3], 2)), "%", sep = "")) +
-    ylab(paste("PC2 - ", 100*(round(malt_species_decontam_filtered_noblanks.pca$explained_variance[2], 2)), "%", sep = "")) +
+    xlab(paste("PC3 - ", 100*(round(malt_species_decontam_filtered_noblanks.pca$prop_expl_var$X[3], 2)), "%", sep = "")) +
+    ylab(paste("PC2 - ", 100*(round(malt_species_decontam_filtered_noblanks.pca$prop_expl_var$X[2], 2)), "%", sep = "")) +
     theme_minimal(base_size = 14) +
     labs(colour = "Avg. mapped read length (bp)", shape = "Time period") +
     theme(legend.title = element_text(size = 10))

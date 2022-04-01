@@ -67,7 +67,7 @@ mpa3_contaminants <- fread("./05-results.backup/contaminant_species_mid_mpa3.tsv
   bind_rows(., fread("./05-results.backup/contaminant_species_iberia_mpa3.tsv", sep = "\t")) %>%
   unique()
 
-# remove contaminant species from nt table
+# remove contaminant species from table
 mpa3_species_decontam <- mpa3_sp %>%
   anti_join(., mpa3_contaminants)
 

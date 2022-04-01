@@ -488,8 +488,8 @@ sub75bp_species_decontam_unfilt <- sub75bp_species_decontam %>%
 tune.pca(sub75bp_species_decontam_unfilt, logratio = 'CLR')
 
 # perform and plot a PCA to see how the data cluster
-plot_pca(sub75bp_species_decontam_unfilt, "PC1", "PC2", "Site", "Time_period", 3)
-plot_pca(sub75bp_species_decontam_unfilt, "PC3", "PC2", "Site", "Time_period", 3)
+plot_pca(sub75bp_species_decontam_unfilt, "PC1", "PC2", "Site_code", "Time_period", 3)
+plot_pca(sub75bp_species_decontam_unfilt, "PC3", "PC2", "Site_code", "Time_period", 3)
 
 # decontaminated and filtered
 sub75bp_species_decontam_filtered <- sub75bp_species_decontam %>%
@@ -509,9 +509,9 @@ sub75bp_species_decontam_filtered <- sub75bp_species_decontam %>%
 tune.pca(sub75bp_species_decontam_filtered, logratio = 'CLR')
 
 # perform and plot a PCA to see how the data cluster
-plot_pca(sub75bp_species_decontam_filtered, "PC1", "PC2", "Site", "Time_period", 3)
+plot_pca(sub75bp_species_decontam_filtered, "PC1", "PC2", "Site_code", "Time_period", 3)
 
-plot_pca(sub75bp_species_decontam_filtered, "PC3", "PC2", "Site", "Time_period", 3)
+plot_pca(sub75bp_species_decontam_filtered, "PC3", "PC2", "Site_code", "Time_period", 3)
 
 
 # ggsave("./06-publication/supplemental_figures/SXX28/SXX28_all_samples_sp_pca12.pdf", plot = all_samples_sp_pca12, device = "pdf",
@@ -566,7 +566,7 @@ sub75bp_species_decontam_noblanks <- sub75bp_species_decontam %>%
 plot_pca(sub75bp_species_decontam_noblanks, "PC1", "PC2", "Region", "Time_period", 3)
 plot_pca(sub75bp_species_decontam_noblanks, "PC3", "PC2", "Region", "Time_period", 3)
 
-plot_pca(sub75bp_species_decontam_noblanks, "PC1", "PC2", "Site", "Time_period", 3)
+plot_pca(sub75bp_species_decontam_noblanks, "PC1", "PC2", "Site_code", "Time_period", 3)
 plot_pca(sub75bp_species_decontam_noblanks, "PC1", "PC2", "Time_period", "Time_period", 3)
 plot_pca(sub75bp_species_decontam_noblanks, "PC1", "PC2", "Sex", "Time_period", 3)
 plot_pca(sub75bp_species_decontam_noblanks, "PC1", "PC2", "Periodontal_disease_present", "Time_period", 3)
@@ -600,11 +600,11 @@ tune.pca(sub75bp_species_decontam_filtered_noblanks, logratio = 'CLR')
 
 # perform and plot a PCA to see how the data cluster
 # by Site
-plot_pca(sub75bp_species_decontam_filtered_noblanks, "PC1", "PC2", "Site", "Time_period", 3)
+plot_pca(sub75bp_species_decontam_filtered_noblanks, "PC1", "PC2", "Site_code", "Time_period", 3)
 
-plot_pca(sub75bp_species_decontam_filtered_noblanks, "PC1", "PC3", "Site", "Time_period", 3)
-plot_pca(sub75bp_species_decontam_filtered_noblanks, "PC2", "PC3", "Site", "Time_period", 3)
-plot_pca(sub75bp_species_decontam_filtered_noblanks, "PC3", "PC2", "Site", "Time_period", 3)
+plot_pca(sub75bp_species_decontam_filtered_noblanks, "PC1", "PC3", "Site_code", "Time_period", 3)
+plot_pca(sub75bp_species_decontam_filtered_noblanks, "PC2", "PC3", "Site_code", "Time_period", 3)
+plot_pca(sub75bp_species_decontam_filtered_noblanks, "PC3", "PC2", "Site_code", "Time_period", 3)
 
 
 # ggsave("~/Desktop/MID_pca_all_pc12.pdf", plot = mid_all_pc12, device = "pdf",
@@ -760,7 +760,7 @@ malt_species_decontam_filtered_noblanks.pca.varmet %>%
 ```{r}
 
 # by Site
-plot_pca(sub75bp_species_decontam_filtered_noblanks, "PC3", "PC2", "Site", "Time_period", 3)
+plot_pca(sub75bp_species_decontam_filtered_noblanks, "PC3", "PC2", "Site_code", "Time_period", 3)
 # by Region
 plot_pca(sub75bp_species_decontam_filtered_noblanks, "PC3", "PC2", "Region", "Time_period", 3)
 

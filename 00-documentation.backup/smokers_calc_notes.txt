@@ -388,26 +388,32 @@ nextflow run nf-core/eager \
 # For the sequencing depth and read length normalization:
 
 # To subsample to same depth use seqtk
-/projects1/microbiome_calculus/smoking_calculus/03-preprocessing/kilteasheen/eager2/samtools/filter/*.gz
-/projects1/microbiome_calculus/smoking_calculus/03-preprocessing/radcliffe_pfuT/eager2/samtools/filter/*.gz
-/projects1/microbiome_calculus/smoking_calculus/03-preprocessing/eager2/eager2_run/samtools/filter/*.gz
-/projects1/microbiome_calculus/iberian/03-preprocessing/screening/eager2/samtools/filter/JAE*.gz
-/projects1/microbiome_calculus/iberian/03-preprocessing/screening/eager2/samtools/filter/ELR*.gz
-/projects1/microbiome_calculus/iberian/03-preprocessing/screening/eager2/samtools/filter/IVE*.gz
-/projects1/microbiome_calculus/iberian/03-preprocessing/screening/eager2/samtools/filter/EXB*.gz
-/projects1/microbiome_calculus/iberian/03-preprocessing/screening/eager2/samtools/filter/LIB*.gz
+/mnt/archgen/microbiome_calculus/smoking_calculus/03-preprocessing/kilteasheen/eager2/samtools/filter/*.gz
+/mnt/archgen/microbiome_calculus/smoking_calculus/03-preprocessing/radcliffe_pfuT/eager2/samtools/filter/*.gz
+/mnt/archgen/microbiome_calculus/smoking_calculus/03-preprocessing/eager2/eager2_run/samtools/filter/*.gz
+/mnt/archgen/microbiome_calculus/iberian/03-preprocessing/screening/eager2/samtools/filter/JAE*.gz
+/mnt/archgen/microbiome_calculus/iberian/03-preprocessing/screening/eager2/samtools/filter/ELR*.gz
+/mnt/archgen/microbiome_calculus/iberian/03-preprocessing/screening/eager2/samtools/filter/IVE*.gz
+/mnt/archgen/microbiome_calculus/iberian/03-preprocessing/screening/eager2/samtools/filter/EXB*.gz
+/mnt/archgen/microbiome_calculus/iberian/03-preprocessing/screening/eager2/samtools/filter/LIB*.gz
 
-for f in /projects1/microbiome_calculus/smoking_calculus/03-preprocessing/checks_input/*.gz
+for f in /mnt/archgen/microbiome_calculus/smoking_calculus/03-preprocessing/checks_input/*.gz
 do
-seqtk sample -s10000 $f 10000000 > /projects1/microbiome_calculus/smoking_calculus/03-preprocessing/checks_input/sub10M/$(basename $f .gz).10M.gz
+seqtk sample -s10000 $f 10000000 > /mnt/archgen/microbiome_calculus/smoking_calculus/03-preprocessing/checks_input/sub10M/$(basename $f .fastq.gz).10M.fastq.gz
+done
+
+for f in /projects1/microbiome_calculus/iberian/03-preprocessing/screening/eager2/samtools/filter/VLC*.gz
+do
+seqtk sample -s10000 $f 10000000 > /mnt/archgen/microbiome_calculus/smoking_calculus/03-preprocessing/depth_check/sub10M/$(basename $f .fastq.gz).10M.fastq.gz
 done
 
 
 # To subsample to have only reads with length <76bp use bioawk
-for f in /projects1/microbiome_calculus/smoking_calculus/03-preprocessing/read_len_check/full_files/*.gz
+for f in /mnt/archgen/microbiome_calculus/smoking_calculus/03-preprocessing/read_len_check/full_files/*.gz
 do
 bioawk -c fastx '{if (length($seq) < 76){print "@"$name" "$comment"\n"$seq"\n+\n"$qual}}' $f > $(basename $f .gz).75bp.gz
 done
+
 
 ################################################################
 
@@ -516,6 +522,17 @@ snakemake -s ../../../../02-scripts.backup/gc_rl_calc_sub10M_mapped.Snakefile --
 snakemake -s ../../../../02-scripts.backup/gc_rl_calc_sub75bp_mapped.Snakefile --cluster 'sbatch --mem 8G -p short -n {threads}' -j 8 -k --restart-times 3 -n
 
 
+# get the average GC content and average RL of the VLC sub10M/sub75bp samples
+# use FASTQC
+snakemake -s ../../../../02-scripts.backup/sub10M_fastqc_gc_rl_calc.Snakefile --cluster-config /mnt/archgen/microbiome_calculus/abpCapture/02-scripts.backup/snakemake_default.config --cluster "qsub -pe smp 16 -l virtual_free={cluster.mem},h_vmem={cluster.mem} -o {cluster.out} -e {cluster.err}" -j 10 --latency-wait 20 -n
+snakemake -s ../../../../02-scripts.backup/sub75bp_fastqc_gc_rl_calc.Snakefile --cluster-config /mnt/archgen/microbiome_calculus/abpCapture/02-scripts.backup/snakemake_default.config --cluster "qsub -pe smp 16 -l virtual_free={cluster.mem},h_vmem={cluster.mem} -o {cluster.out} -e {cluster.err}" -j 10 --latency-wait 20 -n
+
+# then run multiqc in the fastqc folder to get avg RL and GC content of each sample
+# run here: /mnt/archgen/mnt/archgen/microbiome_calculus/smoking_calculus/03-preprocessing/depth_check/sub10M/FastQC 
+# and here: /mnt/archgen/mnt/archgen/microbiome_calculus/smoking_calculus/03-preprocessing/read_len_check/sub75bp/FastQC 
+multiqc .
+
+
 ################################################################
 
 # HHV4/5 investigation
@@ -614,14 +631,22 @@ done
 ################################################################
 MetaPhlAn3 on MID and CMB
 
+# activate the conda environment to start
+conda activate mpa3
+
 # here: /projects1/microbiome_calculus/smoking_calculus/04-analysis/metaphlan3
 # snakemake -s ../../02-scripts.backup/009-metaphlan3_mid.Snakefile --cluster 'sbatch --mem 4G -p short -n {threads}' -j 4 -k --restart-times 3 -n
 snakemake -s ../../02-scripts.backup/009-metaphlan3_mid.Snakefile --cluster-config /mnt/archgen/microbiome_calculus/abpCapture/02-scripts.backup/snakemake_default.config --cluster "qsub -pe smp 4 -l virtual_free={cluster.mem},h_vmem={cluster.mem} -o {cluster.out} -e {cluster.err}" -j 6 --latency-wait 20 -n
 
-# merge the tables
-conda activate mpa3
-merge_metaphlan_tables.py *.metaphlan3.tsv > ../../05-results.backup/mpa3_abundance_table.tsv
+# for the sub10M and sub75bp samples
+snakemake -s ../../02-scripts.backup/009-metaphlan3_mid_sub10M.Snakefile --cluster-config /mnt/archgen/microbiome_calculus/abpCapture/02-scripts.backup/snakemake_default.config --cluster "qsub -pe smp 4 -l virtual_free={cluster.mem},h_vmem={cluster.mem} -o {cluster.out} -e {cluster.err}" -j 10 --latency-wait 20 -n
+snakemake -s ../../02-scripts.backup/009-metaphlan3_mid_sub75bp.Snakefile --cluster-config /mnt/archgen/microbiome_calculus/abpCapture/02-scripts.backup/snakemake_default.config --cluster "qsub -pe smp 4 -l virtual_free={cluster.mem},h_vmem={cluster.mem} -o {cluster.out} -e {cluster.err}" -j 10 --latency-wait 20 -n
 
+
+# merge the tables (make sure conda environment is activated)
+merge_metaphlan_tables.py full_files/*.metaphlan3.tsv > ../../05-results.backup/mpa3_abundance_table.tsv
+merge_metaphlan_tables.py sub10M/*.metaphlan3.tsv > ../../05-results.backup/mpa3_abundance_table_sub10M.tsv
+merge_metaphlan_tables.py sub75bp/*.metaphlan3.tsv > ../../05-results.backup/mpa3_abundance_table_sub75bp.tsv
 
 ################################################################
 

@@ -570,14 +570,15 @@ mpa3_species_decontam_filtered.alpha_meta <- mpa3_species_decontam_filtered.alph
   drop_na(Observed_species) %>%
   filter(!str_detect(Library_ID, "ARS"))
 
+fwrite(mpa3_species_decontam_filtered.alpha, "~/archgen/microbiome_calculus/smoking_calculus/05-results.backup/mpa3_alpha_div_numbers.tsv", sep = "\t", quote = F)
+
 ```
 
 
 ```{r kruskal_test}
 # define the metadata categories to test for significnat differences in diversity
 Envmt <- colnames(mpa3_species_decontam_filtered.alpha_meta %>%
-                    select(Site_code, Region, Time_period, 
-                      Periodontal_disease_present, Caries_present, Sex, Age))
+                    select(Site_code, Time_period))
 
 # test for significant differences in diversity between the metadata categories
 species_kruskal_pvals <- lapply(Envmt, function(envmt) {
@@ -674,7 +675,8 @@ IC_species_p_es <- species_wilcox_pvals %>%
   select(Index, Category, everything()) %>%
   arrange(p.adj)
   
-IC_species_p_es
+IC_species_p_es %>%
+  arrange(Index, Category, p.adj)
 
 # fwrite(IC_species_p_es, "./06-publication/supplemental_tables/alphadiv_wilcox_mpa3_sp.tsv", sep = "\t", quote = F)
 # fwrite(IC_species_p_es, "~/Desktop/mid_alpha_stats.tsv", sep = "\t", quote = F)
