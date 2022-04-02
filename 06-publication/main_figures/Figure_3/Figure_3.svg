@@ -8,8 +8,8 @@
    version="1.1"
    id="svg2251"
    inkscape:version="1.1 (c4e8f9e, 2021-05-24)"
-   sodipodi:docname="Figure_XX4.svg"
-   inkscape:export-filename="/Users/velsko/Dropbox (Personal)/MPI-SHH/git-projects/smoking_calculus/06-publication/main_figures/Figure_XX4/Figure_XX4.png"
+   sodipodi:docname="Figure_3.svg"
+   inkscape:export-filename="/Users/velsko/Dropbox (Personal)/MPI-SHH/git-projects/smoking_calculus/06-publication/main_figures/Figure_3/Figure_3.png"
    inkscape:export-xdpi="300"
    inkscape:export-ydpi="300"
    xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
@@ -26,9 +26,9 @@
      inkscape:pagecheckerboard="0"
      inkscape:document-units="mm"
      showgrid="false"
-     inkscape:zoom="0.79307804"
-     inkscape:cx="481.03715"
-     inkscape:cy="478.51533"
+     inkscape:zoom="1.4741921"
+     inkscape:cx="306.26944"
+     inkscape:cy="128.54498"
      inkscape:window-width="1920"
      inkscape:window-height="1035"
      inkscape:window-x="0"
@@ -2340,5 +2340,20 @@
        style="fill:none;stroke:#000000;stroke-width:0.264583px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
        d="m 57.62999,12.389252 h 24.2213"
        id="path27454" />
+    <text
+       xml:space="preserve"
+       style="font-style:italic;font-size:7.98956px;line-height:1.5;font-family:'Helvetica Neue';-inkscape-font-specification:'Helvetica Neue Italic';stroke-width:0.199739"
+       x="33.749561"
+       y="22.547716"
+       id="text1572"><tspan
+         sodipodi:role="line"
+         id="tspan1570"
+         style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-family:'Helvetica Neue';-inkscape-font-specification:'Helvetica Neue';stroke-width:0.199739"
+         x="33.749561"
+         y="22.547716">**</tspan></text>
+    <path
+       style="fill:none;stroke:#000000;stroke-width:0.264583px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
+       d="m 33.288308,16.093421 h 24.2213"
+       id="path1574" />
   </g>
 </svg>

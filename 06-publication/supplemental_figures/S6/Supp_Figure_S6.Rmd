@@ -183,8 +183,7 @@ mpa3_species_decontam_filtered.alpha_meta <- mpa3_species_decontam_filtered.alph
 ```{r kruskal_test}
 # define the metadata categories to test for significnat differences in diversity
 Envmt <- colnames(mpa3_species_decontam_filtered.alpha_meta %>%
-                    select(Site_code, Region, Time_period, 
-                      Periodontal_disease_present, Caries_present, Sex, Age))
+                    select(Site_code, Time_period))
 
 # test for significant differences in diversity between the metadata categories
 species_kruskal_pvals <- lapply(Envmt, function(envmt) {
@@ -207,7 +206,7 @@ pvalues_envmt <- mpa3_species_decontam_filtered.alpha_meta %>%
   bind_rows(.) %>%
   as_tibble() %>%
   arrange(p)
-species_kruskal_pvals
+species_kruskal_pvals 
 
 # fwrite(species_kruskal_pvals, "./06-publication/supplemental_tables/alphadiv_kruskal_wallace_mpa3_sp.tsv", sep = "\t", quote = F)
 
@@ -245,8 +244,8 @@ pvalues_envmt <- mpa3_species_decontam_filtered.alpha_meta %>%
   select(Index, Category, everything()) %>%
   arrange(p.adj)
 
-species_wilcox_pvals
-
+species_wilcox_pvals %>%
+  arrange(Index, Category, group1, group2, p.adj)
 
 ```
 
@@ -297,7 +296,7 @@ IC_species_p_es %>%
 Observed species, by Site
 ```{r raincloud_plots_os_site}
 obssp <- mpa3_species_decontam_filtered.alpha_meta %>%
-  mutate(Site_code = fct_relevel(Site_code, "MID","CMB","RAD","KIL","ELR","IVE","JAE","VLC")) %>%
+  mutate(Site_code = fct_relevel(Site_code, "IVE","ELR","KIL","RAD","CMB","MID","VLC","JAE")) %>%
 ggplot(., aes(x = Site_code, y = Observed_species, fill = Site_code)) + 
   ## add half-violin from {ggdist} package
   ggdist::stat_halfeye(
@@ -343,7 +342,7 @@ obssp
 Shannon index, by Site
 ```{r raincloud_plots_sh_site}
 shannon <- mpa3_species_decontam_filtered.alpha_meta %>%
-  mutate(Site_code = fct_relevel(Site_code, "MID","CMB","RAD","KIL","ELR","IVE","JAE","VLC")) %>%
+  mutate(Site_code = fct_relevel(Site_code, "IVE","ELR","KIL","RAD","CMB","MID","VLC","JAE")) %>%
 ggplot(., aes(x = Site_code, y = Shannon_index, fill = Site_code)) + 
   ## add half-violin from {ggdist} package
   ggdist::stat_halfeye(
@@ -392,10 +391,10 @@ raincloud_alpha <- plot_grid(obssp, shannon,
           nrow=1, labels = c("A", "B"), rel_widths = c(1, 1), scale = 0.9)
 
 
-ggsave("./06-publication/supplemental_figures/SXX4/raincloud_alpha_sites.pdf", plot = raincloud_alpha,
-       device = "pdf", scale = 1, width = 12, height = 5, units = c("in"), dpi = 300)
-ggsave("./06-publication/supplemental_figures/SXX4/raincloud_alpha_sites.png", plot = raincloud_alpha,
-       device = "png", scale = 1, width = 12, height = 5, units = c("in"), dpi = 300)
+# ggsave("./06-publication/supplemental_figures/S6/raincloud_alpha_sites.pdf", plot = raincloud_alpha,
+#        device = "pdf", scale = 1, width = 12, height = 5, units = c("in"), dpi = 300)
+# ggsave("./06-publication/supplemental_figures/S6/raincloud_alpha_sites.png", plot = raincloud_alpha,
+#        device = "png", scale = 1, width = 12, height = 5, units = c("in"), dpi = 300)
 
 ```
 

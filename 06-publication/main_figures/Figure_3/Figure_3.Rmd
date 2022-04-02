@@ -183,8 +183,7 @@ mpa3_species_decontam_filtered.alpha_meta <- mpa3_species_decontam_filtered.alph
 ```{r kruskal_test}
 # define the metadata categories to test for significnat differences in diversity
 Envmt <- colnames(mpa3_species_decontam_filtered.alpha_meta %>%
-                    select(Site_code, Region, Time_period, 
-                      Periodontal_disease_present, Caries_present, Sex, Age))
+                    select(Site_code, Time_period))
 
 # test for significant differences in diversity between the metadata categories
 species_kruskal_pvals <- lapply(Envmt, function(envmt) {
@@ -245,7 +244,8 @@ pvalues_envmt <- mpa3_species_decontam_filtered.alpha_meta %>%
   select(Index, Category, everything()) %>%
   arrange(p.adj)
 
-species_wilcox_pvals
+species_wilcox_pvals %>%
+  arrange(Index, Category, group1, group2, p.adj)
 
 
 ```
@@ -281,7 +281,8 @@ IC_species_p_es <- species_wilcox_pvals %>%
   select(Index, Category, everything()) %>%
   arrange(p.adj)
   
-IC_species_p_es
+IC_species_p_es %>%
+  arrange(Index, Category, group1, group2, p.adj)
 
 # fwrite(IC_species_p_es, "./06-publication/supplemental_tables/alphadiv_wilcox_mpa3_sp.tsv", sep = "\t", quote = F)
 # fwrite(IC_species_p_es, "~/Desktop/mid_alpha_stats.tsv", sep = "\t", quote = F)
@@ -389,10 +390,10 @@ raincloud_alpha <- plot_grid(obssp, shannon,
           nrow=1, labels = c("A", "B"), rel_widths = c(1, 1), scale = 0.9)
 
 
-ggsave("./06-publication/main_figures/Figure_3/raincloud_alpha.pdf", plot = raincloud_alpha,
-       device = "pdf", scale = 1, width = 10, height = 5, units = c("in"), dpi = 300)
-ggsave("./06-publication/main_figures/Figure_3/raincloud_alpha.png", plot = raincloud_alpha,
-       device = "png", scale = 1, width = 10, height = 5, units = c("in"), dpi = 300)
+# ggsave("./06-publication/main_figures/Figure_3/raincloud_alpha.pdf", plot = raincloud_alpha,
+#        device = "pdf", scale = 1, width = 10, height = 5, units = c("in"), dpi = 300)
+# ggsave("./06-publication/main_figures/Figure_3/raincloud_alpha.png", plot = raincloud_alpha,
+#        device = "png", scale = 1, width = 10, height = 5, units = c("in"), dpi = 300)
 
 ```
 
