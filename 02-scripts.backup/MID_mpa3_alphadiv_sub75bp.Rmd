@@ -1,0 +1,916 @@
+---
+title: "MID/CMB, Radcliffe, Kilteasheen, Iberian medieval calculus MALT alpha diversity"
+author: "Irina Velsko"
+date: "`r format(Sys.time(), '%b %d, %Y')`"
+output:
+    github_document:
+        fig_width: 8
+        fig_height: 6
+        toc: true
+---
+
+```{r load_libraries, echo = F, message = F}
+library(knitr)
+library(data.table)
+library(mixOmics)
+library(rstatix)
+library(vegan)
+library(compositions)
+library(janitor)
+library(ggheatmap)
+library(tidyverse)
+library(gplots)
+library(patchwork)
+opts_chunk$set(echo=F, warning=F, message=F, dpi=150)
+```
+
+Set the working directory of the notebook to the parent directory of the 
+notebook itself.  
+
+```{r setup}
+knitr::opts_knit$set(root.dir = normalizePath(".."))
+```
+
+```{r load_data}
+# load the metadata file
+load("./05-results.backup/Metadata_tables.RData")
+
+# read in the species table
+mpa3_sp_raw <- fread("./05-results.backup/mpa3_abundance_table.tsv") %>%
+  select(-NCBI_tax_id)
+
+mpa3_sp_blanks <- mpa3_sp_raw %>%
+  select(matches("clade_name|EXB|LIB|CSS|CSD|CSN|CSL"))
+
+# clean the file names
+colnames(mpa3_sp_blanks) <- gsub(".metaphlan3","", colnames(mpa3_sp_blanks))
+colnames(mpa3_sp_blanks) <- gsub(".SG1","", colnames(mpa3_sp_blanks))
+
+# filter to have only species
+mpa3_sp_blanks <- mpa3_sp_blanks %>% 
+  filter(str_detect(clade_name, "s__")) %>%
+  separate(clade_name, into = c("K","P","C","O","F","G","Species"), sep = "\\|") %>%
+  select(-c("K","P","C","O","F","G")) %>%
+  mutate(Species = str_replace_all(Species, "s__",""),
+         Species = str_replace_all(Species, "_"," ")) %>%
+  arrange(Species)
+
+```
+
+```{r load_sub75bp_data}
+# read in the sub75bp species table
+mpa3_sub75bp_raw <- fread("./05-results.backup/mpa3_abundance_table_sub75bp.tsv") %>%
+  select(-NCBI_tax_id)
+
+# clean the file names
+colnames(mpa3_sub75bp_raw) <- gsub(".sub75bp.metaphlan3","", colnames(mpa3_sub75bp_raw))
+colnames(mpa3_sub75bp_raw) <- gsub(".SG1","", colnames(mpa3_sub75bp_raw))
+
+# filter to have only species
+mpa3_sub75bp_sp <- mpa3_sub75bp_raw %>% 
+  filter(str_detect(clade_name, "s__")) %>%
+  separate(clade_name, into = c("K","P","C","O","F","G","Species"), sep = "\\|") %>%
+  select(-c("K","P","C","O","F","G")) %>%
+  mutate(Species = str_replace_all(Species, "s__",""),
+         Species = str_replace_all(Species, "_"," ")) %>%
+  # these samples have no metadata
+  select(-c("MID025.A0101","MID033.A0101","MID052.A0101","MID056.A0101","MID065.A0101","MID068.A0101","MID076.A0101","MID078.A0101")) %>%
+  arrange(Species)
+
+# and combine with the blanks table
+mpa3_sub75bp_sp <- mpa3_sub75bp_sp %>%
+  full_join(., mpa3_sp_blanks, by = "Species") %>%
+  pivot_longer(!Species, names_to = "Library_ID", values_to = "relab", values_drop_na = T) %>%
+  pivot_wider(names_from = "Library_ID", values_from = "relab", values_fill = 0)
+
+
+```
+
+
+```{r}
+# load the metadata file again without factors for stats
+metadata_nofactors <- fread("./00-documentation.backup/radcliffe_pfuT_metadata.tsv") %>%
+  bind_rows(., fread("./00-documentation.backup/iberian_medieval_metadata.tsv")) %>%
+  bind_rows(., fread("./00-documentation.backup/kilteasheen_metadata.tsv")) %>%
+  bind_rows(., fread("./00-documentation.backup/mod_metadata.tsv")) %>%
+  full_join(., fread("./00-documentation.backup/MID_analysis_metadata.tsv"))
+
+```
+
+
+Now decontam the tables
+```{r}
+mpa3_contaminants <- fread("./05-results.backup/contaminant_species_radcliffe_mpa3_sub75bp.tsv", sep = "\t") %>%
+  bind_rows(., fread("./05-results.backup/contaminant_species_kilteasheen_mpa3_sub75bp.tsv", sep = "\t")) %>%
+  bind_rows(., fread("./05-results.backup/contaminant_species_iberia_mpa3_sub75bp.tsv", sep = "\t")) %>%
+  unique()
+
+# remove contaminant species from nt table
+mpa3_sub75bp_species_decontam <- mpa3_sub75bp_sp %>%
+  anti_join(., mpa3_contaminants)
+
+```
+
+List the outliers from the plot in `MID_CMB_Rad_Kil_Iber_decontam.Rmd`. 
+```{r outliers}
+outliers_mpa3 <- c("EXB059.A2101","EXB059.A2501","EXB015.A3301","EXB034.A2701","EXB059.A2201","EXB059.A2301","EXB059.A2401","LIB058.A0103","LIB058.A0106","LIB058.A0104")
+poor_samples_mpa3 <- fread("./05-results.backup/cuperdec_mpa3_sub75bp_poor_samples.tsv") %>%
+  pull(Sample)
+
+outliersF <- str_c(outliers_mpa3, collapse = "|")
+
+```
+
+```{r rem_poor_renorm}
+mpa3_sub75bp_species_decontam <- mpa3_sub75bp_species_decontam %>%
+  select(-one_of(outliers_mpa3)) %>%
+  select(-one_of(poor_samples_mpa3))%>%
+  adorn_percentages(denominator = "col") %>%
+  pivot_longer(!Species, names_to = "Library_ID", values_to = "Percent") %>%
+  mutate(Percent = Percent * 100) %>%
+  pivot_wider(names_from = "Library_ID", values_from = "Percent")
+
+```
+
+
+```{r box_plotting_functions}
+
+plot_box_whisker <- function(df, stat_info, metadata_group, fill_group) {
+    fill_group_colors <- get(paste(fill_group, "_colors", sep = ""))
+
+      df_X <- df %>%
+              inner_join(full_metadata %>%
+                           select(Library_ID, Site_code, Region, Time_period, Sample_or_Control, Periodontal_disease_present, Caries_present, Sex, Age), by = "Library_ID")
+
+    stat_info_table = df_X[[stat_info]]
+    metadata_group = df_X[[metadata_group]]
+    fill_group = df_X[[fill_group]]
+
+    bx_wh_plot <- ggplot(df_X, aes(x = metadata_group, y = stat_info_table, fill = fill_group)) +
+                         geom_boxplot(color = "grey30") +
+                         scale_fill_manual(values = fill_group_colors) +
+                         theme_minimal(base_size = 18) +
+                         #scale_y_continuous(trans='log10') +
+                         #scale_y_continuous(trans='pseudo_log') +
+                         theme(axis.text.x = element_text(angle = 45, hjust = 1),
+                               text = element_text(size=20)) +
+                         ylab(stat_info) +
+                         xlab(metadata_group)
+
+    return(bx_wh_plot)
+}
+
+```
+
+```{r box_plotting_functions_mid, eval = F}
+
+plot_box_whisker_mid <- function(df, stat_info, metadata_group, fill_group) {
+    fill_group_colors <- get(paste(fill_group, "_colors", sep = ""))
+
+      df_X <- df %>%
+              inner_join(full_metadata %>%
+                           filter(str_detect(Library_ID, "MID")), by = "Library_ID")
+
+    stat_info_table = df_X[[stat_info]]
+    metadata_group = df_X[[metadata_group]]
+    fill_group = df_X[[fill_group]]
+
+    bx_wh_plot <- ggplot(df_X, aes(x = metadata_group, y = stat_info_table, fill = fill_group)) +
+                         geom_boxplot(color = "grey30") +
+                         scale_fill_manual(values = fill_group_colors) +
+                         theme_minimal(base_size = 18) +
+                         #scale_y_continuous(trans='log10') +
+                         #scale_y_continuous(trans='pseudo_log') +
+                         theme(axis.text.x = element_text(angle = 45, hjust = 1),
+                               text = element_text(size=20)) +
+                         ylab(stat_info) +
+                         xlab(metadata_group)
+
+    return(bx_wh_plot)
+}
+
+```
+
+List the outliers 
+```{r outliers}
+outliers <- c("EXB059.A2501","LIB058.A0103","LIB058.A0106","CSS","CSD")
+poor_samples <- fread("./05-results.backup/cuperdec_poor_samples.tsv") %>%
+  pull(Sample)
+
+outliersF <- str_c(outliers, collapse = "|")
+
+```
+
+
+# Alpha-diversity of all samples
+First we want to know if there are differences in the total diveristy of
+identified species between various metadata categories. We'll look at
+alpha-diversity for this, using both the observed species and Shannon diverity
+metrics. Observed species to tell us which metadata categories have more
+species/genera, and Shannon to tell us which has more even distribution of
+species/genera.
+
+## Observed Speceies
+```{r observed_species}
+# make Relab binary to make a presence/absence table
+presabs_table <- mpa3_sub75bp_species_decontam %>%
+  select(-matches("EXB|LIB|CSN|CSL|CSS|CSD")) %>%
+  gather("Library_ID","Counts",2:ncol(.)) %>%
+  spread(Species,Counts) %>%
+  gather("Species","Counts",2:ncol(.)) %>%
+  mutate(Counts = ifelse(Counts > 0, 1, 0)) %>%
+  spread(Species, Counts) %>%
+  column_to_rownames("Library_ID")
+
+# calculate observed species for each sample with janitor 'adorn_totals'
+mpa3_sub75bp_species_decontam.os <- presabs_table %>%
+  adorn_totals(., where = "col", name = "Observed_species") %>%
+  select(Observed_species) %>%
+  rownames_to_column("Library_ID") %>%
+  filter(!str_detect(Library_ID, "EXB|LIB")) 
+
+plot_box_whisker(mpa3_sub75bp_species_decontam.os, "Observed_species", "Site_code", "Site_code")
+plot_box_whisker(mpa3_sub75bp_species_decontam.os, "Observed_species", "Region", "Region")
+
+# os_plot <-mpa3_sub75bp_species_decontam.os %>%
+#   inner_join(full_metadata %>%
+#                select(Library_ID, Site_code, Region, Time_period, Sample_or_Control, 
+#                       Periodontal_disease_present, Caries_present, Sex, Age), by = "Library_ID") %>%
+# # remove blanks
+# filter(!str_detect(Library_ID, "EXB|LIB")) %>%
+#   ggplot(., aes(x = Site_code, y = Observed_species, fill = Site_code)) +
+#                          geom_boxplot() +
+#                          scale_fill_manual(values = Site_code_colors) +
+#                          theme_minimal(base_size = 18) +
+#                          #scale_y_continuous(trans='log10') +
+#                          #scale_y_continuous(trans='pseudo_log') +
+#                          theme(axis.text.x = element_text(angle = 45, hjust = 1),
+#                               text = element_text(size=18)) +
+#                          ylab("Number of Species") +
+#                          xlab("")
+# os_plot
+
+os_plot <- mpa3_sub75bp_species_decontam.os %>%
+  inner_join(., full_metadata, by = "Library_ID") %>%
+  # filter(!str_detect(Library_ID, "JAE|CMB")) %>%
+  ggplot(., aes(x = Site_code, y = Observed_species, fill = Site_code)) +
+  geom_boxplot(color = "grey30") +
+  geom_point(alpha = 0.5, color = "grey30", position = position_jitterdodge()) +
+  scale_fill_manual(values = Site_code_colors) +
+  theme_minimal(base_size = 18) +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1),
+        text = element_text(size=20)) +
+  ylab("Observed species") +
+  xlab("Site")
+os_plot
+
+
+# ggsave("~/Desktop/MID_os_plot_site.pdf", plot = os_plot, device = "pdf",
+#        scale = 1, width = 9, height = 5, units = c("in"), dpi = 300)
+
+# now on filtered tables
+presabs_table_f <- mpa3_sub75bp_species_decontam %>%
+  select(-matches("EXB|LIB|CSN|CSL|CSD|CSS")) %>%
+  adorn_totals(where = "col", name = "Sum_species.decontam") %>%
+  mutate(Percent = Sum_species.decontam/sum(Sum_species.decontam)*100) %>%
+  filter(Percent > 0.001) %>%
+  select(-one_of(c("Sum_species.decontam","Percent"))) %>%
+  gather("Library_ID","Counts",2:ncol(.)) %>%
+  spread(Species,Counts) %>%
+  gather("Species","Counts",2:ncol(.)) %>%
+  mutate(Counts = ifelse(Counts > 0, 1, 0)) %>%
+  spread(Species, Counts) %>%
+  column_to_rownames("Library_ID")
+  
+# calculate observed species for each sample with janitor 'adorn_totals'
+mpa3_sub75bp_species_decontam_filtered.os <- presabs_table_f %>%
+  adorn_totals(., where = "col", name = "Observed_species") %>%
+  select(Observed_species) %>%
+  rownames_to_column("Library_ID")  
+
+plot_box_whisker(mpa3_sub75bp_species_decontam_filtered.os, "Observed_species", "Site_code", "Site_code")
+plot_box_whisker(mpa3_sub75bp_species_decontam_filtered.os, "Observed_species", "Time_period", "Region")
+plot_box_whisker(mpa3_sub75bp_species_decontam_filtered.os, "Observed_species", "Region", "Time_period")
+plot_box_whisker(mpa3_sub75bp_species_decontam_filtered.os, "Observed_species", "Time_period", "Time_period")
+
+
+filtered_os <- mpa3_sub75bp_species_decontam_filtered.os %>%
+  inner_join(., full_metadata, by = "Library_ID") %>%
+  ggplot(., aes(x = Site_code, y = Observed_species, fill = Site_code)) +
+  geom_boxplot(color = "grey30") +
+  geom_point(alpha = 0.5, color = "grey30", position = position_jitterdodge(jitter.width = 2)) +
+  scale_fill_manual(values = Site_code_colors) +
+  theme_minimal(base_size = 18) +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1),
+        text = element_text(size=20)) +
+  ylab("Observed species") +
+  xlab("Site_code") +
+  ggtitle("Filtered") +
+  theme(plot.title=element_text(size=10))
+filtered_os
+
+# ggsave("~/Desktop/MID_os_filtered_plot_site.pdf", plot = filtered_os, device = "pdf",
+#        scale = 1, width = 8, height = 5, units = c("in"), dpi = 300)
+
+plot1 <-  mpa3_sub75bp_species_decontam_filtered.os %>%
+  inner_join(., full_metadata, by = "Library_ID") %>%
+  ggplot(., aes(x = Time_period, y = Observed_species, fill = Time_period)) +
+  geom_boxplot(color = "grey30") +
+  geom_point(alpha = 0.5, color = "grey30", position = position_jitterdodge(jitter.width = 2)) +
+  scale_fill_manual(values = Time_period_colors) +
+  theme_minimal(base_size = 18) +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1),
+        text = element_text(size=20)) +
+  ylab("Observed species") +
+  xlab("Site_code") +
+  ggtitle("Filtered") +
+  theme(plot.title=element_text(size=10))
+plot1
+# ggsave("~/Desktop/shannon_calculus_time_periods.pdf", plot = plot1, device = "pdf",
+#        scale = 1, width = 7, height = 5, units = c("in"), dpi = 300)
+
+
+```
+
+```{r}
+mpa3_sub75bp_species_decontam %>% 
+  pivot_longer(!Species, names_to = "Library_ID", values_to = "Counts") %>% 
+  pivot_wider(names_from = "Species", values_from = "Counts") %>% 
+  select(Library_ID) %>%
+  left_join(., full_metadata %>% select(Library_ID, Site_code), by = "Library_ID") %>%
+  filter(!str_detect(Site_code, "EXB|LIB|DEN|SOL")) %>%
+  group_by(Site_code) %>%
+  count()
+  
+  
+```
+
+
+## Shannon Index
+```{r shannon_diversity}
+# Shannon diversity with the package vegan
+mpa3_sub75bp_species_decontam.matrix <- as.matrix(mpa3_sub75bp_species_decontam %>%
+  select(-one_of(outliers)) %>%
+  select(-one_of(poor_samples)) %>%
+  select(-matches("EXB|LIB|CSN|CSL")) %>%
+  gather("Library_ID","Counts",2:ncol(.)) %>%
+  spread(Species,Counts) %>% 
+  column_to_rownames("Library_ID"))
+ 
+mpa3_sub75bp_species_decontam.shannon <- as.data.frame(diversity(mpa3_sub75bp_species_decontam.matrix, index = "shannon"))
+names(mpa3_sub75bp_species_decontam.shannon)[1] <- "Shannon_index"
+
+# merge with the metadata file and plot
+mpa3_sub75bp_species_decontam.shannon <- mpa3_sub75bp_species_decontam.shannon %>%
+  rownames_to_column("Library_ID")
+
+plot_box_whisker(mpa3_sub75bp_species_decontam.shannon, "Shannon_index", "Site_code", "Site_code")
+plot_box_whisker(mpa3_sub75bp_species_decontam.shannon, "Shannon_index", "Region", "Region")
+
+shannon_sp_plot <-mpa3_sub75bp_species_decontam.shannon %>%
+  inner_join(full_metadata %>%
+               select(Library_ID, Site_code, Region, Time_period, Sample_or_Control, 
+                      Periodontal_disease_present, Caries_present, Sex, Age), by = "Library_ID") %>%
+  ggplot(., aes(x = Site_code, y = Shannon_index, fill = Site_code)) +
+                         geom_boxplot() +
+                         scale_fill_manual(values = Site_code_colors) +
+                         theme_minimal(base_size = 18) +
+                         #scale_y_continuous(trans='log10') +
+                         #scale_y_continuous(trans='pseudo_log') +
+                         theme(axis.text.x = element_text(angle = 45, hjust = 1),
+                              text = element_text(size=18)) +
+                         ylab("Shannon index") +
+                         xlab("")
+shannon_sp_plot
+
+# now with the filtered data
+mpa3_sub75bp_species_decontam_filtered.matrix <- as.matrix(mpa3_sub75bp_species_decontam %>%
+  select(-one_of(outliers)) %>%
+  select(-one_of(poor_samples)) %>%
+  select(-matches("EXB|LIB|CSN|CSL")) %>%
+  adorn_totals(where = "col", name = "Sum_species.decontam") %>%
+  mutate(Percent = Sum_species.decontam/sum(Sum_species.decontam)*100) %>%
+  filter(Percent > 0.001) %>%
+  select(-one_of(c("Sum_species.decontam","Percent"))) %>%
+  gather("Library_ID","Counts",2:ncol(.)) %>%
+  spread(Species,Counts) %>% 
+  column_to_rownames("Library_ID"))
+
+mpa3_sub75bp_species_decontam_filtered.shannon <- as.data.frame(diversity(mpa3_sub75bp_species_decontam_filtered.matrix, index = "shannon"))
+names(mpa3_sub75bp_species_decontam_filtered.shannon)[1] <- "Shannon_index"
+
+# merge with the metadata file and plot
+mpa3_sub75bp_species_decontam_filtered.shannon <- mpa3_sub75bp_species_decontam_filtered.shannon %>%
+  rownames_to_column("Library_ID")
+
+plot_box_whisker(mpa3_sub75bp_species_decontam_filtered.shannon, "Shannon_index", "Site_code", "Site_code")
+plot_box_whisker(mpa3_sub75bp_species_decontam_filtered.shannon, "Shannon_index", "Time_period", "Region")
+plot_box_whisker(mpa3_sub75bp_species_decontam_filtered.shannon, "Shannon_index", "Region", "Time_period")
+plot_box_whisker(mpa3_sub75bp_species_decontam_filtered.shannon, "Shannon_index", "Time_period", "Time_period")
+
+plot1 <-  mpa3_sub75bp_species_decontam_filtered.shannon %>%
+  inner_join(., full_metadata, by = "Library_ID") %>%
+  ggplot(., aes(x = Time_period, y = Shannon_index, fill = Time_period)) +
+  geom_boxplot(color = "grey30") +
+  geom_point(alpha = 0.5, color = "grey30", position = position_jitterdodge(jitter.width = 2)) +
+  scale_fill_manual(values = Time_period_colors) +
+  theme_minimal(base_size = 18) +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1),
+        text = element_text(size=20)) +
+  ylab("Shannon index") +
+  xlab("Site_code") +
+  ggtitle("Filtered") +
+  theme(plot.title=element_text(size=10))
+plot1
+# ggsave("~/Desktop/shannon_calculus_time_periods.pdf", plot = plot1, device = "pdf",
+#        scale = 1, width = 7, height = 5, units = c("in"), dpi = 300)
+
+
+```
+
+```{r shannon_histogram, eval = F}
+
+plot1 <- mpa3_sub75bp_species_decontam_filtered.shannon %>%
+  # mutate(Shannon_index = )
+  inner_join(full_metadata %>%
+               select(Library_ID, Site_code, Region, Time_period, Sample_or_Control, 
+                      Periodontal_disease_present, Caries_present, Sex, Age), by = "Library_ID") %>%
+  ggplot(., aes(x = Shannon_index, color = Time_period)) +
+  geom_density() +
+  theme_minimal(base_size = 18) +
+  theme(axis.text.x = element_text(angle = 0, hjust = 1),
+        text = element_text(size=20)) +
+  ylab("") +
+  xlab("Shannon index")
+plot1
+
+# ggsave("~/Desktop/shannon_calculus_time_periods.pdf", plot = plot1, device = "pdf",
+#        scale = 1, width = 7, height = 5, units = c("in"), dpi = 300)
+
+```
+
+
+## Pielou's Evenness
+Let's also look specifically at evenness of the samples using Pielou's evenness.
+This calculation (derived from Shannon's index) gives us a number from 0 to 1,
+where 0 is no evenness and 1 is perfect evenness. We want to see if there are
+any groups that have substantially greater species/genera evenness than the
+others. We're not interested in what the actual number is, or how even the
+samples appear to be, except relative to eachother.
+```{r evenness_pielou}
+evenness.species <- diversity(mpa3_sub75bp_species_decontam.matrix)
+evenness.species <- as.data.frame(evenness.species/log(specnumber(mpa3_sub75bp_species_decontam.matrix)))
+names(evenness.species)[1] <- "Pileou_evenness"
+
+# merge with the metadata file and plot
+evenness.species <- evenness.species %>%
+  rownames_to_column("Library_ID")
+
+plot_box_whisker(evenness.species, "Pileou_evenness", "Site_code", "Site_code")
+plot_box_whisker(evenness.species, "Pileou_evenness", "Time_period", "Region")
+
+pe_sp_plot <-evenness.species %>%
+  inner_join(full_metadata %>%
+               select(Library_ID, Site_code, Region, Time_period, Sample_or_Control, 
+                      Periodontal_disease_present, Caries_present, Sex, Age), by = "Library_ID") %>%
+  ggplot(., aes(x = Site_code, y = Pileou_evenness, fill = Site_code)) +
+                         geom_boxplot() +
+                         scale_fill_manual(values = Site_code_colors) +
+                         theme_minimal(base_size = 18) +
+                         #scale_y_continuous(trans='log10') +
+                         #scale_y_continuous(trans='pseudo_log') +
+                         theme(axis.text.x = element_text(angle = 45, hjust = 1),
+                              text = element_text(size=18)) +
+                         ylab("Pielou's evenness") +
+                         xlab("")
+pe_sp_plot
+
+# now with filtered data
+evenness.species_filtered <- diversity(mpa3_sub75bp_species_decontam_filtered.matrix)
+evenness.species_filtered <- as.data.frame(evenness.species_filtered/log(specnumber(mpa3_sub75bp_species_decontam_filtered.matrix)))
+names(evenness.species_filtered)[1] <- "Pileou_evenness"
+
+# merge with the metadata file and plot
+evenness.species_filtered <- evenness.species_filtered %>%
+  rownames_to_column("Library_ID")
+
+plot_box_whisker(evenness.species_filtered, "Pileou_evenness", "Site_code", "Site_code")
+plot_box_whisker(evenness.species_filtered, "Pileou_evenness", "Time_period", "Region")
+plot_box_whisker(evenness.species_filtered, "Pileou_evenness", "Region", "Time_period")
+plot_box_whisker(evenness.species_filtered, "Pileou_evenness", "Time_period", "Time_period")
+
+```
+
+
+## Stats for samples without controls
+```{r tables_for_stats}
+# Filtered species tables alpha-diversity stats
+# get the number of observed species
+presabs_table_f <- mpa3_sub75bp_species_decontam %>%
+  select(-one_of(outliers)) %>%
+  select(-one_of(poor_samples)) %>%
+  select(-matches("EXB|LIB|CSN|CSL")) %>%
+  adorn_totals(where = "col", name = "Sum_species.decontam") %>%
+  mutate(Percent = Sum_species.decontam/sum(Sum_species.decontam)*100) %>%
+  filter(Percent > 0.001) %>%
+  select(-one_of(c("Sum_species.decontam","Percent"))) %>%
+  gather("Library_ID","Counts",2:ncol(.)) %>%
+  spread(Species,Counts) %>%
+  gather("Species","Counts",2:ncol(.)) %>%
+  mutate(Counts = ifelse(Counts > 0, 1, 0)) %>%
+  spread(Species, Counts) %>%
+  column_to_rownames("Library_ID")
+  
+# calculate observed species for each sample with janitor 'adorn_totals'
+mpa3_sub75bp_species_decontam_filtered.alpha <- presabs_table_f %>%
+  adorn_totals(., where = "col", name = "Observed_species") %>%
+  select(Observed_species) %>%
+  rownames_to_column("Library_ID") 
+
+
+# get the Shannon index
+mpa3_sub75bp_species_decontam_filtered.matrix <- as.matrix(mpa3_sub75bp_species_decontam %>%
+  select(-one_of(outliers)) %>%
+  select(-one_of(poor_samples)) %>%
+  select(-matches("EXB|LIB|CSN|CSL")) %>%
+  adorn_totals(where = "col", name = "Sum_species.decontam") %>%
+  mutate(Percent = Sum_species.decontam/sum(Sum_species.decontam)*100) %>%
+  filter(Percent > 0.001) %>%
+  select(-one_of(c("Sum_species.decontam","Percent"))) %>%
+  gather("Library_ID","Counts",2:ncol(.)) %>%
+  spread(Species,Counts) %>% 
+  column_to_rownames("Library_ID"))
+
+mpa3_sub75bp_species_decontam_filtered.shannon <- as.data.frame(diversity(mpa3_sub75bp_species_decontam_filtered.matrix, index = "shannon"))
+names(mpa3_sub75bp_species_decontam_filtered.shannon)[1] <- "Shannon_index"
+
+# convert row names to a column and combine with the observed species table
+mpa3_sub75bp_species_decontam_filtered.alpha <- mpa3_sub75bp_species_decontam_filtered.alpha %>%
+  full_join(., mpa3_sub75bp_species_decontam_filtered.shannon %>%
+  rownames_to_column("Library_ID"), by = "Library_ID")
+  
+# Get the evenness index
+evenness.species_filtered <- diversity(mpa3_sub75bp_species_decontam_filtered.matrix)
+evenness.species_filtered <- as.data.frame(evenness.species_filtered/log(specnumber(mpa3_sub75bp_species_decontam_filtered.matrix)))
+names(evenness.species_filtered)[1] <- "Pileou_evenness"
+
+# merge with the metadata file and plot
+mpa3_sub75bp_species_decontam_filtered.alpha <- mpa3_sub75bp_species_decontam_filtered.alpha %>%
+  full_join(., evenness.species_filtered %>%
+  rownames_to_column("Library_ID"), by = "Library_ID")
+
+# now plot the observed species
+os_site <- plot_box_whisker(mpa3_sub75bp_species_decontam_filtered.alpha, "Observed_species", "Site_code", "Site_code")
+os_site
+shannon_site <- plot_box_whisker(mpa3_sub75bp_species_decontam_filtered.alpha, "Shannon_index", "Site_code", "Site_code")
+shannon_site
+pe_site <- plot_box_whisker(mpa3_sub75bp_species_decontam_filtered.alpha, "Pileou_evenness", "Site_code", "Site_code")
+pe_site
+
+# ggsave("./06-publication/supplemental_figures/SXX6/panel_parts/Figure_SXX6_os_market_split.pdf", plot = os_market_split, device = "pdf",
+#        scale = 1, width = 7, height = 5, units = c("in"), dpi = 300)
+
+# add metadata to the table
+mpa3_sub75bp_species_decontam_filtered.alpha_meta <- mpa3_sub75bp_species_decontam_filtered.alpha %>%
+  full_join(., metadata_nofactors %>%
+               select(Library_ID, Site_code, Region, Time_period, Sample_or_Control, 
+                      Periodontal_disease_present, Caries_present, Sex, Age), by = "Library_ID") %>%
+  drop_na(Observed_species) %>%
+  filter(!str_detect(Library_ID, "ARS"))
+
+
+fwrite(mpa3_sub75bp_species_decontam_filtered.alpha, "~/archgen/microbiome_calculus/smoking_calculus/05-results.backup/mpa3_alpha_div_numbers_sub75bp.tsv", sep = "\t", quote = F)
+
+```
+
+
+```{r kruskal_test}
+# define the metadata categories to test for significnat differences in diversity
+Envmt <- colnames(mpa3_sub75bp_species_decontam_filtered.alpha_meta %>%
+                    select(Site_code, Time_period))
+
+# test for significant differences in diversity between the metadata categories
+species_kruskal_pvals <- lapply(Envmt, function(envmt) {
+pvalues_envmt <- mpa3_sub75bp_species_decontam_filtered.alpha_meta %>%
+  select(Library_ID, Observed_species, !!enquo(envmt)) %>%
+  rename(lastone = !!enquo(envmt)) %>% # this is the way I found to get the rstatix functions to recognize the column name
+  kruskal_test(Observed_species ~ lastone) %>% # number of species
+  mutate(Category = !!enquo(envmt)) %>% # adds the name of the metadata category as a new column
+  bind_rows(., mpa3_sub75bp_species_decontam_filtered.alpha_meta %>% 
+              select(Library_ID, Shannon_index, !!enquo(envmt)) %>%
+              rename(lastone = !!enquo(envmt)) %>%
+            kruskal_test(Shannon_index ~ lastone) %>% # Shannon index
+            mutate(Category = !!enquo(envmt))) %>%
+  bind_rows(., mpa3_sub75bp_species_decontam_filtered.alpha_meta %>% 
+              select(Library_ID, Pileou_evenness, !!enquo(envmt)) %>%
+              rename(lastone = !!enquo(envmt)) %>%
+            kruskal_test(Pileou_evenness ~ lastone) %>% # Pileou's evenness
+            mutate(Category = !!enquo(envmt)))
+}) %>%
+  bind_rows(.) %>%
+  as_tibble() %>%
+  arrange(p)
+species_kruskal_pvals
+
+# fwrite(species_kruskal_pvals, "./06-publication/supplemental_tables/alphadiv_kruskal_wallace_mpa3_sub75bp_sp.tsv", sep = "\t", quote = F)
+
+```
+
+```{r wilcox_test}
+# pull out only the metadata categories that were significantly different between groups from the Kruskal-Wallace test
+Envmt_sig <- species_kruskal_pvals %>%
+  filter(p <= 0.05) %>%
+  distinct(Category) %>%
+  pull(Category)
+
+# run a post-hoc test on those metadata categories to see which groups in them are significantly different
+species_wilcox_pvals <- lapply(Envmt_sig, function(envmt) {
+pvalues_envmt <- mpa3_sub75bp_species_decontam_filtered.alpha_meta %>%
+  select(Library_ID, Observed_species, !!enquo(envmt)) %>%
+  rename(lastone = !!enquo(envmt)) %>% # this is the way I found to get the rstatix functions to recognize the column name
+  pairwise_wilcox_test(Observed_species ~ lastone, p.adjust.method = "fdr") %>% # number of species
+  mutate(Category = !!enquo(envmt)) %>% # adds the name of the metadata category as a new column
+  bind_rows(., mpa3_sub75bp_species_decontam_filtered.alpha_meta %>% 
+              select(Library_ID, Shannon_index, !!enquo(envmt)) %>%
+              rename(lastone = !!enquo(envmt)) %>%
+            pairwise_wilcox_test(Shannon_index ~ lastone, p.adjust.method = "fdr") %>% # Shannon index
+            mutate(Category = !!enquo(envmt))) %>%
+  bind_rows(., mpa3_sub75bp_species_decontam_filtered.alpha_meta %>% 
+              select(Library_ID, Pileou_evenness, !!enquo(envmt)) %>%
+              rename(lastone = !!enquo(envmt)) %>%
+            pairwise_wilcox_test(Pileou_evenness ~ lastone, p.adjust.method = "fdr") %>% # Pileou's evenness
+            mutate(Category = !!enquo(envmt)))
+}) %>%
+  bind_rows(.) %>%
+  as_tibble( )%>%
+  # filter(p.adj <= 0.05) %>%
+  rename(Index = .y.) %>%
+  mutate(Category = fct_relevel(Category, "Time_period","Site_code"))  %>%
+  select(Index, Category, everything()) %>%
+  arrange(p.adj)
+
+species_wilcox_pvals %>%
+  mutate(Category = fct_relevel(Category, "Time_period","Site_code")) %>%
+  arrange(Index, Category, group1, group2, p.adj)
+
+
+```
+
+```{r wilcox_eff_size}
+# and check the effect size
+species_wilcox_effs <- lapply(Envmt_sig, function(envmt) {
+pvalues_envmt <- mpa3_sub75bp_species_decontam_filtered.alpha_meta %>%
+  select(Library_ID, Observed_species, !!enquo(envmt)) %>%
+  rename(lastone = !!enquo(envmt)) %>% # this is the way I found to get the rstatix functions to recognize the column name
+  wilcox_effsize(Observed_species ~ lastone) %>% # number of species
+  mutate(Category = !!enquo(envmt)) %>% # adds the name of the metadata category as a new column
+  bind_rows(., mpa3_sub75bp_species_decontam_filtered.alpha_meta %>% 
+              select(Library_ID, Shannon_index, !!enquo(envmt)) %>%
+              rename(lastone = !!enquo(envmt)) %>%
+            wilcox_effsize(Shannon_index ~ lastone) %>% # Shannon index
+            mutate(Category = !!enquo(envmt))) %>%
+  bind_rows(., mpa3_sub75bp_species_decontam_filtered.alpha_meta %>% 
+              select(Library_ID, Pileou_evenness, !!enquo(envmt)) %>%
+              rename(lastone = !!enquo(envmt)) %>%
+            wilcox_effsize(Pileou_evenness ~ lastone) %>% # Pileou's evenness
+            mutate(Category = !!enquo(envmt)))
+}) %>%
+  bind_rows(.) %>%
+  as_tibble( ) %>%
+  select(.y.,Category, everything()) %>%
+  arrange(desc(effsize)) %>%
+  rename(Index = .y.)
+
+
+IC_species_p_es <- species_wilcox_pvals %>%
+  full_join(., species_wilcox_effs, by = c("Index","Category","group1","group2","n1","n2")) %>%
+  select(Index, Category, everything()) %>%
+  mutate(Category = fct_relevel(Category, "Time_period","Site_code"))  %>%
+  arrange(p.adj)
+  
+IC_species_p_es %>%
+  mutate(Category = fct_relevel(Category, "Time_period","Site_code")) %>%
+  arrange(Index, Category, group1, group2, p.adj)
+
+# fwrite(IC_species_p_es, "./06-publication/supplemental_tables/alphadiv_wilcox_mpa3_sub75bp_sp.tsv", sep = "\t", quote = F)
+# fwrite(IC_species_p_es, "~/Desktop/mid_alpha_stats.tsv", sep = "\t", quote = F)
+
+```
+
+```{r raincloud_plots_os_tp}
+sub75bp_tp_raincloud <- mpa3_sub75bp_species_decontam_filtered.alpha_meta %>%
+  mutate(Time_period = fct_relevel(Time_period, "Medieval","Industrial","Modern")) %>%
+ggplot(., aes(x = Time_period, y = Observed_species, fill = Time_period)) + 
+  ## add half-violin from {ggdist} package
+  ggdist::stat_halfeye(
+    ## custom bandwidth
+    adjust = .5, 
+    ## adjust height
+    width = .6, 
+    ## move geom to the right
+    justification = -.2, 
+    ## remove slab interval
+    .width = 0, 
+    point_colour = NA
+  ) + 
+  geom_boxplot(
+    width = .12, 
+    ## remove outliers
+    outlier.color = NA, ## `outlier.shape = NA` works as well
+    color = "grey30"
+  ) +
+  ## add dot plots from {ggdist} package
+  ggdist::stat_dots(
+    ## orientation to the left
+    side = "left", 
+    ## move geom to the left
+    justification = 1.1, 
+    ## adjust grouping (binning) of observations 
+    binwidth = 1
+  ) + 
+  ## remove white space on the left
+  coord_cartesian(xlim = c(1.2, NA)) +
+  theme_minimal() +
+  scale_fill_manual(values = Time_period_colors) +
+  theme(text = element_text(size=18)) +
+  theme(legend.position="none",
+        axis.title.x=element_blank()) +
+  ylab("No. species")
+
+sub75bp_tp_raincloud
+
+```
+
+```{r raincloud_plots_os_site}
+sub75bp_sc_raincloud <- mpa3_sub75bp_species_decontam_filtered.alpha_meta %>%
+  mutate(Site_code = fct_relevel(Site_code, "IVE","ELR","KIL","RAD","CMB","MID","VLC","JAE")) %>%
+ggplot(., aes(x = Site_code, y = Observed_species, fill = Site_code)) + 
+  ## add half-violin from {ggdist} package
+  ggdist::stat_halfeye(
+    ## custom bandwidth
+    adjust = .5, 
+    ## adjust height
+    width = .6, 
+    ## move geom to the right
+    justification = -.2, 
+    ## remove slab interval
+    .width = 0, 
+    point_colour = NA
+  ) + 
+  geom_boxplot(
+    width = .12, 
+    ## remove outliers
+    outlier.color = NA, ## `outlier.shape = NA` works as well
+    color = "grey30"
+  ) +
+  ## add dot plots from {ggdist} package
+  ggdist::stat_dots(
+    ## orientation to the left
+    side = "left", 
+    ## move geom to the left
+    justification = 1.1, 
+    ## adjust grouping (binning) of observations 
+    binwidth = 1
+  ) + 
+  ## remove white space on the left
+  coord_cartesian(xlim = c(1.2, NA)) +
+  theme_minimal() +
+  scale_fill_manual(values = Site_code_colors) +
+  theme(text = element_text(size=18)) +
+  theme(legend.position="none",
+        axis.title.x=element_blank()) +
+  ylab("No. species")
+
+sub75bp_sc_raincloud
+
+```
+
+```{r raincloud_plots_sh}
+
+sub75bp_tp_sh_raincloud <- mpa3_sub75bp_species_decontam_filtered.alpha_meta %>%
+  mutate(Time_period = fct_relevel(Time_period, "Medieval","Industrial","Modern")) %>%
+  ggplot(., aes(x = Time_period, y = Shannon_index, fill = Time_period)) + 
+  ## add half-violin from {ggdist} package
+  ggdist::stat_halfeye(
+    ## custom bandwidth
+    adjust = .5, 
+    ## adjust height
+    width = .6, 
+    ## move geom to the right
+    justification = -.2, 
+    ## remove slab interval
+    .width = 0, 
+    point_colour = NA
+  ) + 
+  geom_boxplot(
+    width = .12, 
+    ## remove outliers
+    outlier.color = NA, ## `outlier.shape = NA` works as well
+    color = "grey30"
+  ) +
+  ## add dot plots from {ggdist} package
+  ggdist::stat_dots(
+    ## orientation to the left
+    side = "left", 
+    ## move geom to the left
+    justification = 1.1, 
+    ## adjust grouping (binning) of observations 
+    binwidth = .03
+  ) + 
+  ## remove white space on the left
+  coord_cartesian(xlim = c(1.2, NA)) +
+  theme_minimal() +
+  scale_fill_manual(values = Time_period_colors) +
+  theme(text = element_text(size=18)) +
+  theme(legend.position="none",
+        axis.title.x=element_blank()) +
+  ylab("Shannon index")
+
+sub75bp_tp_sh_raincloud
+
+```
+
+```{r raincloud_plots_sh_site}
+sub75bp_sc_sh_raincloud <- mpa3_sub75bp_species_decontam_filtered.alpha_meta %>%
+  mutate(Site_code = fct_relevel(Site_code, "IVE","ELR","KIL","RAD","CMB","MID","VLC","JAE")) %>%
+ggplot(., aes(x = Site_code, y = Shannon_index, fill = Site_code)) + 
+  ## add half-violin from {ggdist} package
+  ggdist::stat_halfeye(
+    ## custom bandwidth
+    adjust = .5, 
+    ## adjust height
+    width = .6, 
+    ## move geom to the right
+    justification = -.2, 
+    ## remove slab interval
+    .width = 0, 
+    point_colour = NA
+  ) + 
+  geom_boxplot(
+    width = .12, 
+    ## remove outliers
+    outlier.color = NA, ## `outlier.shape = NA` works as well
+    color = "grey30"
+  ) +
+  ## add dot plots from {ggdist} package
+  ggdist::stat_dots(
+    ## orientation to the left
+    side = "left", 
+    ## move geom to the left
+    justification = 1.1, 
+    ## adjust grouping (binning) of observations 
+    binwidth = .03
+  ) + 
+  ## remove white space on the left
+  coord_cartesian(xlim = c(1.2, NA)) +
+  theme_minimal() +
+  scale_fill_manual(values = Site_code_colors) +
+  theme(text = element_text(size=18)) +
+  theme(legend.position="none",
+        axis.title.x=element_blank()) +
+  ylab("Shannon index")
+
+sub75bp_sc_sh_raincloud
+
+```
+
+```{r}
+sub75bp_alpha_figure <- sub75bp_tp_raincloud + sub75bp_tp_sh_raincloud +sub75bp_sc_raincloud + sub75bp_sc_sh_raincloud +
+  plot_layout(nrow = 2) + 
+  plot_annotation(tag_levels = 'A')
+
+sub75bp_alpha_figure
+
+ggsave("./06-publication/supplemental_figures/SXX13/sub75bp_alpha_figure.pdf", plot = sub75bp_alpha_figure, device = "pdf",
+       scale = 1, width = 10, height = 7, units = c("in"), dpi = 300)
+
+ggsave("./06-publication/supplemental_figures/SXX13/sub75bp_alpha_figure.png", plot = sub75bp_alpha_figure, device = "png",
+       scale = 1, width = 10, height = 7, units = c("in"), dpi = 300)
+
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

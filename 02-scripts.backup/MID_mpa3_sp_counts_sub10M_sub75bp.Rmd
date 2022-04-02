@@ -1,0 +1,477 @@
+---
+title: "MID/CMB, Radcliffe, Kilteasheen, Iberian medieval calculus metadata and colors"
+author: "Irina Velsko"
+date: "`r format(Sys.time(), '%b %d, %Y')`"
+output:
+    github_document:
+        fig_width: 8
+        fig_height: 6
+        toc: true
+---
+
+```{r load_libraries, echo = F, message = F}
+library(knitr)
+library(data.table)
+library(janitor)
+library(vegan)
+library(rstatix)
+library(tidyverse)
+library(patchwork)
+```
+
+```{r setup}
+knitr::opts_knit$set(root.dir = normalizePath(".."))
+```
+
+
+```{r}
+# colors3 <- c("#f5767a", "#63f35e", "#8dc6f7") # "#5e63f3")
+colors3 <- c("#311068", "#C83E73", "#41b6c4")
+shapes3 <- c(21, 23, 24)
+
+```
+
+```{r}
+# load the metadata file
+load("./05-results.backup/Metadata_tables.RData")
+
+# w/o factors
+metadata_nofactors <- fread("./00-documentation.backup/radcliffe_pfuT_metadata.tsv") %>%
+  bind_rows(., fread("./00-documentation.backup/iberian_medieval_metadata.tsv")) %>%
+  bind_rows(., fread("./00-documentation.backup/kilteasheen_metadata.tsv")) %>%
+  bind_rows(., fread("./00-documentation.backup/mod_metadata.tsv")) %>%
+  full_join(., fread("./00-documentation.backup/MID_analysis_metadata.tsv"))
+
+```
+
+Set the sample order for plotting
+```{r}
+sample_order <- full_metadata %>%
+  select(Library_ID, Site_code) %>%
+  filter(!str_detect(Library_ID, "EXB|LIB|CSS|CSL|CSD|CSN")) %>%
+  mutate(Site_code= fct_relevel(Site_code, "JAE","VLC","RAD","CMB","MID","ELR","IVE","KIL")) %>%
+  arrange(Site_code) %>%
+  pull(Library_ID)
+  
+```
+
+```{r, eval = F}
+# read in the files with species counts per sample from the alpha-diversity Rmd files
+
+full_adiv <- fread("./05-results.backup/mpa3_alpha_div_numbers.tsv") %>%
+  mutate(Dataset = "Full")
+
+sub10M_adiv <- fread("./05-results.backup/mpa3_alpha_div_numbers_sub10M.tsv") %>%
+  mutate(Dataset = "Sub10M")
+
+sub75bp_adiv <- fread("./05-results.backup/mpa3_alpha_div_numbers_sub75bp.tsv") %>%
+  mutate(Dataset = "Sub75bp")
+
+
+```
+
+```{r full_table}
+
+# read in the species table
+mpa3_raw <- fread("./05-results.backup/mpa3_abundance_table.tsv") %>%
+  select(-NCBI_tax_id)
+
+# clean the file names
+colnames(mpa3_raw) <- gsub(".metaphlan3","", colnames(mpa3_raw))
+colnames(mpa3_raw) <- gsub(".SG1","", colnames(mpa3_raw))
+
+# filter to have only species
+mpa3_sp <- mpa3_raw %>% 
+  filter(str_detect(clade_name, "s__")) %>%
+  separate(clade_name, into = c("K","P","C","O","F","G","Species"), sep = "\\|") %>%
+  select(-c("K","P","C","O","F","G")) %>%
+  mutate(Species = str_replace_all(Species, "s__",""),
+         Species = str_replace_all(Species, "_"," ")) %>%
+  # these samples have no metadata
+  select(-c("MID025.A0101","MID033.A0101","MID052.A0101","MID056.A0101","MID065.A0101","MID068.A0101","MID076.A0101","MID078.A0101")) %>%
+  arrange(Species)
+
+```
+
+```{r sub10M_table}
+# read in the sub10M species table
+mpa3_sub10M_raw <- fread("./05-results.backup/mpa3_abundance_table_sub10M.tsv") %>%
+  select(-NCBI_tax_id)
+
+# clean the file names
+colnames(mpa3_sub10M_raw) <- gsub(".sub10M.metaphlan3","", colnames(mpa3_sub10M_raw))
+colnames(mpa3_sub10M_raw) <- gsub(".SG1","", colnames(mpa3_sub10M_raw))
+
+# filter to have only species
+mpa3_sub10M_sp <- mpa3_sub10M_raw %>% 
+  filter(str_detect(clade_name, "s__")) %>%
+  separate(clade_name, into = c("K","P","C","O","F","G","Species"), sep = "\\|") %>%
+  select(-c("K","P","C","O","F","G")) %>%
+  mutate(Species = str_replace_all(Species, "s__",""),
+         Species = str_replace_all(Species, "_"," ")) %>%
+  # these samples have no metadata
+  select(-c("MID025.A0101","MID033.A0101","MID052.A0101","MID056.A0101","MID065.A0101","MID068.A0101","MID076.A0101","MID078.A0101")) %>%
+  arrange(Species)
+
+```
+
+```{r sub75bp_table}
+# read in the sub75bp species table
+mpa3_sub75bp_raw <- fread("./05-results.backup/mpa3_abundance_table_sub75bp.tsv") %>%
+  select(-NCBI_tax_id)
+
+# clean the file names
+colnames(mpa3_sub75bp_raw) <- gsub(".sub75bp.metaphlan3","", colnames(mpa3_sub75bp_raw))
+colnames(mpa3_sub75bp_raw) <- gsub(".SG1","", colnames(mpa3_sub75bp_raw))
+
+# filter to have only species
+mpa3_sub75bp_sp <- mpa3_sub75bp_raw %>% 
+  filter(str_detect(clade_name, "s__")) %>%
+  separate(clade_name, into = c("K","P","C","O","F","G","Species"), sep = "\\|") %>%
+  select(-c("K","P","C","O","F","G")) %>%
+  mutate(Species = str_replace_all(Species, "s__",""),
+         Species = str_replace_all(Species, "_"," ")) %>%
+  # these samples have no metadata
+  select(-c("MID025.A0101","MID033.A0101","MID052.A0101","MID056.A0101","MID065.A0101","MID068.A0101","MID076.A0101","MID078.A0101")) %>%
+  arrange(Species)
+
+```
+
+
+```{r}
+# read in all contaminant tables
+
+# Full
+mpa3_contaminants_full <- fread("./05-results.backup/contaminant_species_mid_mpa3.tsv", sep = "\t") %>%
+  bind_rows(., fread("./05-results.backup/contaminant_species_kilteasheen_mpa3.tsv", sep = "\t")) %>%
+  bind_rows(., fread("./05-results.backup/contaminant_species_iberia_mpa3.tsv", sep = "\t")) %>%
+  unique()
+
+# sub10M
+mpa3_contaminants_sub10M <- fread("./05-results.backup/contaminant_species_radcliffe_mpa3_sub10M.tsv", sep = "\t") %>%
+  bind_rows(., fread("./05-results.backup/contaminant_species_kilteasheen_mpa3_sub10M.tsv", sep = "\t")) %>%
+  bind_rows(., fread("./05-results.backup/contaminant_species_iberia_mpa3_sub10M.tsv", sep = "\t")) %>%
+  unique()
+
+# sub75bp
+mpa3_contaminants_sub75bp <- fread("./05-results.backup/contaminant_species_radcliffe_mpa3_sub75bp.tsv", sep = "\t") %>%
+  bind_rows(., fread("./05-results.backup/contaminant_species_kilteasheen_mpa3_sub75bp.tsv", sep = "\t")) %>%
+  bind_rows(., fread("./05-results.backup/contaminant_species_iberia_mpa3_sub75bp.tsv", sep = "\t")) %>%
+  unique()
+
+mpa3_contaminants <- mpa3_contaminants_full %>%
+  bind_rows(., mpa3_contaminants_sub10M) %>%
+  bind_rows(., mpa3_contaminants_sub75bp) %>%
+  unique()
+
+# remove contaminant species from the table
+mpa3_sp_decontam <- mpa3_sp %>%
+  anti_join(., mpa3_contaminants)
+
+mpa3_sub10M_species_decontam <- mpa3_sub10M_sp %>%
+  anti_join(., mpa3_contaminants)
+
+mpa3_sub75bp_species_decontam <- mpa3_sub75bp_sp %>%
+  anti_join(., mpa3_contaminants)
+
+```
+
+```{r full_alpha}
+# get the number of observed species
+presabs_table_f <- mpa3_sp %>%
+  select(-matches("ARS|EXB|LIB|CSN|CSL|CSD|CSS")) %>%
+  gather("Library_ID","Counts",2:ncol(.)) %>%
+  spread(Species,Counts) %>%
+  gather("Species","Counts",2:ncol(.)) %>%
+  mutate(Counts = ifelse(Counts > 0, 1, 0)) %>%
+  spread(Species, Counts) %>%
+  column_to_rownames("Library_ID")
+  
+# calculate observed species for each sample with janitor 'adorn_totals'
+mpa3_sp_full.alpha <- presabs_table_f %>%
+  adorn_totals(., where = "col", name = "Observed_species") %>%
+  select(Observed_species) %>%
+  rownames_to_column("Library_ID") 
+
+
+# get the Shannon index
+mpa3_sp_full.matrix <- as.matrix(mpa3_sp %>%
+  select(-matches("ARS|EXB|LIB|CSN|CSL|CSD|CSS")) %>%
+  gather("Library_ID","Counts",2:ncol(.)) %>%
+  spread(Species,Counts) %>% 
+  column_to_rownames("Library_ID"))
+
+mpa3_sp_full.shannon <- as.data.frame(diversity(mpa3_sp_full.matrix, index = "shannon"))
+names(mpa3_sp_full.shannon)[1] <- "Shannon_index"
+
+# convert row names to a column and combine with the observed species table
+mpa3_sp_full.alpha <- mpa3_sp_full.alpha %>%
+  full_join(., mpa3_sp_full.shannon %>%
+  rownames_to_column("Library_ID"), by = "Library_ID")
+  
+# Get the evenness index
+evenness.species <- diversity(mpa3_sp_full.matrix)
+evenness.species <- as.data.frame(evenness.species/log(specnumber(mpa3_sp_full.matrix)))
+names(evenness.species)[1] <- "Pileou_evenness"
+
+# merge with the metadata file and plot
+mpa3_sp_full.alpha <- mpa3_sp_full.alpha %>%
+  full_join(., evenness.species %>%
+  rownames_to_column("Library_ID"), by = "Library_ID")
+
+# add metadata to the table
+mpa3_sp_full.alpha_meta <- mpa3_sp_full.alpha %>%
+  full_join(., metadata_nofactors %>%
+               select(Library_ID, Site_code, Time_period), by = "Library_ID") %>%
+  drop_na(Observed_species) %>%
+  mutate(Dataset = "Full")
+
+```
+
+```{r sub10M_alpha}
+# get the number of observed species
+presabs_table_f <- mpa3_sub10M_sp %>%
+  select(-matches("ARS|EXB|LIB|CSN|CSL|CSD|CSS")) %>%
+  gather("Library_ID","Counts",2:ncol(.)) %>%
+  spread(Species,Counts) %>%
+  gather("Species","Counts",2:ncol(.)) %>%
+  mutate(Counts = ifelse(Counts > 0, 1, 0)) %>%
+  spread(Species, Counts) %>%
+  column_to_rownames("Library_ID")
+  
+# calculate observed species for each sample with janitor 'adorn_totals'
+mpa3_sp_10M.alpha <- presabs_table_f %>%
+  adorn_totals(., where = "col", name = "Observed_species") %>%
+  select(Observed_species) %>%
+  rownames_to_column("Library_ID") 
+
+
+# get the Shannon index
+mpa3_sp_10M.matrix <- as.matrix(mpa3_sub10M_sp %>%
+  select(-matches("ARS|EXB|LIB|CSN|CSL|CSD|CSS")) %>%
+  gather("Library_ID","Counts",2:ncol(.)) %>%
+  spread(Species,Counts) %>% 
+  column_to_rownames("Library_ID"))
+
+mpa3_sp_10M.shannon <- as.data.frame(diversity(mpa3_sp_10M.matrix, index = "shannon"))
+names(mpa3_sp_10M.shannon)[1] <- "Shannon_index"
+
+# convert row names to a column and combine with the observed species table
+mpa3_sp_10M.alpha <- mpa3_sp_10M.alpha %>%
+  full_join(., mpa3_sp_10M.shannon %>%
+  rownames_to_column("Library_ID"), by = "Library_ID")
+  
+# Get the evenness index
+evenness.species <- diversity(mpa3_sp_10M.matrix)
+evenness.species <- as.data.frame(evenness.species/log(specnumber(mpa3_sp_10M.matrix)))
+names(evenness.species)[1] <- "Pileou_evenness"
+
+# merge with the metadata file and plot
+mpa3_sp_10M.alpha <- mpa3_sp_10M.alpha %>%
+  full_join(., evenness.species %>%
+  rownames_to_column("Library_ID"), by = "Library_ID")
+
+# add metadata to the table
+mpa3_sp_10M.alpha_meta <- mpa3_sp_10M.alpha %>%
+  full_join(., metadata_nofactors %>%
+               select(Library_ID, Site_code, Time_period), by = "Library_ID") %>%
+  drop_na(Observed_species) %>%
+  mutate(Dataset = "Sub10M")
+
+```
+
+```{r sub75bp_alpha}
+# get the number of observed species
+presabs_table_f <- mpa3_sub75bp_sp %>%
+  select(-matches("ARS|EXB|LIB|CSN|CSL|CSD|CSS")) %>%
+  gather("Library_ID","Counts",2:ncol(.)) %>%
+  spread(Species,Counts) %>%
+  gather("Species","Counts",2:ncol(.)) %>%
+  mutate(Counts = ifelse(Counts > 0, 1, 0)) %>%
+  spread(Species, Counts) %>%
+  column_to_rownames("Library_ID")
+  
+# calculate observed species for each sample with janitor 'adorn_totals'
+mpa3_sp_75bp.alpha <- presabs_table_f %>%
+  adorn_totals(., where = "col", name = "Observed_species") %>%
+  select(Observed_species) %>%
+  rownames_to_column("Library_ID") 
+
+
+# get the Shannon index
+mpa3_sp_75bp.matrix <- as.matrix(mpa3_sub75bp_sp %>%
+  select(-matches("ARS|EXB|LIB|CSN|CSL|CSD|CSS")) %>%
+  gather("Library_ID","Counts",2:ncol(.)) %>%
+  spread(Species,Counts) %>% 
+  column_to_rownames("Library_ID"))
+
+mpa3_sp_75bp.shannon <- as.data.frame(diversity(mpa3_sp_75bp.matrix, index = "shannon"))
+names(mpa3_sp_75bp.shannon)[1] <- "Shannon_index"
+
+# convert row names to a column and combine with the observed species table
+mpa3_sp_75bp.alpha <- mpa3_sp_75bp.alpha %>%
+  full_join(., mpa3_sp_75bp.shannon %>%
+  rownames_to_column("Library_ID"), by = "Library_ID")
+  
+# Get the evenness index
+evenness.species <- diversity(mpa3_sp_75bp.matrix)
+evenness.species <- as.data.frame(evenness.species/log(specnumber(mpa3_sp_75bp.matrix)))
+names(evenness.species)[1] <- "Pileou_evenness"
+
+# merge with the metadata file and plot
+mpa3_sp_75bp.alpha <- mpa3_sp_75bp.alpha %>%
+  full_join(., evenness.species %>%
+  rownames_to_column("Library_ID"), by = "Library_ID")
+
+# add metadata to the table
+mpa3_sp_75bp.alpha_meta <- mpa3_sp_75bp.alpha %>%
+  full_join(., metadata_nofactors %>%
+               select(Library_ID, Site_code, Time_period), by = "Library_ID") %>%
+  drop_na(Observed_species) %>%
+  mutate(Dataset = "Sub75bp")
+
+```
+
+```{r}
+
+all_data <- mpa3_sp_full.alpha_meta %>%
+  bind_rows(., mpa3_sp_10M.alpha_meta) %>%
+  bind_rows(., mpa3_sp_75bp.alpha_meta)
+
+# check that the same number of samples are in each group
+all_data %>%
+  group_by(Dataset, Site_code) %>%
+  count() %>%
+  pivot_wider(names_from = "Dataset", values_from = "n")
+
+```
+
+```{r}
+all_data %>%
+  group_by(Dataset, Site_code) %>%
+  summarize(mean_species = round(mean(Observed_species), digits = 0),
+            sd_species = round(sd(Observed_species), digits = 0)) %>%
+  arrange(Site_code)
+
+```
+
+
+```{r}
+
+no_sp_box_polot <- all_data %>%
+  mutate(Site_code = fct_relevel(Site_code, "IVE","ELR","KIL","RAD","CMB","MID","VLC","JAE")) %>%
+  ggplot(., aes(x = Site_code, y = Observed_species, fill = Dataset)) +
+    geom_boxplot(alpha = 0.5) +
+    geom_jitter(alpha = 0.5, position = position_jitterdodge(jitter.width = 0.1), size = 1) +
+    theme_minimal() +
+    scale_fill_manual(values = colors3) +
+    theme(axis.text.x = element_text(angle = 0, vjust = 0.5),
+          text = element_text(size=16)) +
+    scale_y_continuous(breaks=scales::pretty_breaks(n=8)) +
+    ylab("No. species") +
+    xlab("")
+
+no_sp_box_polot
+
+```
+
+
+```{r stats_full_10M}
+
+kruskal_sub10M <-all_data %>%
+  mutate(Time_period = as.character(Time_period)) %>%
+  filter(Dataset != "Sub75bp") %>%
+  group_by(Time_period) %>% # together is Classified, UNGROUPED, UNMAPPED
+  nest() %>%
+  mutate(p.value = purrr::map(.x = data, .f = ~kruskal_test(data = .x, Observed_species ~ Dataset)$p)) %>%
+  unnest(p.value)
+kruskal_sub10M
+
+
+all_data %>%
+  mutate(Time_period = as.character(Time_period)) %>%
+  filter(Dataset != "Sub75bp") %>%
+  group_by(Time_period) %>%
+  pairwise_wilcox_test(data = ., Observed_species ~ Dataset, p.adjust.method = "fdr") 
+
+
+
+all_data %>%
+  mutate(Time_period = as.character(Time_period)) %>%
+  filter(Dataset != "Sub75bp") %>%
+  group_by(Site_code) %>%
+  pairwise_wilcox_test(data = ., Observed_species ~ Dataset, p.adjust.method = "fdr")
+
+all_data %>%
+  mutate(Time_period = as.character(Time_period)) %>%
+  filter(Dataset != "Sub75bp") %>%
+  group_by(Site_code) %>%
+  pairwise_wilcox_test(data = ., Shannon_index ~ Dataset, p.adjust.method = "fdr")
+
+```
+
+```{r stats_full_75bp}
+
+all_data %>%
+  mutate(Time_period = as.character(Time_period)) %>%
+  filter(Dataset != "Sub10M") %>%
+  group_by(Time_period) %>%
+  pairwise_wilcox_test(data = ., Observed_species ~ Dataset, p.adjust.method = "fdr")
+
+
+all_data %>%
+  mutate(Time_period = as.character(Time_period)) %>%
+  filter(Dataset != "Sub10M") %>%
+  group_by(Site_code) %>%
+  pairwise_wilcox_test(data = ., Observed_species ~ Dataset, p.adjust.method = "fdr")
+
+all_data %>%
+  mutate(Time_period = as.character(Time_period)) %>%
+  filter(Dataset != "Sub10M") %>%
+  group_by(Site_code) %>%
+  pairwise_wilcox_test(data = ., Shannon_index ~ Dataset, p.adjust.method = "fdr")
+
+```
+
+
+```{r}
+shannon_box_plot <- all_data %>%
+  mutate(Site_code = fct_relevel(Site_code, "IVE","ELR","KIL","RAD","CMB","MID","VLC","JAE")) %>%
+  ggplot(., aes(x = Site_code, y = Shannon_index, fill = Dataset)) +
+    geom_boxplot(alpha = 0.5) +
+    geom_jitter(alpha = 0.5, position = position_jitterdodge(jitter.width = 0.1), size = 1) +
+    theme_minimal() +
+    scale_fill_manual(values = colors3) +
+    theme(axis.text.x = element_text(angle = 0, vjust = 0.5),
+          text = element_text(size=16)) +
+    scale_y_continuous(breaks=scales::pretty_breaks(n=8)) +
+    ylab("Shannon index") +
+    xlab("")
+
+shannon_box_plot
+
+```
+
+```{r}
+adiv_sub_figure <- no_sp_box_polot + shannon_box_plot +
+  plot_layout(nrow = 2) + 
+  plot_annotation(tag_levels = 'A')
+
+adiv_sub_figure
+
+# ggsave("./06-publication/supplemental_figures/SXX11/adiv_sub_figure.pdf", plot = adiv_sub_figure, device = "pdf",
+#        scale = 1, width = 10, height = 10, units = c("in"), dpi = 300)
+
+```
+
+
+
+
+
+
+
+
+
+
+
+

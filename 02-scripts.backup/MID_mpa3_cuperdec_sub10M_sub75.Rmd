@@ -1,0 +1,253 @@
+---
+title: "Middenbeemster, CMB calculus sample cumulative decay curves from nt MALT database"
+author: "Irina Velsko"
+date: "`r format(Sys.time(), '%b %d, %Y')`"
+output: github_document
+---
+
+```{r load_libraries, echo = F, message = F}
+library(knitr)
+library(janitor)
+library(cuperdec)
+library(data.table)
+library(magrittr) ## for pipes!
+library(dplyr) # for mutate()!
+library(tidyverse)
+```
+
+Set the working directory of the notebook to the parent directory of the 
+notebook itself.  
+
+```{r setup}
+knitr::opts_knit$set(root.dir = normalizePath(".."))
+```
+
+Read in the full species and genus tables.
+```{r load_data}
+# read in the sub10M species table
+mpa3_sub10M_raw <- fread("./05-results.backup/mpa3_abundance_table_sub10M.tsv") %>%
+  select(-NCBI_tax_id)
+
+# clean the file names
+colnames(mpa3_sub10M_raw) <- gsub(".sub10M.metaphlan3","", colnames(mpa3_sub10M_raw))
+colnames(mpa3_sub10M_raw) <- gsub(".SG1","", colnames(mpa3_sub10M_raw))
+
+# filter to have only species
+mpa3_sub10M_sp <- mpa3_sub10M_raw %>% 
+  filter(str_detect(clade_name, "s__")) %>%
+  separate(clade_name, into = c("K","P","C","O","F","G","Species"), sep = "\\|") %>%
+  select(-c("K","P","C","O","F","G")) %>%
+  mutate(Species = str_replace_all(Species, "s__",""),
+         Species = str_replace_all(Species, "_"," ")) %>%
+  # these samples have no metadata
+  select(-c("MID025.A0101","MID033.A0101","MID052.A0101","MID056.A0101","MID065.A0101","MID068.A0101","MID076.A0101","MID078.A0101")) %>%
+  arrange(Species)
+
+# read in the sub75bp species table
+mpa3_sub75bp_raw <- fread("./05-results.backup/mpa3_abundance_table_sub75bp.tsv") %>%
+  select(-NCBI_tax_id)
+
+# clean the file names
+colnames(mpa3_sub75bp_raw) <- gsub(".sub75bp.metaphlan3","", colnames(mpa3_sub75bp_raw))
+colnames(mpa3_sub75bp_raw) <- gsub(".SG1","", colnames(mpa3_sub75bp_raw))
+
+# filter to have only species
+mpa3_sub75bp_sp <- mpa3_sub75bp_raw %>% 
+  filter(str_detect(clade_name, "s__")) %>%
+  separate(clade_name, into = c("K","P","C","O","F","G","Species"), sep = "\\|") %>%
+  select(-c("K","P","C","O","F","G")) %>%
+  mutate(Species = str_replace_all(Species, "s__",""),
+         Species = str_replace_all(Species, "_"," ")) %>%
+  # these samples have no metadata
+  select(-c("MID025.A0101","MID033.A0101","MID052.A0101","MID056.A0101","MID065.A0101","MID068.A0101","MID076.A0101","MID078.A0101")) %>%
+  arrange(Species)
+
+```
+
+
+Load metadata
+```{r load_metadata}
+
+load("./05-results.backup/Metadata_tables.RData")
+
+```
+
+
+# MetaPhlAn3 sub10M
+```{r}
+# list samples with no metadata so they can be removed from the table
+no_meta_samples <- mpa3_sub10M_sp %>%
+  gather("Library_ID", "Counts", 2:ncol(.)) %>%
+  spread(Species, Counts) %>%
+  select(Library_ID) %>%
+  anti_join(., full_metadata %>% select(Library_ID)) %>%
+  pull()
+
+# remove samples with no metadata
+mpa3_sub10M_sp <- mpa3_sub10M_sp %>%
+  select(-no_meta_samples)
+
+```
+
+
+Use the example database
+```{r set_database}
+# load the example database
+example_database <- system.file("extdata",
+                                "example_database.tsv",
+                                package = "cuperdec")
+
+# convert the example database to a tibble
+database <- load_database(example_database, target = "oral") # %>% print()
+
+```
+
+```{r taxatable}
+
+taxatable <- load_taxa_table(mpa3_sub10M_sp) # %>% print()
+
+```
+
+```{r metamap}
+metadata_map <- load_map(full_metadata,
+                     sample_col = "Library_ID",
+                     source_col = "Site_code") # %>% print()
+
+```
+
+```{r simple_curve}
+curves <- calculate_curve(taxatable, database = database) %>%
+  print()
+
+plot_cuperdec(curves)
+
+
+curves %>%
+  filter(Sample == "CSD")
+
+
+```
+
+```{r metadata_curve}
+plot_cuperdec(curves, metadata_map)
+
+```
+
+```{r adaptive_rank_burnin}
+
+adaptive_rank_burnin_result <- adaptive_burnin_filter(curves, percent_threshold = 68) # percent_threshold = 50 allows the highest ExtractionBlank line to turn turquoise; percent_threshold = 60 keeps the highest ExtractionBlank line red but turns one CMC sample line red; percent_threshold = 59 keeps all CMC turquoise and all ExtractionBlanks red; going higher turns more CMC red
+cd_curve_plot <- plot_cuperdec(curves, metadata_map, adaptive_rank_burnin_result, restrict_x = 50)
+cd_curve_plot
+
+
+# ggsave("./06-publication/supplemental_figures/SXX1/SXX1_cuperdec_adaptive_68pct.png", plot = cd_curve_plot, device = "png",
+#        scale = 1, width = 7, height = 5, units = c("in"), dpi = 300)
+
+```
+
+```{r discard_list, eval = F}
+# this will not have any CMC samples
+discard_list <- adaptive_rank_burnin_result %>% filter(!Passed) %>%
+  filter(!str_detect(Sample, "EXB|LIB")) %>% # these are blanks, dentin, or soil
+  select(Sample)
+discard_list
+
+# Using the same cut-offs as for the full dataset, the same 9 samples are identified as poorly-preserved
+# fwrite(discard_list, "./05-results.backup/cuperdec_mpa3_sub10M_poor_samples.tsv", sep = "\t", quote = F)
+
+# list the controls that passed to know which to remove before running decontam
+adaptive_rank_burnin_result %>% filter(Passed) %>%
+  filter(str_detect(Sample, "EXB|LIB|CSD|CSL|CSS|CSN"))
+
+```
+
+
+
+# MetaPhlAn3 sub75bp
+```{r}
+# list samples with no metadata so they can be removed from the table
+no_meta_samples <- mpa3_sub75bp_sp %>%
+  gather("Library_ID", "Counts", 2:ncol(.)) %>%
+  spread(Species, Counts) %>%
+  select(Library_ID) %>%
+  anti_join(., full_metadata %>% select(Library_ID)) %>%
+  pull()
+
+# remove samples with no metadata
+mpa3_sub75bp_sp <- mpa3_sub75bp_sp %>%
+  select(-no_meta_samples)
+
+```
+
+
+Use the example database
+```{r set_database}
+# load the example database
+example_database <- system.file("extdata",
+                                "example_database.tsv",
+                                package = "cuperdec")
+
+# convert the example database to a tibble
+database <- load_database(example_database, target = "oral") # %>% print()
+
+```
+
+```{r taxatable}
+
+taxatable <- load_taxa_table(mpa3_sub75bp_sp) # %>% print()
+
+```
+
+```{r metamap}
+metadata_map <- load_map(full_metadata,
+                     sample_col = "Library_ID",
+                     source_col = "Site_code") # %>% print()
+
+```
+
+```{r simple_curve}
+curves <- calculate_curve(taxatable, database = database) %>%
+  print()
+
+plot_cuperdec(curves)
+
+
+curves %>%
+  filter(Sample == "CSD")
+
+
+```
+
+```{r metadata_curve}
+plot_cuperdec(curves, metadata_map)
+
+```
+
+```{r adaptive_rank_burnin}
+
+adaptive_rank_burnin_result <- adaptive_burnin_filter(curves, percent_threshold = 60) # percent_threshold = 50 allows the highest ExtractionBlank line to turn turquoise; percent_threshold = 60 keeps the highest ExtractionBlank line red but turns one CMC sample line red; percent_threshold = 59 keeps all CMC turquoise and all ExtractionBlanks red; going higher turns more CMC red
+cd_curve_plot <- plot_cuperdec(curves, metadata_map, adaptive_rank_burnin_result, restrict_x = 50)
+cd_curve_plot
+
+
+# ggsave("./06-publication/supplemental_figures/SXX1/SXX1_cuperdec_adaptive_68pct.png", plot = cd_curve_plot, device = "png",
+#        scale = 1, width = 7, height = 5, units = c("in"), dpi = 300)
+
+```
+
+```{r discard_list, eval = F}
+# this will not have any CMC samples
+discard_list <- adaptive_rank_burnin_result %>% filter(!Passed) %>%
+  filter(!str_detect(Sample, "EXB|LIB")) %>% # these are blanks, dentin, or soil
+  select(Sample)
+discard_list
+
+# Using a lower cut-off than for the full data set (here 60 pct_threshold), a different set of 9 samples are identified as poorly-preserved
+# Using the same cut-off as for the full data set there are 36 samples poorly-preserved samples, mostly Radcliffe and MID
+# fwrite(discard_list, "./05-results.backup/cuperdec_mpa3_sub75bp_poor_samples.tsv", sep = "\t", quote = F)
+
+# list the controls that passed to know which to remove before running decontam
+adaptive_rank_burnin_result %>% filter(Passed) %>%
+  filter(str_detect(Sample, "EXB|LIB|CSD|CSL|CSS|CSN"))
+
+```
