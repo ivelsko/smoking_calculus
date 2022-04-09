@@ -184,6 +184,8 @@ ggplot(mid_pca_values, aes(PC1, PC2, color = Site_code, shape = Time_period)) +
   ylab(paste("PC2 - ", exp_var_mid[2]))
 
 
+fwrite(mid_pca_values, "./05-results.backup/mid_species_pca_values.tsv", sep = "\t", quote = F)
+
 ```
 
 ```{r mid_pc_correlations}

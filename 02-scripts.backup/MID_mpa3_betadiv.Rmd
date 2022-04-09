@@ -1470,6 +1470,14 @@ pc1 <- mpa3_species_decontam_filtered_nocontrols_biplot_121$plot_env$pws_10 %>%
 
 fwrite(pc1, "./05-results.backup/mpa3_pc1_species_list.tsv", quote = F, sep = "\t")
 
+pc2 <- mpa3_species_decontam_filtered_nocontrols_biplot_122$plot_env$pws_10 %>% 
+  arrange(desc(PC2)) %>%
+  bind_rows(., mpa3_species_decontam_filtered_nocontrols_biplot_122$plot_env$neg_10 %>% 
+  arrange(PC2)) %>%
+  select(Taxon, PC2)
+
+fwrite(pc2, "./05-results.backup/mpa3_pc2_species_list.tsv", quote = F, sep = "\t")
+
 ```
 
 

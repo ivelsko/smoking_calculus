@@ -204,8 +204,8 @@ full_metadata <- full_metadata %>%
 
 Site_code_colors <- c(MID = "#311068", CMB = "#7B2382FF", RAD = "#C83E73", KIL = "#E95562", ELR = "#FEA873",
                       IVE = "#FED395", JAE = "#41b6c4", VLC = "#a0dae1", EXB = "#252525", LIB = "#737373", DEN = "#252525", SOL = "#252525")
-Site_code_shapes <- c(Middenbeemster = 15, CMB = 16, Radcliffe = 17, Kilteasheen = 18, ELR = 25, IVE = 14, Jaen = 13, VLC = 13, Extraction_blank = 4, Library_blank = 3, Dentin = 3, Soil = 3)
-Site_code_size <- c(Middenbeemster = 4.5, CMB = 4, Radcliffe = 4, Kilteasheen = 6, ELR = 4, IVE = 4, Jaen = 4, VLC = 4, Extraction_blank = 4, Library_blank = 4, Dentin = 3, Soil = 3)
+Site_code_shapes <- c(MID = 16, CMB = 15, RAD = 17, KIL = 18, ELR = 25, IVE = 14, JAE = 13, VLC = 13, EXB = 4, LIB = 3, Dentin = 3, Soil = 3)
+Site_code_size <- c(MID = 4.5, CMB = 4, RAD = 4, KIL = 6, ELR = 4, IVE = 4, JAE = 4, VLC = 4, EXB = 4, LIB = 4, Dentin = 3, Soil = 3)
 
 Time_period_colors <- c(Industrial = "#311068", Medieval = "#C83E73", Modern = "#41b6c4", Extraction_blank = "#252525", Library_blank = "#737373", Soil = "black")
 Time_period_shapes <- c(Industrial = 19, Medieval = 17, Modern = 15, Extraction_blank = 4, Library_blank = 3)
@@ -256,7 +256,7 @@ save(full_metadata,
      alt_tooth_location_colors,alt_tooth_location_shapes,alt_tooth_location_size,
      file = "./05-results.backup/Metadata_tables.RData")
 
-fwrite(full_metadata, "00-documentation.backup/full_combined_metadata.tsv", sep = "\t", quote = F, na = "NA")
+# fwrite(full_metadata, "00-documentation.backup/full_combined_metadata.tsv", sep = "\t", quote = F, na = "NA")
 
 ```
 

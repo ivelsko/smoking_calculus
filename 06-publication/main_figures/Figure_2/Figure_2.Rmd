@@ -21,11 +21,13 @@ library(vegan)
 library(janitor)
 library(pander)
 library(flextable)
+library(variancePartition)
 library(tidyverse)
 library(gplots)
 library(ggrepel)
 library(viridis)
 library(cowplot)
+library(RColorBrewer)
 opts_chunk$set(echo=F, warning=F, message=F, dpi=150)
 ```
 
@@ -101,6 +103,50 @@ strep_group_info <- mpa3_species_decontam %>%
 
 ```
 
+```{r strep_groups}
+# load the MALT RefSeq taxonomy tables that have been decontaminated 
+# and the column headers are cleaned up
+# this is to get the Strep groups for coloring the PCA plot
+load("./05-results.backup/Taxonomy_tables.RData")
+
+# list poor samples from cuperdec
+poor_samples_rs <- fread("./05-results.backup/cuperdec_poor_samples.tsv") %>%
+  rename(Library_ID = Sample) %>%
+  filter(str_detect(Library_ID, "MID")) %>%
+  pull(Library_ID)
+
+# we'll use the prevalence-filtered dataset
+malt_rs <- all_species_decontam_prev %>%
+  # select(matches("Species|MID|CMB")) %>%
+  adorn_totals(where = "col")  %>%
+  filter(Total >  0) %>%
+  select(-Total) %>%
+  select(-poor_samples_rs)
+
+strep_groups <- fread("./00-documentation.backup/dRep_strep_groups.tsv") %>%
+  # remove the extrac column with the old dRep
+  select(-Clade_Consensus) %>%
+  # make a factor for plotting
+  mutate(dRep = fct_relevel(dRep, "Sanguinis","Mitis","Salivarius","Anginosus","Bovis","Pyogenic","Mutans","Other_oral","Other","Unknown"))
+
+strep_rs <- malt_rs %>%
+  filter(str_detect(Species, "Streptococcus")) %>%
+  # join with the Strep grup table for plotting
+  inner_join(., strep_groups) %>%
+  select(Species, dRep, everything()) %>%
+  # convert to long-format
+  gather("Library_ID","Counts", 3:ncol(.)) %>%
+  # mutate(Library_ID = fct_relevel(Library_ID, sample_order_rs)) %>%
+  dplyr::group_by(Library_ID, dRep) %>%
+  summarize(Count_sum = sum(Counts)) %>%
+  ungroup() %>%
+  group_by(Library_ID) %>%
+  mutate(Percent = Count_sum / sum(Count_sum)) %>%
+  select(Library_ID, dRep, Percent) %>%
+  pivot_wider(names_from = dRep, values_from = Percent)
+
+```
+
 ```{r load_metadata}
 
 # load the metadata file
@@ -116,6 +162,14 @@ colnames(malt_map_unmap_rl_gc) <- gsub("_unmap","_malt_unmap", colnames(malt_map
 #   full_join(., malt_map_unmap_rl_gc) %>%
 #   full_join(., strep_groups, by = "Library_ID")
 
+
+```
+
+```{r}
+comb_metadata <- full_metadata %>%
+  mutate(`DNA_molecules_per_library_x10^6_log` = log10(`DNA_molecules_per_library_x10^6`)) %>%
+  full_join(., malt_map_unmap_rl_gc) %>%
+  full_join(., strep_rs, by = "Library_ID")
 
 ```
 
@@ -422,8 +476,8 @@ beta_div <- plot_grid(minpipe_pc12, pctpd_pc12,
 
 beta_div
 
-ggsave("./06-publication/main_figures/Figure_2/beta_div.pdf", plot = beta_div,
-       device = "pdf", scale = 1, width = 12, height = 9.5, units = c("in"), dpi = 300)
+# ggsave("./06-publication/main_figures/Figure_2/beta_div.pdf", plot = beta_div,
+#        device = "pdf", scale = 1, width = 12, height = 9.5, units = c("in"), dpi = 300)
 
 ```
 
@@ -437,6 +491,29 @@ mpa3_species_decontam_mid <- mpa3_species_decontam %>%
   mutate(Counts = Counts +1) %>%
   spread(Species,Counts) %>%
   column_to_rownames("Library_ID")
+
+# prepare to run a PCA
+# check the number of components to retain by tuning the PCA
+mixOmics::tune.pca(mpa3_species_decontam_mid, logratio = 'CLR')
+
+malt_otu.pca <- mixOmics::pca(mpa3_species_decontam_mid, ncomp = 2, logratio = 'CLR')
+
+exp_var_mid <- paste0(round(malt_otu.pca$prop_expl_var$X * 100, 2), "%")
+
+mid_pca_values <- malt_otu.pca$variates$X %>%
+  as.data.frame() %>%
+  rownames_to_column("Library_ID") %>%
+  inner_join(., comb_metadata, by = "Library_ID") %>%
+  drop_na(Site_code) %>%
+  mutate(Sex_n = ifelse(Sex == "Female", 0,
+                        ifelse(Sex == "Male", 1,2))) %>%
+  mutate(Pipenotch_n = ifelse(Pipenotch == "Present",0,
+                              ifelse(Pipenotch == "Absent",1,2))) %>%
+  mutate(Age_n = ifelse(Age == "13-18",0,
+                        ifelse(Age == "18-25",1,
+                               ifelse(Age == "25-45",2,
+                                      ifelse(Age == "45+",4,5)))))
+
 
 ```
 

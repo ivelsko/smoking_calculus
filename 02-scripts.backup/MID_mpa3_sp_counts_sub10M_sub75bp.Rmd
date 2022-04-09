@@ -344,6 +344,9 @@ all_data %>%
   count() %>%
   pivot_wider(names_from = "Dataset", values_from = "n")
 
+
+# fwrite(all_data, "../05-results.backup/alphadiv_numbers_full_sub.tsv", quote = F, sep = "\t")
+
 ```
 
 ```{r}

@@ -1,21 +1,41 @@
-PC2_positive	Avg_GC	PC2
-Pseudopropionibacterium propionicum	66.1	PWS
-Desulfomicrobium orale	58.9	PWS
-Actinomyces sp oral taxon 414	65.7	PWS
-Bacteroidetes oral taxon 274	43	PWS
-Fretibacterium fastidiosum	63.2	PWS
-Corynebacterium matruchotii	57.1	PWS
-Eubacterium minutum	45.8	PWS
-Cardiobacterium valvarum	58.2	PWS
-Johnsonella ignava	35.8	PWS
-Desulfobulbus oralis	60.1	PWS
-Methanobrevibacter oralis	27.8	NEG
-Pseudoramibacter alactolyticus	52.1	NEG
-Eubacterium saphenum	50.1	NEG
-Eubacterium nodatum	38.15	NEG
-Neisseria mucosa	50.85	NEG
-Gemella bergeri	30.3	NEG
-Bacteroidetes bacterium oral taxon 272	47.7	NEG
-Streptococcus oralis	41.1	NEG
-Fusobacterium hwasookii	27	NEG
-Neisseria sicca	51.1	NEG
+Species	PC2_loading	Avg_GC	PC2
+Pseudopropionibacterium propionicum	NA	66.1	PWS
+Desulfomicrobium orale	NA	58.9	PWS
+Actinomyces sp oral taxon 414	NA	65.7	PWS
+Bacteroidetes oral taxon 274	NA	43	PWS
+Fretibacterium fastidiosum	NA	63.2	PWS
+Corynebacterium matruchotii	NA	57.1	PWS
+Eubacterium minutum	NA	45.8	PWS
+Cardiobacterium valvarum	NA	58.2	PWS
+Johnsonella ignava	NA	35.8	PWS
+Desulfobulbus oralis	NA	60.1	PWS
+Methanobrevibacter oralis	NA	27.8	NEG
+Pseudoramibacter alactolyticus	NA	52.1	NEG
+Eubacterium saphenum	NA	50.1	NEG
+Eubacterium nodatum	NA	38.15	NEG
+Neisseria mucosa	NA	50.85	NEG
+Gemella bergeri	NA	30.3	NEG
+Bacteroidetes bacterium oral taxon 272	NA	47.7	NEG
+Streptococcus oralis	NA	41.1	NEG
+Fusobacterium hwasookii	NA	27	NEG
+Neisseria sicca	NA	51.1	NEG
+Bacteroidetes oral taxon 274	0.195967308146538	43	PWS
+Tannerella forsythia	0.194456554864105	47	PWS
+Fretibacterium fastidiosum	0.167109568542498	63	PWS
+Pseudopropionibacterium propionicum	0.16395587866467	66	PWS
+Eubacterium saphenum	0.159569025357411	50.05	PWS
+Eubacterium minutum	0.158639981157061	45.8	PWS
+Actinomyces sp oral taxon 414	0.152336552076598	65.6	PWS
+Ottowia sp oral taxon 894	0.14179283825149	67.1	PWS
+Treponema socranskii	0.134247917238553	49.2	PWS
+Desulfobulbus oralis	0.131453763544005	60	PWS
+Methanobrevibacter oralis	-0.742143146091689	27.8	NEG
+Neisseria mucosa	-0.122461057979253	50.8	NEG
+Gemella bergeri	-0.076743800613228	30.3	NEG
+Streptococcus oralis	-0.072292824987947	41.1	NEG
+Rothia dentocariosa	-0.071373384545707	53.8	NEG
+Eubacterium nodatum	-0.060152863658927	38.2	NEG
+Streptococcus sanguinis	-0.036494384898959	43.2	NEG
+Actinomyces oris	-0.034087334627513	68.5	NEG
+Olsenella uli	-0.033755607740583	66	NEG
+Pyramidobacter piscolens	-0.032956471740649	58.7	NEG
