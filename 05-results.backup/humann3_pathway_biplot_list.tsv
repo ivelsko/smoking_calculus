@@ -1,0 +1,44 @@
+pathway	Direction
+PWY-5971: palmitate biosynthesis (type II fatty acid synthase)	PC1+
+PWY-6285: superpathway of fatty acids biosynthesis (E. coli)	PC1+
+PWY0-1479: tRNA processing	PC1+
+PWY-6284: superpathway of unsaturated fatty acids biosynthesis (E. coli)	PC1+
+PWY-5173	PC1+
+NAGLIPASYN-PWY: lipid IVA biosynthesis (E. coli)	PC1+
+GLYCOLYSIS-TCA-GLYOX-BYPASS: superpathway of glycolysis, pyruvate dehydrogenase, TCA, and glyoxylate bypass	PC1+
+PWY-5345: superpathway of L-methionine biosynthesis (by sulfhydrylation)	PC1+
+SULFATE-CYS-PWY: superpathway of sulfate assimilation and cysteine biosynthesis	PC1+
+PWY-5855: ubiquinol-7 biosynthesis (early decarboxylation)	PC1+
+PWY-5856: ubiquinol-9 biosynthesis (early decarboxylation)	PC1+
+PWY-5857: ubiquinol-10 biosynthesis (early decarboxylation)	PC1+
+PWY-6708: ubiquinol-8 biosynthesis (early decarboxylation)	PC1+
+PWY-5757: fosfomycin biosynthesis	PC1-
+PWY-7374: 1,4-dihydroxy-6-naphthoate biosynthesis I	PC1-
+PWY-6876: isopropanol biosynthesis (engineered)	PC1-
+PWY-6350: archaetidylinositol biosynthesis	PC1-
+PWY-6349: CDP-archaeol biosynthesis	PC1-
+PWY-6749: CMP-legionaminate biosynthesis I	PC1-
+PWY-6167: flavin biosynthesis II (archaea)	PC1-
+PWY-7200: superpathway of pyrimidine deoxyribonucleoside salvage	PC1-
+PWY-7316: dTDP-N-acetylviosamine biosynthesis	PC1-
+PWY-5101: L-isoleucine biosynthesis II	PC1-
+PWY-5897: superpathway of menaquinol-11 biosynthesis	PC2+
+PWY-5898: superpathway of menaquinol-12 biosynthesis	PC2+
+PWY-5899: superpathway of menaquinol-13 biosynthesis	PC2+
+PWY-5840: superpathway of menaquinol-7 biosynthesis	PC2+
+PWY66-389: phytol degradation	PC2+
+PWY-5838: superpathway of menaquinol-8 biosynthesis I	PC2+
+FUCCAT-PWY: fucose degradation	PC2+
+PWY-5837: 2-carboxy-1,4-naphthoquinol biosynthesis	PC2+
+PWY-5861: superpathway of demethylmenaquinol-8 biosynthesis I	PC2+
+PWY-6313: serotonin degradation	PC2+
+PWY-6350: archaetidylinositol biosynthesis	PC2-
+PWY-6349: CDP-archaeol biosynthesis	PC2-
+PWY-7332: superpathway of UDP-N-acetylglucosamine-derived O-antigen building blocks biosynthesis	PC2-
+KETOGLUCONMET-PWY: ketogluconate metabolism	PC2-
+RUMP-PWY: formaldehyde oxidation I	PC2-
+PWY-6749: CMP-legionaminate biosynthesis I	PC2-
+PWY-7316: dTDP-N-acetylviosamine biosynthesis	PC2-
+PWY-5101: L-isoleucine biosynthesis II	PC2-
+PWY-6167: flavin biosynthesis II (archaea)	PC2-
+PWY-6174: mevalonate pathway II (haloarchaea)	PC2-
