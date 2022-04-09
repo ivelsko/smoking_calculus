@@ -1,0 +1,983 @@
+---
+title: "MID/CMB, Radcliffe, Kilteasheen, Iberian Medieval, calculus MetaPhlAn3 beta diversity"
+author: "Irina Velsko"
+date: "`r format(Sys.time(), '%b %d, %Y')`"
+output:
+    github_document:
+        fig_width: 8
+        fig_height: 6
+        toc: true
+---
+
+
+```{r load_libraries, echo = F, message = F}
+library(knitr)
+library(decontam)
+library(data.table)
+library(vegan)
+library(ape)
+library(mixOmics)
+library(janitor)
+library(rstatix)
+library(variancePartition)
+library(pander)
+library(tidyverse)
+library(gplots)
+library(ggrepel)
+library(viridis)
+library(patchwork)
+library(RColorBrewer)
+opts_chunk$set(echo=F, warning=F, message=F, dpi=150)
+```
+
+Set the working directory of the notebook to the parent directory of the 
+notebook itself.  
+
+```{r setup}
+knitr::opts_knit$set(root.dir = normalizePath("../../../"))
+```
+
+# HUMAnN3 Pathways
+
+# humann3 tables 
+```{r load_data}
+## load the species and genus tables generated with humann3
+humann3_path_full <- fread("./05-results.backup/pathabundance_joined_cpm.tsv")
+humann3_path_full <- as_tibble(humann3_path_full)
+humann3_GFs_full <- fread("./05-results.backup/genefamilies_joined_cpm_ur90rxn.tsv")
+humann3_GFs_full <- as_tibble(humann3_GFs_full)
+
+# clean the file names
+humann3_GFs_full <- rename(humann3_GFs_full, GeneFamily = `# Gene Family`)
+colnames(humann3_GFs_full) <- gsub(".unmapped_Abundance-RPKs","", colnames(humann3_GFs_full))
+colnames(humann3_GFs_full) <- gsub(".SG1","", colnames(humann3_GFs_full))
+
+humann3_path_full <- rename(humann3_path_full, Pathway = `# Pathway`)
+colnames(humann3_path_full) <- gsub(".unmapped_Abundance","", colnames(humann3_path_full))
+colnames(humann3_path_full) <- gsub(".SG1","", colnames(humann3_path_full))
+
+# remove unmapped and ungrouped reads
+humann3_path <- humann3_path_full %>% filter(!str_detect(Pathway, "UNMAPPED|UNINTEGRATED"))
+humann3_GFs <- humann3_GFs_full %>% filter(!str_detect(GeneFamily, "UNMAPPED|UNGROUPED"))
+
+```
+
+```{r load_metadata}
+# load the metadata file
+load("./05-results.backup/Metadata_tables.RData")
+
+```
+
+
+```{r load_data}
+# mpa3 species table for Strep group proportions?
+# read in the species table
+mpa3_sp <- fread("./05-results.backup/mpa3_abundance_table.tsv") %>%
+  select(-NCBI_tax_id)
+
+# clean the file names
+colnames(mpa3_sp) <- gsub(".metaphlan3","", colnames(mpa3_sp))
+colnames(mpa3_sp) <- gsub(".SG1","", colnames(mpa3_sp))
+
+# filter to have only species
+mpa3_sp <- mpa3_sp %>% 
+  filter(str_detect(clade_name, "s__")) %>%
+  separate(clade_name, into = c("K","P","C","O","F","G","Species"), sep = "\\|") %>%
+  select(-c("K","P","C","O","F","G")) %>%
+  mutate(Species = str_replace_all(Species, "s__",""),
+         Species = str_replace_all(Species, "_"," ")) %>%
+  # these samples have no metadata
+  select(-c("MID025.A0101","MID033.A0101","MID052.A0101","MID056.A0101","MID065.A0101","MID068.A0101","MID076.A0101","MID078.A0101")) %>%
+  arrange(Species)
+
+mpa3_contaminants <- fread("./05-results.backup/contaminant_species_mid_mpa3.tsv", sep = "\t") %>%
+  bind_rows(., fread("./05-results.backup/contaminant_species_kilteasheen_mpa3.tsv", sep = "\t")) %>%
+  bind_rows(., fread("./05-results.backup/contaminant_species_iberia_mpa3.tsv", sep = "\t")) %>%
+  unique()
+
+# remove contaminant species from table
+mpa3_species_decontam <- mpa3_sp %>%
+  anti_join(., mpa3_contaminants)
+
+outliers_mpa3 <- c("EXB059.A2101","EXB059.A2501","EXB015.A3301","EXB034.A2701","EXB059.A2201","EXB059.A2301","EXB059.A2401","LIB058.A0103","LIB058.A0106","LIB058.A0104")
+poor_samples_mpa3 <- fread("./05-results.backup/cuperdec_mpa3_poor_samples.tsv") %>%
+  pull(Sample)
+
+
+```
+
+
+```{r load_strep_groups}
+strep_groups <- fread("./00-documentation.backup/25-streptococcus_cladegroup_amylasegroup_database.tsv") %>%
+  select(Taxon, Clade_Consensus) %>%
+  rename(Species = Taxon) %>%
+  mutate(Species = str_replace_all(Species, "_", " ")) %>%
+  rename(Strep_group = Clade_Consensus) %>%
+  mutate(Strep_group = fct_relevel(Strep_group, "sanguinis","mitis","salivarius","anginosus","bovis","pyogenic","mutans","unknown","NA"))
+
+# get the proportion of sanguinis and anginosis for each sample
+strep_group_info <- mpa3_species_decontam %>%
+  filter(str_detect(Species, "Streptococcus")) %>%
+  # join with the Strep grup table for plotting
+  inner_join(., strep_groups) %>%
+  select(-Species) %>%
+  select(Strep_group, everything()) %>%
+  # transpose
+  gather("Library_ID","Counts", 2:ncol(.)) %>%
+  group_by(Library_ID, Strep_group) %>%
+  summarize(Reads = sum(Counts)) %>%
+  spread(Strep_group, Reads) %>%
+  # convert table to proportions
+  adorn_percentages(denominator = "row") %>%
+  # arrange by sanguinis and for the ones w/o sanguinis, by anginosis
+  arrange(desc(sanguinis))
+
+```
+
+
+
+```{r strep_groups}
+# load the MALT RefSeq taxonomy tables that have been decontaminated 
+# and the column headers are cleaned up
+# this is to get the Strep groups for coloring the PCA plot
+load("./05-results.backup/Taxonomy_tables.RData")
+
+# list poor samples from cuperdec
+poor_samples_rs <- fread("./05-results.backup/cuperdec_poor_samples.tsv") %>%
+  rename(Library_ID = Sample) %>%
+  filter(str_detect(Library_ID, "MID")) %>%
+  pull(Library_ID)
+
+# we'll use the prevalence-filtered dataset
+malt_rs <- all_species_decontam_prev %>%
+  # select(matches("Species|MID|CMB")) %>%
+  adorn_totals(where = "col")  %>%
+  filter(Total >  0) %>%
+  select(-Total) 
+# %>%
+#   select(-poor_samples_rs)
+
+strep_groups <- fread("./00-documentation.backup/dRep_strep_groups.tsv") %>%
+  # remove the extrac column with the old dRep
+  select(-Clade_Consensus) %>%
+  # make a factor for plotting
+  mutate(dRep = fct_relevel(dRep, "Sanguinis","Mitis","Salivarius","Anginosus","Bovis","Pyogenic","Mutans","Other_oral","Other","Unknown"))
+
+strep_rs <- malt_rs %>%
+  filter(str_detect(Species, "Streptococcus")) %>%
+  # join with the Strep grup table for plotting
+  inner_join(., strep_groups) %>%
+  select(Species, dRep, everything()) %>%
+  # convert to long-format
+  gather("Library_ID","Counts", 3:ncol(.)) %>%
+  # mutate(Library_ID = fct_relevel(Library_ID, sample_order_rs)) %>%
+  dplyr::group_by(Library_ID, dRep) %>%
+  summarize(Count_sum = sum(Counts)) %>%
+  ungroup() %>%
+  group_by(Library_ID) %>%
+  mutate(Percent = Count_sum / sum(Count_sum)) %>%
+  select(Library_ID, dRep, Percent) %>%
+  pivot_wider(names_from = dRep, values_from = Percent)
+
+```
+
+```{r species_pc1_pct}
+# get the percent of species driving PC1+ and PC1- plotting from the MetaPhlan3 table
+# Does the abundance of those species also affect plotting of the pathway PCA?
+
+# select the species with strongest loadings in PC1 + and - directions
+pc1_mpa3 <- fread("./05-results.backup/mpa3_pc1_species_list.tsv") 
+
+pc1pws <- pc1_mpa3 %>%
+  filter(PC1 > 0) %>%
+  pull(Taxon)
+
+pc1neg <- pc1_mpa3 %>%
+  filter(PC1 < 0) %>%
+  pull(Taxon)
+
+# calculate percent of species in PC1 positice top 10 in each sample
+pc_species_pws_pc1 <- mpa3_species_decontam %>%
+  select(-one_of(outliers_mpa3)) %>%
+  select(-one_of(poor_samples_mpa3)) %>%
+  select(-matches("EXB|LIB|CSN|CSD|ARS|CSS|CSL")) %>%
+  filter(Species %in% pc1pws) %>%
+  # convert to long-format
+  pivot_longer(!Species, names_to = "Library_ID", values_to = "Counts") %>%
+  dplyr::group_by(Library_ID) %>%
+  summarize(Count_sum = sum(Counts)) %>%
+  ungroup() %>%
+  full_join(., mpa3_species_decontam %>%
+  select(-one_of(outliers_mpa3)) %>%
+  select(-one_of(poor_samples_mpa3)) %>%
+  select(-matches("EXB|LIB|CSN|CSD|ARS|CSS|CSL")) %>%
+              pivot_longer(!Species, names_to = "Library_ID", values_to = "Counts") %>%
+              dplyr::group_by(Library_ID) %>%
+              summarize(Total = sum(Counts)) %>%
+              select(Library_ID, Total)) %>%
+  mutate(Percent_pws_pc1 = Count_sum / Total * 100) %>%
+  select(Library_ID, Percent_pws_pc1)
+
+# calculate percent of species in PC1 negative top 10 in each sample
+pc_species_neg_pc1 <- mpa3_species_decontam %>%
+  select(-one_of(outliers_mpa3)) %>%
+  select(-one_of(poor_samples_mpa3)) %>%
+  select(-matches("EXB|LIB|CSN|CSD|ARS|CSS|CSL")) %>%
+  filter(Species %in% pc1neg) %>%
+  # convert to long-format
+  pivot_longer(!Species, names_to = "Library_ID", values_to = "Counts") %>%
+  dplyr::group_by(Library_ID) %>%
+  summarize(Count_sum = sum(Counts)) %>%
+  ungroup() %>%
+  full_join(., mpa3_species_decontam %>%
+  select(-one_of(outliers_mpa3)) %>%
+  select(-one_of(poor_samples_mpa3)) %>%
+  select(-matches("EXB|LIB|CSN|CSD|ARS|CSS|CSL")) %>%
+              pivot_longer(!Species, names_to = "Library_ID", values_to = "Counts") %>%
+              dplyr::group_by(Library_ID) %>%
+              summarize(Total = sum(Counts)) %>%
+              select(Library_ID, Total)) %>%
+  mutate(Percent_neg_pc1 = Count_sum / Total * 100) %>%
+  select(Library_ID, Percent_neg_pc1)
+
+# add both to the metadata table below
+
+```
+
+```{r species_pc2_pct}
+# get the percent of species driving PC1+ and PC1- plotting from the MetaPhlan3 table
+# Does the abundance of those species also affect plotting of the pathway PCA?
+
+# select the species with strongest loadings in PC2 + and - directions
+pc2_mpa3 <- fread("./05-results.backup/mpa3_pc2_species_list.tsv") 
+
+pc2pws <- pc2_mpa3 %>%
+  filter(PC2 > 0) %>%
+  pull(Taxon)
+
+pc2neg <- pc2_mpa3 %>%
+  filter(PC2 < 0) %>%
+  pull(Taxon)
+
+# calculate percent of species in PC2 positice top 10 in each sample
+pc_species_pws_pc2 <- mpa3_species_decontam %>%
+  select(-one_of(outliers_mpa3)) %>%
+  select(-one_of(poor_samples_mpa3)) %>%
+  select(-matches("EXB|LIB|CSN|CSD|ARS|CSS|CSL")) %>%
+  filter(Species %in% pc2pws) %>%
+  # convert to long-format
+  pivot_longer(!Species, names_to = "Library_ID", values_to = "Counts") %>%
+  dplyr::group_by(Library_ID) %>%
+  summarize(Count_sum = sum(Counts)) %>%
+  ungroup() %>%
+  full_join(., mpa3_species_decontam %>%
+  select(-one_of(outliers_mpa3)) %>%
+  select(-one_of(poor_samples_mpa3)) %>%
+  select(-matches("EXB|LIB|CSN|CSD|ARS|CSS|CSL")) %>%
+              pivot_longer(!Species, names_to = "Library_ID", values_to = "Counts") %>%
+              dplyr::group_by(Library_ID) %>%
+              summarize(Total = sum(Counts)) %>%
+              select(Library_ID, Total)) %>%
+  mutate(Percent_pws_pc2 = Count_sum / Total * 100) %>%
+  select(Library_ID, Percent_pws_pc2)
+
+# calculate percent of species in PC2 negative top 10 in each sample
+pc_species_neg_pc2 <- mpa3_species_decontam %>%
+  select(-one_of(outliers_mpa3)) %>%
+  select(-one_of(poor_samples_mpa3)) %>%
+  select(-matches("EXB|LIB|CSN|CSD|ARS|CSS|CSL")) %>%
+  filter(Species %in% pc2neg) %>%
+  # convert to long-format
+  pivot_longer(!Species, names_to = "Library_ID", values_to = "Counts") %>%
+  dplyr::group_by(Library_ID) %>%
+  summarize(Count_sum = sum(Counts)) %>%
+  ungroup() %>%
+  full_join(., mpa3_species_decontam %>%
+  select(-one_of(outliers_mpa3)) %>%
+  select(-one_of(poor_samples_mpa3)) %>%
+  select(-matches("EXB|LIB|CSN|CSD|ARS|CSS|CSL")) %>%
+              pivot_longer(!Species, names_to = "Library_ID", values_to = "Counts") %>%
+              dplyr::group_by(Library_ID) %>%
+              summarize(Total = sum(Counts)) %>%
+              select(Library_ID, Total)) %>%
+  mutate(Percent_neg_pc2 = Count_sum / Total * 100) %>%
+  select(Library_ID, Percent_neg_pc2)
+
+# add both to the metadata table below
+
+```
+
+```{r unmapped_info, eval = F}
+# read in the MALT mapped/unmapped gc and read length info from `MID_malt_map_unmap_rl_gc.Rmd`
+malt_map_unmap_rl_gc <- fread("./05-results.backup/rl_gc_sub_data.tsv")
+colnames(malt_map_unmap_rl_gc) <- gsub("_map","_malt_map", colnames(malt_map_unmap_rl_gc))
+colnames(malt_map_unmap_rl_gc) <- gsub("_unmap","_malt_unmap", colnames(malt_map_unmap_rl_gc))
+
+```
+
+```{r}
+full_metadata <- full_metadata %>%
+  mutate(`DNA_molecules_per_library_x10^6_log` = log10(`DNA_molecules_per_library_x10^6`)) %>%
+  # full_join(., malt_map_unmap_rl_gc) %>%
+  full_join(., strep_rs, by = "Library_ID") %>%
+  full_join(., pc_species_pws_pc1, by = "Library_ID") %>%
+  full_join(., pc_species_neg_pc1, by = "Library_ID") %>%
+  full_join(., pc_species_pws_pc2, by = "Library_ID") %>%
+  full_join(., pc_species_neg_pc2, by = "Library_ID")
+
+```
+
+```{r pca_plot_fxn}
+# plot PCA with colored dots and the title including the # of species or genera
+plot_pca <- function(df, pc1, pc2, color_group, shape_group, ncomps) {
+    metadata_group_colors <- get(paste(color_group, "_colors", sep = ""))
+    metadata_group_shapes <- get(paste(shape_group, "_shapes", sep = ""))
+
+    pca.list <- mixOmics::pca(df, ncomp = ncomps, logratio = 'CLR')
+
+    exp_var <- paste0(round(pca.list$prop_expl_var$X * 100, 2), "%")
+    df_X <- pca.list$variates$X %>%
+              as.data.frame() %>%
+              rownames_to_column("Library_ID") %>%
+              inner_join(full_metadata, by = "Library_ID") %>%
+              inner_join(., strep_group_info)
+              
+    color_group = df_X[[color_group]]
+    shape_group = df_X[[shape_group]]
+
+    if (pc1 == 'PC1') {
+        pc1 <- df_X$PC1
+        exp_var_pc1 <- exp_var[1]
+        xaxis <- c("PC1")
+    }  else if (pc1 == 'PC2') {
+        pc1 <- df_X$PC2
+        exp_var_pc1 <- exp_var[2]
+        xaxis <- c("PC2")
+    } else if (pc1 == 'PC3') {
+        pc1 <- df_X$PC3
+        exp_var_pc1 <- exp_var[3]
+        xaxis <- c("PC3")
+    }
+
+    if (pc2 == 'PC1') {
+        pc2 <- df_X$PC1
+        exp_var_pc2 <- exp_var[1]
+        yaxis <- c("PC1")
+    }  else if (pc2 == 'PC2') {
+        pc2 <- df_X$PC2
+        exp_var_pc2 <- exp_var[2]
+        yaxis <- c("PC2")
+    } else if (pc2 == 'PC3') {
+        pc2 <- df_X$PC3
+        exp_var_pc2 <- exp_var[3]
+        yaxis <- c("PC3")
+    }
+
+    pca_plot <- ggplot(df_X, aes(pc1, pc2)) +
+     geom_point(aes(, fill = color_group, shape = shape_group), size = 2.5, stroke = 0.3) +
+     scale_fill_manual(values = metadata_group_colors) +
+     scale_shape_manual(values = metadata_group_shapes) +
+     # stat_ellipse() +
+     xlab(paste(xaxis, " - ", exp_var_pc1)) +
+     ylab(paste(yaxis, " - ", exp_var_pc2)) +
+     theme_minimal(base_size = 16) +
+     theme(text = element_text(size=16)) +
+     theme(legend.title = element_blank(),
+           legend.key.size = unit(2,"mm"),
+           legend.text = element_text(size = 6)) +
+     theme(legend.position = "top")
+
+    return(pca_plot)
+}
+
+```
+
+
+```{r pca_plot_cont_fxn}
+# for continuous data
+plot_pca_cont <- function(df, pc1, pc2, color_group, shape_group, ncomps, title_text) {
+
+    pca.list <- mixOmics::pca(df, ncomp = ncomps, logratio = 'CLR')
+
+    exp_var <- paste0(round(pca.list$prop_expl_var$X * 100, 2), "%")
+    df_X <- pca.list$variates$X %>%
+              as.data.frame() %>%
+              rownames_to_column("Library_ID") %>%
+              inner_join(full_metadata, by = "Library_ID") %>%
+              inner_join(., strep_group_info, by = "Library_ID")
+    # %>%
+              # full_join(., full_source_results %>%
+              #             rename(Library_ID = SampleID),  by = "Library_ID")
+    
+    color_group = df_X[[color_group]]
+    shape_group = df_X[[shape_group]]
+
+    if (pc1 == 'PC1') {
+        pc1 <- df_X$PC1
+        exp_var_pc1 <- exp_var[1]
+        xaxis <- c("PC1")
+    }  else if (pc1 == 'PC2') {
+        pc1 <- df_X$PC2
+        exp_var_pc1 <- exp_var[2]
+        xaxis <- c("PC2")
+    } else if (pc1 == 'PC3') {
+        pc1 <- df_X$PC3
+        exp_var_pc1 <- exp_var[3]
+        xaxis <- c("PC3")
+    }
+
+    if (pc2 == 'PC1') {
+        pc2 <- df_X$PC1
+        exp_var_pc2 <- exp_var[1]
+        yaxis <- c("PC1")
+    }  else if (pc2 == 'PC2') {
+        pc2 <- df_X$PC2
+        exp_var_pc2 <- exp_var[2]
+        yaxis <- c("PC2")
+    } else if (pc2 == 'PC3') {
+        pc2 <- df_X$PC3
+        exp_var_pc2 <- exp_var[3]
+        yaxis <- c("PC3")
+    }
+
+    pca_plot <- ggplot(df_X, aes(pc1, pc2, fill = color_group, shape = shape_group)) +
+     geom_point(size = 2, color = "black") +
+     scale_fill_viridis_c(option = "C") +
+     scale_shape_manual(values = c(24,21)) +
+     # stat_ellipse() +
+     xlab(paste(xaxis, " - ", exp_var_pc1)) +
+     ylab(paste(yaxis, " - ", exp_var_pc2)) +
+     theme_minimal(base_size = 16) +
+     theme(text = element_text(size=16)) +
+     theme(legend.title = element_blank(),
+           legend.key.size = unit(2,"mm"),
+           legend.text = element_text(size = 6)) + 
+     theme(legend.position = "top") +
+     ggtitle(title_text) + theme(plot.title = element_text(size = 10))
+
+    return(pca_plot)
+}
+
+```
+
+```{r pca_plot_mid_fxn}
+# plot PCA with colored dots 
+plot_pca_mid <- function(df, pc1, pc2, color_group, shape_group, ncomps, title_text) {
+
+    pca.list <- mixOmics::pca(df, ncomp = ncomps, logratio = 'CLR')
+
+    exp_var <- paste0(round(pca.list$prop_expl_var$X * 100, 2), "%")
+    df_X <- pca.list$variates$X %>%
+              as.data.frame() %>%
+              rownames_to_column("Library_ID") %>%
+              inner_join(full_metadata, by = "Library_ID") %>%
+              inner_join(., strep_group_info, by = "Library_ID")
+    
+    color_group = df_X[[color_group]]
+    shape_group = df_X[[shape_group]]
+
+    if (pc1 == 'PC1') {
+        pc1 <- df_X$PC1
+        exp_var_pc1 <- exp_var[1]
+        xaxis <- c("PC1")
+    }  else if (pc1 == 'PC2') {
+        pc1 <- df_X$PC2
+        exp_var_pc1 <- exp_var[2]
+        xaxis <- c("PC2")
+    } else if (pc1 == 'PC3') {
+        pc1 <- df_X$PC3
+        exp_var_pc1 <- exp_var[3]
+        xaxis <- c("PC3")
+    }
+
+    if (pc2 == 'PC1') {
+        pc2 <- df_X$PC1
+        exp_var_pc2 <- exp_var[1]
+        yaxis <- c("PC1")
+    }  else if (pc2 == 'PC2') {
+        pc2 <- df_X$PC2
+        exp_var_pc2 <- exp_var[2]
+        yaxis <- c("PC2")
+    } else if (pc2 == 'PC3') {
+        pc2 <- df_X$PC3
+        exp_var_pc2 <- exp_var[3]
+        yaxis <- c("PC3")
+    }
+
+    pca_plot <- ggplot(df_X, aes(pc1, pc2, colour = color_group, shape = shape_group)) +
+     geom_point(size = 2) +
+     scale_colour_manual(values = c("#5A167E","#E95562","#FED395","#252525","#311068","#C83E73","#FEA873")) + # 
+     scale_shape_manual(values = c(16, 17, 15, 18)) +
+     # stat_ellipse() +
+     xlab(paste(xaxis, " - ", exp_var_pc1)) +
+     ylab(paste(yaxis, " - ", exp_var_pc2)) +
+     theme_minimal(base_size = 16) +
+     theme(text = element_text(size=16)) +
+     theme(legend.title = element_blank(),
+           legend.key.size = unit(2,"mm"),
+           legend.text = element_text(size = 6)) + # 
+     theme(legend.position = "top") +
+     ggtitle(title_text) + theme(plot.title = element_text(size = 10))
+
+    return(pca_plot)
+}
+
+```
+
+List the outliers from the plot in `MID_mpa3_decontam.Rmd`. 
+```{r outliers}
+outliers_mpa3 <- c("EXB059.A2101","EXB059.A2501","EXB015.A3301","EXB034.A2701","EXB059.A2201","EXB059.A2301","EXB059.A2401","LIB058.A0103","LIB058.A0106","LIB058.A0104")
+poor_samples_mpa3 <- fread("./05-results.backup/cuperdec_mpa3_poor_samples.tsv") %>%
+  pull(Sample)
+
+outliersF <- str_c(outliers_mpa3, collapse = "|")
+
+```
+
+
+#Sample Clustering with PCA
+
+# Pathway abundance analyses
+What is the relationship of the groups in a PCA without the blanks? Let's try
+the PCA using only the species that are present in at least 10% of at least one
+sample group (MID, CMB, Radcliffe, Kilteasheen, Iberia)
+
+```{r}
+
+humann3_path_l1 <- humann3_path %>%
+  filter(!str_detect(Pathway, "\\|")) %>%
+  # no full_metadata, remove these
+  select(-c("MID025.A0101","MID033.A0101","MID052.A0101","MID056.A0101","MID065.A0101","MID068.A0101","MID076.A0101","MID078.A0101")) %>%
+  # remove poorly preserved saples
+  select(-c("MID024.A0101","MID063.A0101","MID092.A0101")) %>%
+  select(-matches("EXB|LIB")) %>%
+  # inner_join(., humann3_path.decontam_noblanks_presence_more_30, by = "Pathway") %>%
+  gather("Library_ID","Counts",2:ncol(.)) %>%
+  mutate(Counts = Counts + 1) %>%
+  spread(Pathway,Counts) %>%
+  column_to_rownames("Library_ID")
+
+# prepare to run a PCA
+# check the number of components to retain by tuning the PCA
+mixOmics::tune.pca(humann3_path_l1, logratio = 'CLR')
+
+
+humann3_all_otu.pca <- mixOmics::pca(humann3_path_l1, ncomp = 2, logratio = 'CLR')
+humann3_all_pca_values <- humann3_all_otu.pca$variates$X %>%
+  as.data.frame() %>%
+  rownames_to_column("Library_ID") %>%
+  inner_join(., full_metadata, by = "Library_ID") %>%
+  left_join(., strep_group_info, by = "Library_ID")
+
+```
+
+```{r}
+# pipenotch colors/shapes
+Pipenotch_colors = c("#311068","#C83E73")
+Pipenotch_shapes = c(16,17)
+
+```
+
+
+```{r pca_time_period}
+# by minimum number of pipenotches
+pipenotch <- plot_pca_cont(humann3_path_l1, "PC1", "PC2","Min_no_Pipe_notches","Pipenotch", 3,"Min. No. Pipe Notches") 
+pipenotch
+
+```
+
+```{r pca_gc}
+# by average GC content
+gc <- plot_pca_cont(humann3_path_l1, "PC1", "PC2", "gc_avg", "Pipenotch", 3, "Avg. GC content (%)")
+gc
+
+```
+```{r pca_gc}
+# by average GC content
+pd <- plot_pca_cont(humann3_path_l1, "PC1", "PC2", "%_positions_with_Periodontal", "Pipenotch", 3, "Periodontal disease")
+pd
+
+```
+
+```{r pca_rl}
+# by average read length
+sg <- plot_pca_cont(humann3_path_l1, "PC1", "PC2", "Percent_pws_pc1", "Pipenotch", 3, "Prop. PC1 positive species")
+sg
+
+# ggsave("./06-publication/supplemental_figures/S11/read_length.pdf", plot = rl,
+#        device = "pdf", scale = 1, width = 6, height = 5, units = c("in"), dpi = 300)
+
+```
+
+## Species contributions to pathways
+
+```{r pc_biplot_top10s}
+# PC biplot loading top 10s
+humann3_pathway_biplot_list <- fread("./05-results.backup/humann3_pathway_biplot_list.tsv") 
+humann3_pathway_biplot_list <- humann3_pathway_biplot_list %>%
+  rename(Pathway = pathway) %>%
+  mutate(Path = sapply(Pathway, function(f) {
+                                  unlist(str_split(f, ":"))[1]
+                                  })) %>%
+  select(Pathway, Path, everything()) %>%
+  # remove 3 of the 4 ubiquinol pathways w/identical loadings
+  filter(!str_detect(Pathway, "5856|5857|6708"))
+
+```
+
+
+## MID and CMB PC1
+```{r path_pc1pws}
+# list the 10 orthologs with strongest loading in PC1 + values
+humann3_path_biplot_pc <- humann3_pathway_biplot_list %>%
+  filter(Direction == "PC1+") %>%
+  pull(Path) %>%
+  str_c(., collapse = "|") # need this format for filtering in the next step
+
+
+# select only those 10 pathways from the list, and split the column with names into 3 (Pathway, Genus, Species)
+humann3_path_pc1pws <- humann3_path %>%
+  filter(str_detect(Pathway, humann3_path_biplot_pc)) %>%
+  filter(str_detect(Pathway, "\\|")) %>%
+  gather("SampleID", "CPM", 2:ncol(.)) %>%
+  mutate(Pathway = str_replace_all(Pathway, "\\.s__", "|s__")) %>%
+  separate(., Pathway, into = c("Pathway", "Genus", "Species"), sep = "\\|") %>%
+  mutate(Species = replace_na(Species, "unclassified"),
+         Genus = str_replace_all(Genus, "g__", ""),
+         Species = str_replace_all(Species, "s__", "")) %>%
+  inner_join(., humann3_pathway_biplot_list %>%
+              select(Pathway, Path) %>%
+               distinct(.), by = "Pathway") %>%
+  inner_join(.,  humann3_pathway_biplot_list %>%
+               filter(Direction == "PC1+") %>%
+               select(Path), by = "Path") %>%
+  select(-Pathway) %>%
+  select(Path, everything()) %>%
+  arrange(Path)
+
+# calculate the % for each ortholog contributed by each genus         
+humann3_path_pc1pws_stats <- humann3_path_pc1pws %>%
+  group_by(Path, Genus) %>%
+  summarize(Sum = sum(CPM)) %>%
+  mutate(Percent = Sum/sum(Sum)*100) %>%
+  ungroup(.)
+
+# create the list of 10 orthologs again, but don't collapse the list as above
+humann3_path_biplot_pc <- humann3_pathway_biplot_list %>%
+  filter(Direction == "PC1+") %>%
+  arrange(Path) %>%
+  pull(Path)
+
+# calculate the total % of all genera that contribute < X% to each ortholog
+humann3_path_pc1pws_stats_extra <- lapply(humann3_path_biplot_pc, function(eclass) {
+ high_percent <- humann3_path_pc1pws_stats %>%
+   filter(Path == eclass) %>%
+   filter(Percent < 5) %>%
+   summarise(Remaining = sum(Percent)) %>%
+   mutate(Path = eclass,
+          Genus = "Other")
+}) %>%
+ bind_rows(.)
+
+# add this additional % to the main table
+humann3_path_pcbi_bar_df <- humann3_path_pc1pws_stats_extra %>%
+  rename(Percent = Remaining) %>%
+  bind_rows(., humann3_path_pc1pws_stats %>%
+              select(-Sum)) %>% 
+  select(Path, Genus, Percent) %>%
+  mutate(Direction = "PC1+") %>%
+  distinct()
+  
+# plot the values in a bar chart
+paths_sp_pc1 <- humann3_path_pcbi_bar_df %>%
+  # filter(Direction == "PC1+", Genus != "Other") %>% # removing Other plots all species/unassigned - no need to filter the pathways
+  filter(Percent >= 5 | (Percent <= 5 & Genus == "Other")) %>% # filter out the genera with % < 5, but keep Other < 5
+  # filter(Percent >= 5) %>% # filter out the genera with % < 5, but keep Other < 5
+  mutate(Genus = fct_relevel(Genus, "Other","unclassified","Aggregatibacter","Capnocytophaga","Cardiobacterium","Eikenella","Haemophilus","Kingella","Lautropia","Neisseria","Ottowia","Streptococcus"),
+         Path = fct_relevel(Path, humann3_pathway_biplot_list %>%
+                              filter(Direction == "PC1+") %>%
+                              pull(Path))) %>%
+  ggplot(., aes(x=Path, y=Percent, fill = Genus)) +
+    geom_bar(stat = "identity") +
+    theme_minimal() +
+    # scale_fill_viridis_d(option = "B") +
+    # scale_fill_manual(values = c("#000004FF","#969696","#2D1160FF","#51127CFF", # 100B2EFF
+    #                              "#721F81FF","#932B80FF","#B63679FF","#D8456CFF",
+    #                              "#F1605DFF","#FB8861FF","#FEAF77FF","#FED799FF","#FCFDBFFF")) +
+    # scale_fill_manual(values = c("#000004FF","#969696","#330A5FFF","#56106EFF",
+    #                              "#781C6DFF","#9A2865FF","#BB3754FF","#D84C3EFF",
+    #                              "#ED6925FF","#F98C0AFF","#FCB519FF","#F4DE52FF","#FCFFA4FF")) +
+    scale_fill_manual(values = c("#0D0887FF","#969696","#5D01A6FF","#7E03A8FF",
+                                 "#9C179EFF","#B52F8CFF","#CC4678FF","#DE5F65FF",
+                                 "#ED7953FF","#F89441FF","#FDB32FFF","#FBD424FF","#F0F921FF")) +
+    # scale_fill_manual(values = c("#03051AFF","#969696","#3F1B44FF","#611F53FF",
+    #                              "#841E5AFF","#A9185AFF","#CB1B4FFF","#E43841FF",
+    #                              "#F06043FF","#F4875EFF","#F6AA82FF","#F7CCAEFF","#FAEBDDFF")) +
+     theme(text = element_text(size=18),
+          axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1)) +
+    ylab("Percent") +
+    ggtitle("Metacyc pathways - PC1 positive") +
+    theme(title = element_text(size=10))
+
+# viridis_pal(option = "B")(13)
+paths_sp_pc1
+
+```
+
+```{r path_pc1neg}
+# list the 10 orthologs with strongest loading in PC1 + values
+humann3_path_biplot_pc <- humann3_pathway_biplot_list %>%
+  filter(Direction == "PC1-") %>%
+  arrange(Path) %>%
+  pull(Path) %>%
+  str_c(., collapse = "|") # need this format for filtering in the next step
+
+# select only those 10 orthologs from the list, and split the column with names into 3 (Ortholog, Genus, Species)
+humann3_path_pc1neg <- humann3_path %>%
+  filter(str_detect(Pathway, humann3_path_biplot_pc)) %>%
+  filter(str_detect(Pathway, "\\|")) %>%
+  gather("SampleID", "CPM", 2:ncol(.)) %>%
+  mutate(Pathway = str_replace_all(Pathway, "\\.s__", "|s__")) %>%
+  separate(., Pathway, into = c("Pathway", "Genus", "Species"), sep = "\\|") %>%
+  mutate(Species = replace_na(Species, "unclassified"),
+         Genus = str_replace_all(Genus, "g__", ""),
+         Species = str_replace_all(Species, "s__", "")) %>%
+  inner_join(., humann3_pathway_biplot_list %>%
+              select(Pathway, Path) %>%
+               distinct(.), by = "Pathway") %>%
+  inner_join(.,  humann3_pathway_biplot_list %>%
+               filter(Direction == "PC1-") %>%
+               select(Path), by = "Path") %>%
+  select(-Pathway) %>%
+  select(Path, everything()) %>%
+  arrange(Path)
+
+# calculate the % for each ortholog contributed by each genus         
+humann3_path_pc1neg_stats <- humann3_path_pc1neg %>%
+  group_by(Path, Genus) %>%
+  summarize(Sum = sum(CPM)) %>%
+  mutate(Percent = Sum/sum(Sum)*100) %>%
+  ungroup(.)
+
+# create the list of 10 orthologs again, but don't collapse the list as above
+humann3_path_biplot_pc <- humann3_pathway_biplot_list %>%
+  filter(Direction == "PC1-") %>%
+  arrange(Path) %>%
+  pull(Path)
+
+# calculate the total % of all genera that contribute < X% to each ortholog
+humann3_path_pc1neg_stats_extra <- lapply(humann3_path_biplot_pc, function(eclass) {
+ high_percent <- humann3_path_pc1neg_stats %>%
+   filter(Path == eclass) %>%
+   filter(Percent < 5) %>%
+   summarise(Remaining = sum(Percent)) %>%
+   mutate(Path = eclass,
+          Genus = "Other")
+}) %>%
+ bind_rows(.)
+
+# add this additional % to the main table
+humann3_path_pcbi_bar_df <- humann3_path_pcbi_bar_df %>%
+  bind_rows(humann3_path_pc1neg_stats_extra %>%
+            rename(Percent = Remaining) %>%
+            bind_rows(., humann3_path_pc1neg_stats %>%
+                      select(-Sum)) %>% 
+            select(Path, Genus, Percent) %>%
+            mutate(Direction = "PC1-")) %>%
+  distinct()
+
+# plot the values in a bar chart
+paths_sp_pc2 <- humann3_path_pcbi_bar_df %>%
+  filter(Direction == "PC1-") %>% # removing Other plots all species/unassigned - no need to filter the pathways
+  filter(Percent >= 5 | (Percent <= 5 & Genus == "Other")) %>% # filter out the genera with % < 5, but keep Other < 5
+  mutate(Genus = fct_relevel(Genus, "Other","unclassified","Desulfobulbus","Desulfomicrobium","Methanobrevibacter"),
+         Path = fct_relevel(Path, humann3_pathway_biplot_list %>%
+                              filter(Direction == "PC1-") %>%
+                              pull(Path))) %>%
+  ggplot(., aes(x=Path, y=Percent, fill = Genus)) +
+    geom_bar(stat = "identity") +
+    theme_minimal() +
+    scale_fill_manual(values = c("#0D0887FF","#969696","#B52F8CFF","#ED7953FF","#FCFFA4FF")) +
+    theme(text = element_text(size=18),
+          axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1)) +
+    # facet_wrap(~pathrtholog, nrow=2) +
+    ylab("Percent") +
+    ggtitle("Metacyc pathways - PC1 negative") +
+    theme(title = element_text(size=12))
+paths_sp_pc2
+
+```
+
+
+```{r plot_together}
+(pipenotch + gc + sg) / (paths_sp_pc2 + paths_sp_pc1)
+# 
+# (pipenotch + gc + sg) + (paths_sp_pc2 + paths_sp_pc1) +
+#   plot_layout(ncol = 2)
+# 
+# (pipenotch / gc / sg) | (paths_sp_pc2 / paths_sp_pc1) +
+#   plot_layout(ncol = 2)
+# 
+paths_species <- paths_sp_pc2 / paths_sp_pc1
+
+(pipenotch +  pd + gc + sg + plot_layout(guides = 'collect')) | paths_species
+
+paths_beta_div <- pipenotch + pd + gc + sg + paths_sp_pc2 + paths_sp_pc1 +
+  plot_layout(ncol = 2)
+
+paths_beta_div
+
+ggsave("./06-publication/main_figures/Figure_XX7/h3_paths_beta_div_high.pdf", plot = paths_beta_div,
+       device = "pdf", scale = 1, width = 15, height = 15, units = c("in"), dpi = 300)
+
+```
+
+
+## Canonical Correlation Analysis
+```{r pca_species_mid}
+# read in the speies correlations to add here later
+mpa3_sp_pc_corrs <- fread("./05-results.backup/mid_species_pca_values.tsv") %>%
+  select(Library_ID, PC1, PC2) %>%
+  rename(PC1_sp = PC1,
+         PC2_sp = PC2)
+
+humann3_path_l1 <- humann3_path %>%
+  filter(!str_detect(Pathway, "\\|")) %>%
+  # no full_metadata, remove these
+  select(-c("MID025.A0101","MID033.A0101","MID052.A0101","MID056.A0101","MID065.A0101","MID068.A0101","MID076.A0101","MID078.A0101")) %>%
+  select(-matches("EXB|LIB")) %>%
+  # inner_join(., humann3_path.decontam_noblanks_presence_more_30, by = "Pathway") %>%
+  gather("Library_ID","Counts",2:ncol(.)) %>%
+  mutate(Counts = Counts + 1) %>%
+  spread(Pathway,Counts) %>%
+  column_to_rownames("Library_ID")
+
+# prepare to run a PCA
+# check the number of components to retain by tuning the PCA
+mixOmics::tune.pca(humann3_path_l1, logratio = 'CLR')
+
+humann3_path_l1.pca <- mixOmics::pca(humann3_path_l1, ncomp = 2, logratio = 'CLR')
+
+h3_paths_pca_values <- humann3_path_l1.pca$variates$X %>%
+  as.data.frame() %>%
+  rownames_to_column("Library_ID") %>%
+  inner_join(., full_metadata, by = "Library_ID") %>%
+  drop_na(Site_code) %>%
+  mutate(Sex_n = ifelse(Sex == "Female", 0,
+                        ifelse(Sex == "Male", 1,2))) %>%
+  mutate(Pipenotch_n = ifelse(Pipenotch == "Present",0,
+                              ifelse(Pipenotch == "Absent",1,2))) %>%
+  mutate(Age_n = ifelse(Age == "13-18",0,
+                        ifelse(Age == "18-25",1,
+                               ifelse(Age == "25-45",2,
+                                      ifelse(Age == "45+",4,5))))) %>%
+  full_join(., mpa3_sp_pc_corrs, by = "Library_ID")
+
+
+```
+
+```{r mid_pc_correlations}
+# Compute Canonical Correlation Analysis (CCA) 
+# between all pairs of selected variables
+# returns absolute correlation value
+
+# rename vriables to look nice in figures
+h3_paths_pca_values_select <- h3_paths_pca_values %>%
+  select(Library_ID, PC1, PC2, PC1_sp, PC2_sp, Percent_pws_pc1, Percent_neg_pc1, Percent_pws_pc2, Percent_neg_pc2, seq_len_avg, gc_avg, No_reads_total, Sanguinis, Anginosus, Age_n, Sex_n, Pipenotch_n, Min_no_Pipe_notches, `%AMTL`, `%teeth_with_caries`, calc_sup_SI_score, Peridontal_affect_score, `%_positions_with_Periodontal`, Max_Perio_Score, Calculus_extracted_mg, `extract_conc_ng/mg`, `extract_conc_ng/uL`, `extract_conc_after_storage_ng/uL`, `DNA_molecules_per_library_x10^6`,Calc_sub_SI_score, `%teeth_with_calc`, `%_positions_perioapical`) %>%
+  rename(`Seq length` = seq_len_avg,
+         GC = gc_avg,
+         `Total reads` = No_reads_total,
+         Age = Age_n,
+         Sex = Sex_n,
+         Pipenotch = Pipenotch_n,
+         `Min no. pipenotch` = Min_no_Pipe_notches,
+         `% AMTL` = `%AMTL`,
+         `% Caries` = `%teeth_with_caries`,
+         `Supra calc score` = calc_sup_SI_score,
+         `Perio score` = Peridontal_affect_score,
+         `% Perio` = `%_positions_with_Periodontal`,
+         `Max perio score` = Max_Perio_Score,
+         `Extracted weight (mg)` = Calculus_extracted_mg,
+         `Pre-storage [extract] (ng/mg)` = `extract_conc_ng/mg`,
+         `Pre-storage [extract] (ng/uL)` = `extract_conc_ng/uL`,
+         `Post-storage [extract] (ng/uL)` = `extract_conc_after_storage_ng/uL`,
+         `[Library] (molecules)` = `DNA_molecules_per_library_x10^6`,
+         `Sub calc score` = Calc_sub_SI_score,
+         `% Calculus` = `%teeth_with_calc`,
+         `% Perioapical` = `%_positions_perioapical`,
+         `Species PC1` = PC1_sp,
+         `Species PC2` = PC2_sp,
+         `Species % PC1+` = Percent_pws_pc1,
+         `Species % PC1-` = Percent_neg_pc1,
+         `Species % PC2+` = Percent_pws_pc2,
+         `Species % PC2-` = Percent_neg_pc2) %>%
+  # re-order the columns
+  select(Library_ID, PC1, PC2, Age, Sex, Pipenotch, `Min no. pipenotch`, `% AMTL`, `% Caries`, `Supra calc score`, `Sub calc score`, `% Calculus`, `Perio score`, `% Perio`, `Max perio score`, `% Perioapical`, `Extracted weight (mg)`, `Pre-storage [extract] (ng/mg)`, `Pre-storage [extract] (ng/uL)`, `Post-storage [extract] (ng/uL)`, `[Library] (molecules)`, `Seq length`, GC, `Total reads`, Sanguinis, Anginosus, `Species PC1`, `Species PC2`, `Species % PC1+`, `Species % PC1-`, `Species % PC2+`, `Species % PC2-`)
+
+# select variables
+form <- ~ PC1 + PC2 + Age + Sex + Pipenotch + `Min no. pipenotch` + `% AMTL` + `% Caries` + `Supra calc score` + `Sub calc score` + `% Calculus` + `Perio score` + `% Perio` + `Max perio score` + `% Perioapical` + `Extracted weight (mg)` + `Pre-storage [extract] (ng/mg)` + `Pre-storage [extract] (ng/uL)` + `Post-storage [extract] (ng/uL)` + `[Library] (molecules)` + `Seq length` + GC + `Total reads` + Sanguinis + Anginosus + `Species PC1` + `Species PC2` +`Species % PC1+` + `Species % PC1-` + `Species % PC2+` + `Species % PC2-`
+
+# compute CCA
+C_mid = canCorPairs( form, h3_paths_pca_values_select)
+
+```
+
+```{r pearson_corr_mid}
+# test for significant differences in diversity between the metadata categories
+pearson_mid <- h3_paths_pca_values_select %>%
+rstatix::cor_test(., PC1, PC2, Age, Sex, Pipenotch, `Min no. pipenotch`, `% AMTL`, `% Caries`, `Supra calc score`, `Sub calc score`, `% Calculus`, `Perio score`, `% Perio`, `Max perio score`, `% Perioapical`, `Extracted weight (mg)`, `Pre-storage [extract] (ng/mg)`, `Pre-storage [extract] (ng/uL)`, `Post-storage [extract] (ng/uL)`, `[Library] (molecules)`, `Seq length`, GC, `Total reads`, Sanguinis, Anginosus, `Species PC1`, `Species PC2`, `Species % PC1+`, `Species % PC1-`, `Species % PC2+`, `Species % PC2-`, method="pearson")
+
+pearson_mid %>%
+  mutate(same = var1 == var2) %>%
+  filter(same == FALSE) %>%
+  select(-same) %>%
+  filter(p <= 0.001) %>%
+  filter(cor > 0.40 | cor < -0.40) %>%
+  distinct(statistic, .keep_all = TRUE)
+  
+```
+
+```{r}
+
+C_mid %>%
+  as_data_frame(.) %>%
+  mutate(names = rownames(C_mid)) %>%
+  select(names, everything()) %>%
+  pivot_longer(!names, names_to = "Corrs", values_to = "values") %>%
+  filter(values != 1) %>%
+  filter(values >= 0.4) %>%
+  distinct(values, .keep_all = TRUE)
+
+```
+
+```{r}
+
+colorset <- c("#ffffff","#e8e2ee","#d1c6dc","#baaacb","#a48fba","#8d74aa","#775b99","#604289","#492978","#311068")
+
+pvals_mid <- h3_paths_pca_values_select %>%
+  column_to_rownames("Library_ID") %>%
+  as.matrix(.) %>%
+  corrplot::cor.mtest(., method="pearson")
+
+mid_corr_plot <- C_mid %>%
+  corrplot::corrplot(., p.mat = pvals_mid$p, order = "original", type = "full", col = colorset, is.corr = FALSE, cl.cex = 0.95, diag = FALSE, #tl.srt = 45,
+                     tl.col = 'black', sig.level = c(0.001), pch.cex = 1.2, insig = 'label_sig', pch.col = 'grey20')
+mid_corr_plot
+
+```
+
+
+```{r}
+svg(file = "./06-publication/main_figures/Figure_XX7/mid_h3_path_corr_plot.svg") 
+# pdf(file = "./06-publication/main_figures/Figure_XX7/mid_h3_path_corr_plot.pdf") 
+
+C_mid %>%
+  corrplot::corrplot(., p.mat = pvals_mid$p, order = "original", type = "full", col = colorset, is.corr = FALSE, cl.cex = 0.95, diag = FALSE, #tl.srt = 45,
+                     tl.col = 'black', sig.level = c(0.001), pch.cex = 1.2, insig = 'label_sig', pch.col = 'grey20')
+
+
+dev.off()
+
+```
+
+
