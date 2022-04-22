@@ -785,12 +785,123 @@ for f in *.o; do grep "Unaligned reads after translated alignment:" $f | sed 's/
 paste files.names unaligned.pcts > ../../../../05-results.backup/humann2_alignment_stats.tsv
 
 
+###########################
+ENA upload
+###########################
+# prep reads for ENA b/c eager doesn't output non-collapsed reads
+# list the MID files here /mnt/archgen/microbiome_calculus/smoking_calculus/03-preprocessing/eager2/eager2_run/adapterremoval/output
+ls -1 *.settings | sed 's/_S0_L001_R1_001\.fastq_L1\.pe\.settings//g' | \
+sed 's/_S0_L002_R1_001\.fastq_L2\.pe\.settings//g' | \
+sed 's/_S0_L003_R1_001\.fastq_L3\.pe\.settings//g' | \
+sed 's/_S0_L004_R1_001\.fastq_L4\.pe\.settings//g' | \
+sed 's/_S0_L001_R1_001\.fastq_L5\.pe\.settings//g' | \
+sed 's/_S0_L002_R1_001\.fastq_L6\.pe\.settings//g' | \
+sed 's/_S0_L003_R1_001\.fastq_L7\.pe\.settings//g' | \
+sed 's/_S0_L004_R1_001\.fastq_L8\.pe\.settings//g' > ../../../../non_collapsed_for_ena/seqlist.tsv
+
+# and manually add the ELR and IVE files as well as the blanks from those
+ELR003.A0101.SG1.1
+ELR004.A0101.SG1.1
+ELR006.A0101.SG1.1
+ELR008.A0101.SG1.1
+ELR010.A0101.SG1.1
+IVE002.B0101.SG1.1
+IVE003.A0101.SG1.1
+IVE005.A0101.SG1.1
+IVE005.B0101.SG1.1
+IVE007.B0101.SG1.1
+EXB015.A3001.SG1.1
+EXB015.A3401.SG1.1
+EXB015.A3301.SG1.1
+LIB007.A0125.SG1.1
+LIB007.A0131.SG1.1
+LIB007.A0130.SG1.1
+
+# now remove duplicates
+sort seqlist.tsv | uniq > seqlist_u.tsv
+mv seqlist_u.tsv seqlist.tsv
 
 
+# run pandora2eager to generate a tsv file with the raw read paths
+/mnt/archgen/tools/pandora2eager/0.2.2/pandora2eager.sh seqlist.tsv > mid_raw_libraries.tsv
 
+# now run through AdapterRemoval to merge lanes but not collapse the R1 and R2 files
+AdapterRemoval --file1 reads_1a.fq reads_1b.fq reads_1c.fq \
+--file2 reads_2a.fq reads_2b.fq reads_2c.fq \
+--threads 4 \
+--gzip \
+--combined-output \
+--output1 basename.R1.truncated.fastq \
+--output2 basename.R2.truncated.fastq
 
+# or run eager2 instead
+nextflow run nf-core/eager -r 2.4.4 \
+            -profile eva,archgen \
+            --input "/mnt/archgen/microbiome_calculus/smoking_calculus/03-preprocessing/non_collapsed_for_ena/mid_raw_libraries_runs.tsv" \
+            --fasta '/mnt/archgen/Reference_Genomes/Human/hs37d5/hs37d5.fa' \
+            --fasta_index '/mnt/archgen/Reference_Genomes/Human/hs37d5/hs37d5.fa.fai' \
+            --bwa_index '/mnt/archgen/Reference_Genomes/Human/hs37d5' \
+            --seq_dict '/mnt/archgen/Reference_Genomes/Human/hs37d5/hs37d5.dict' \
+            --skip_deduplication --skip_damage_calculation \
+            --complexity_filter_poly_g \
+            --skip_collapse \
+            --mapper bwamem \
+            --bam_unmapped_type bam \
+            --outdir "/mnt/archgen/microbiome_calculus/smoking_calculus/03-preprocessing/non_collapsed_for_ena/eager2_skip_collapse" \
+            -name mid_skip_collapse \
+            -with-tower
 
+# EAGER2 didn't complete properly, do it manually, then
 
+cd /mnt/archgen/microbiome_calculus/smoking_calculus/03-preprocessing/non_collapsed_for_ena/eager2_skip_collapse
+mkdir multiqc
+cd multiqc
+multiqc --config /r1/people/irina_marie_velsko/.nextflow/assets/nf-core/eager/assets/multiqc_config.yaml ..
+
+# then run 
+nextflow clean -f -k
+
+# and finally remove the work/ folder to remove unneeded duplicate files
+
+# files are here: /mnt/archgen/microbiome_calculus/smoking_calculus/03-preprocessing/non_collapsed_for_ena/eager2_skip_collapse/lanemerging
+# calculate the md5 sums
+md5sum *R1* > R1_md5sums.txt
+md5sum *R2* > R2_md5sums.txt
+
+# create a folder on the ENA ftp server
+ftp webin.ebi.ac.uk
+Webin-42290
+
+bin
+mkdir Smoking_calculus
+bye
+
+# upload data to ENA with aspera
+~/.aspera/cli/bin/ascp -QT -l100M -L /projects1/clusterhomes/velsko /projects1/microbiome_calculus/Cameroon_plaque/01-data/eager2_for_ENA/correct_IDs_for_ENA_upload/*.gz Webin-42290@webin.ebi.ac.uk:/Cameroon_modern_plaque
+
+~/.aspera/cli/bin/ascp -QT -l100M -L /mnt/archgen/users/velsko /mnt/archgen/microbiome_calculus/smoking_calculus/03-preprocessing/non_collapsed_for_ena/eager2_skip_collapse/lanemerging/*.gz Webin-42290@webin.ebi.ac.uk:/Smoking_calculus
+
+```
+(base) irina_marie_velsko@bionc21:/mnt/archgen/microbiome_calculus/smoking_calculus/03-preprocessing/non_collapsed_for_ena/eager2_skip_collapse/lanemerging$ ftp webin.ebi.ac.uk
+Connected to webin2.ebi.ac.uk.
+220-Welcome to ftp-private.ebi.ac.uk
+220
+Name (webin.ebi.ac.uk:irina_marie_velsko): Webin-42290
+331 Please specify the password.
+Password:
+230 Login successful.
+Remote system type is UNIX.
+Using binary mode to transfer files.
+ftp> bin
+200 Switching to Binary mode.
+ftp> mkdir Smoking_calculus
+257 "/Smoking_calculus" created
+ftp> bye
+221 Goodbye.
+```
+
+~/.aspera/cli/bin/ascp -QT -l100M -L /mnt/archgen/users/velsko /mnt/archgen/microbiome_calculus/smoking_calculus/03-preprocessing/non_collapsed_for_ena/eager2_skip_collapse/lanemerging/*.SG1.1_R1.fq.gz Webin-42290@webin.ebi.ac.uk:/Smoking_calculus
+~/.aspera/cli/bin/ascp -QT -l100M -L /mnt/archgen/users/velsko /mnt/archgen/microbiome_calculus/smoking_calculus/03-preprocessing/non_collapsed_for_ena/eager2_skip_collapse/lanemerging/*.SG1.1_R2.fq.gz Webin-42290@webin.ebi.ac.uk:/Smoking_calculus
 
 
 

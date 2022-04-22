@@ -222,7 +222,7 @@ plot_pca_cont <- function(df, pc1, pc2, color_group, shape_group, ncomps, title_
     }
 
     pca_plot <- ggplot(df_X, aes(pc1, pc2, fill = color_group, shape = shape_group)) +
-     geom_point(size = 2.5, color = "black") +
+     geom_point(size = 4.5, color = "black") +
      scale_fill_viridis_c(option = "C") +
      scale_shape_manual(values = c(24,21)) +
      # stat_ellipse() +
@@ -309,7 +309,7 @@ plot_pca_bi <- function(df, pc1, pc2, metadata_group, columntitle) {
 
 
     pca_plot_bi <- ggplot(df_X, aes(x = Pc1, y = Pc2)) +
-      geom_point(size = 2.5, aes(shape = metadata_group, fill = metadata_group))+
+      geom_point(size = 4.5, aes(shape = metadata_group, fill = metadata_group))+
       geom_segment(data = pws_10,
                    aes(xend = get(paste(pc1)), yend = get(paste(pc2))),
                    x = 0, y = 0, colour = "black",
@@ -476,8 +476,8 @@ beta_div <- plot_grid(minpipe_pc12, pctpd_pc12,
 
 beta_div
 
-# ggsave("./06-publication/main_figures/Figure_2/beta_div.pdf", plot = beta_div,
-#        device = "pdf", scale = 1, width = 12, height = 9.5, units = c("in"), dpi = 300)
+ggsave("./06-publication/main_figures/Figure_2/beta_div.pdf", plot = beta_div,
+       device = "pdf", scale = 1, width = 12, height = 9.5, units = c("in"), dpi = 300)
 
 ```
 
