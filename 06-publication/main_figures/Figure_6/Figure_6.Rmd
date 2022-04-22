@@ -310,6 +310,7 @@ aardvark_plot <- aardvark%>%
          theme(axis.text.x = element_blank(),
                axis.text = element_text(size = 10)) +
          scale_y_log10() +
+         # scale_y_continuous(labels = function(x) paste0(x*100)) + # Multiply by 100
          ylab("Percent") +
          ggtitle("")
 

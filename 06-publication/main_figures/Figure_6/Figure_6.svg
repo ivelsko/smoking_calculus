@@ -8,8 +8,8 @@
    version="1.1"
    id="svg66717"
    inkscape:version="1.1 (c4e8f9e, 2021-05-24)"
-   sodipodi:docname="Figure_XX3.svg"
-   inkscape:export-filename="/Users/velsko/Dropbox (Personal)/MPI-SHH/git-projects/smoking_calculus/06-publication/main_figures/Figure_XX3/Figure_XX3.png"
+   sodipodi:docname="Figure_6.svg"
+   inkscape:export-filename="/Users/velsko/Dropbox (Personal)/MPI-SHH/git-projects/smoking_calculus/06-publication/main_figures/Figure_6/Figure_6.png"
    inkscape:export-xdpi="300"
    inkscape:export-ydpi="300"
    xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
@@ -26,9 +26,9 @@
      inkscape:pagecheckerboard="0"
      inkscape:document-units="mm"
      showgrid="false"
-     inkscape:zoom="4.158288"
-     inkscape:cx="521.72913"
-     inkscape:cy="485.41611"
+     inkscape:zoom="1.1146444"
+     inkscape:cx="388.91327"
+     inkscape:cy="444.53639"
      inkscape:window-width="1920"
      inkscape:window-height="1035"
      inkscape:window-x="0"
@@ -10561,31 +10561,31 @@
            transform="translate(1153.1408,-96.984046)" />
         <text
            xml:space="preserve"
-           style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:9px;line-height:3.1;font-family:'Helvetica Neue';-inkscape-font-specification:'Helvetica Neue';text-align:end;text-anchor:end;stroke-width:0.75;fill:#4d4d4d"
+           style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:9px;line-height:3.1;font-family:'Helvetica Neue';-inkscape-font-specification:'Helvetica Neue';text-align:end;text-anchor:end;fill:#4d4d4d;stroke-width:0.75"
            x="45.863277"
            y="21.649538"
            id="text23304"
            transform="scale(1,-1)"><tspan
              sodipodi:role="line"
              id="tspan23302"
-             style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:9px;font-family:'Helvetica Neue';-inkscape-font-specification:'Helvetica Neue';text-align:end;text-anchor:end;stroke-width:0.75;fill:#4d4d4d"
+             style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:9px;font-family:'Helvetica Neue';-inkscape-font-specification:'Helvetica Neue';text-align:end;text-anchor:end;fill:#4d4d4d;stroke-width:0.75"
              x="45.863277"
-             y="21.649538">0.1</tspan><tspan
+             y="21.649538">10</tspan><tspan
              sodipodi:role="line"
-             style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:9px;font-family:'Helvetica Neue';-inkscape-font-specification:'Helvetica Neue';text-align:end;text-anchor:end;stroke-width:0.75;fill:#4d4d4d"
+             style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:9px;font-family:'Helvetica Neue';-inkscape-font-specification:'Helvetica Neue';text-align:end;text-anchor:end;fill:#4d4d4d;stroke-width:0.75"
              x="45.863277"
              y="49.549538"
-             id="tspan24314">0.01</tspan><tspan
+             id="tspan24314">1</tspan><tspan
              sodipodi:role="line"
-             style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:9px;font-family:'Helvetica Neue';-inkscape-font-specification:'Helvetica Neue';text-align:end;text-anchor:end;stroke-width:0.75;fill:#4d4d4d"
+             style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:9px;font-family:'Helvetica Neue';-inkscape-font-specification:'Helvetica Neue';text-align:end;text-anchor:end;fill:#4d4d4d;stroke-width:0.75"
              x="45.863277"
              y="77.449539"
-             id="tspan24712">0.001</tspan><tspan
+             id="tspan24712">0.1</tspan><tspan
              sodipodi:role="line"
-             style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:9px;font-family:'Helvetica Neue';-inkscape-font-specification:'Helvetica Neue';text-align:end;text-anchor:end;stroke-width:0.75;fill:#4d4d4d"
+             style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:9px;font-family:'Helvetica Neue';-inkscape-font-specification:'Helvetica Neue';text-align:end;text-anchor:end;fill:#4d4d4d;stroke-width:0.75"
              x="45.863277"
              y="105.34953"
-             id="tspan24714">0.0001</tspan></text>
+             id="tspan24714">0.01</tspan></text>
       </g>
     </g>
   </g>
