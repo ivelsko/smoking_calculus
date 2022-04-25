@@ -716,7 +716,7 @@ plot_pca_bi <- function(df, pc1, pc2, metadata_group, columntitle) {
 
 ```{r}
 Pipenotch_colors = c("#311068","#C83E73")
-Pipenotch_shapes = c(21,24)
+Pipenotch_shapes = c(24,21)
 
 biplot <- plot_pca_bi(humann3_all_otu.pca, "PC1", "PC2", "Pipenotch", PC1)
 biplot
