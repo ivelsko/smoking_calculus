@@ -191,16 +191,6 @@ plot_box_whisker_mid <- function(df, stat_info, metadata_group, fill_group) {
 
 ```
 
-List the outliers 
-```{r outliers}
-outliers <- c("EXB059.A2501","LIB058.A0103","LIB058.A0106","CSS","CSD")
-poor_samples <- fread("./05-results.backup/cuperdec_poor_samples.tsv") %>%
-  pull(Sample)
-
-outliersF <- str_c(outliers, collapse = "|")
-
-```
-
 
 # Alpha-diversity of all samples
 First we want to know if there are differences in the total diveristy of
@@ -350,9 +340,9 @@ mpa3_sub75bp_species_decontam %>%
 ```{r shannon_diversity}
 # Shannon diversity with the package vegan
 mpa3_sub75bp_species_decontam.matrix <- as.matrix(mpa3_sub75bp_species_decontam %>%
-  select(-one_of(outliers)) %>%
-  select(-one_of(poor_samples)) %>%
-  select(-matches("EXB|LIB|CSN|CSL")) %>%
+  select(-one_of(outliers_mpa3)) %>%
+  select(-one_of(poor_samples_mpa3)) %>%
+  select(-matches("EXB|LIB|CSN|CSL|CSD|CSS")) %>%
   gather("Library_ID","Counts",2:ncol(.)) %>%
   spread(Species,Counts) %>% 
   column_to_rownames("Library_ID"))
@@ -385,9 +375,9 @@ shannon_sp_plot
 
 # now with the filtered data
 mpa3_sub75bp_species_decontam_filtered.matrix <- as.matrix(mpa3_sub75bp_species_decontam %>%
-  select(-one_of(outliers)) %>%
-  select(-one_of(poor_samples)) %>%
-  select(-matches("EXB|LIB|CSN|CSL")) %>%
+  select(-one_of(outliers_mpa3)) %>%
+  select(-one_of(poor_samples_mpa3)) %>%
+  select(-matches("EXB|LIB|CSN|CSL|CSD|CSS")) %>%
   adorn_totals(where = "col", name = "Sum_species.decontam") %>%
   mutate(Percent = Sum_species.decontam/sum(Sum_species.decontam)*100) %>%
   filter(Percent > 0.001) %>%
@@ -507,9 +497,9 @@ plot_box_whisker(evenness.species_filtered, "Pileou_evenness", "Time_period", "T
 # Filtered species tables alpha-diversity stats
 # get the number of observed species
 presabs_table_f <- mpa3_sub75bp_species_decontam %>%
-  select(-one_of(outliers)) %>%
-  select(-one_of(poor_samples)) %>%
-  select(-matches("EXB|LIB|CSN|CSL")) %>%
+  select(-one_of(outliers_mpa3)) %>%
+  select(-one_of(poor_samples_mpa3)) %>%
+  select(-matches("EXB|LIB|CSN|CSL|CSD|CSS")) %>%
   adorn_totals(where = "col", name = "Sum_species.decontam") %>%
   mutate(Percent = Sum_species.decontam/sum(Sum_species.decontam)*100) %>%
   filter(Percent > 0.001) %>%
@@ -530,9 +520,9 @@ mpa3_sub75bp_species_decontam_filtered.alpha <- presabs_table_f %>%
 
 # get the Shannon index
 mpa3_sub75bp_species_decontam_filtered.matrix <- as.matrix(mpa3_sub75bp_species_decontam %>%
-  select(-one_of(outliers)) %>%
-  select(-one_of(poor_samples)) %>%
-  select(-matches("EXB|LIB|CSN|CSL")) %>%
+  select(-one_of(outliers_mpa3)) %>%
+  select(-one_of(poor_samples_mpa3)) %>%
+  select(-matches("EXB|LIB|CSN|CSL|CSD|CSS")) %>%
   adorn_totals(where = "col", name = "Sum_species.decontam") %>%
   mutate(Percent = Sum_species.decontam/sum(Sum_species.decontam)*100) %>%
   filter(Percent > 0.001) %>%
@@ -579,7 +569,7 @@ mpa3_sub75bp_species_decontam_filtered.alpha_meta <- mpa3_sub75bp_species_decont
   filter(!str_detect(Library_ID, "ARS"))
 
 
-fwrite(mpa3_sub75bp_species_decontam_filtered.alpha, "~/archgen/microbiome_calculus/smoking_calculus/05-results.backup/mpa3_alpha_div_numbers_sub75bp.tsv", sep = "\t", quote = F)
+fwrite(mpa3_sub75bp_species_decontam_filtered.alpha, "./05-results.backup/mpa3_alpha_div_numbers_sub75bp.tsv", sep = "\t", quote = F)
 
 ```
 
@@ -881,10 +871,10 @@ sub75bp_alpha_figure <- sub75bp_tp_raincloud + sub75bp_tp_sh_raincloud +sub75bp_
 
 sub75bp_alpha_figure
 
-ggsave("./06-publication/supplemental_figures/SXX13/sub75bp_alpha_figure.pdf", plot = sub75bp_alpha_figure, device = "pdf",
+ggsave("./06-publication/supplemental_figures/S8/sub75bp_alpha_figure.pdf", plot = sub75bp_alpha_figure, device = "pdf",
        scale = 1, width = 10, height = 7, units = c("in"), dpi = 300)
 
-ggsave("./06-publication/supplemental_figures/SXX13/sub75bp_alpha_figure.png", plot = sub75bp_alpha_figure, device = "png",
+ggsave("./06-publication/supplemental_figures/S8/sub75bp_alpha_figure.png", plot = sub75bp_alpha_figure, device = "png",
        scale = 1, width = 10, height = 7, units = c("in"), dpi = 300)
 
 ```

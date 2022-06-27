@@ -192,7 +192,7 @@ plot_box_whisker_mid <- function(df, stat_info, metadata_group, fill_group) {
 ```
 
 List the outliers 
-```{r outliers}
+```{r outliers, eval = F}
 outliers <- c("EXB059.A2501","LIB058.A0103","LIB058.A0106","CSS","CSD")
 poor_samples <- fread("./05-results.backup/cuperdec_poor_samples.tsv") %>%
   pull(Sample)
@@ -210,7 +210,7 @@ metrics. Observed species to tell us which metadata categories have more
 species/genera, and Shannon to tell us which has more even distribution of
 species/genera.
 
-## Observed Speceies
+## Observed Species
 ```{r observed_species}
 # make Relab binary to make a presence/absence table
 presabs_table <- mpa3_sub10M_species_decontam %>%
@@ -350,9 +350,9 @@ mpa3_sub10M_species_decontam %>%
 ```{r shannon_diversity}
 # Shannon diversity with the package vegan
 mpa3_sub10M_species_decontam.matrix <- as.matrix(mpa3_sub10M_species_decontam %>%
-  select(-one_of(outliers)) %>%
-  select(-one_of(poor_samples)) %>%
-  select(-matches("EXB|LIB|CSN|CSL")) %>%
+  select(-one_of(outliers_mpa3)) %>%
+  select(-one_of(poor_samples_mpa3)) %>%
+  select(-matches("EXB|LIB|CSN|CSL|CSD|CSS")) %>%
   gather("Library_ID","Counts",2:ncol(.)) %>%
   spread(Species,Counts) %>% 
   column_to_rownames("Library_ID"))
@@ -385,9 +385,9 @@ shannon_sp_plot
 
 # now with the filtered data
 mpa3_sub10M_species_decontam_filtered.matrix <- as.matrix(mpa3_sub10M_species_decontam %>%
-  select(-one_of(outliers)) %>%
-  select(-one_of(poor_samples)) %>%
-  select(-matches("EXB|LIB|CSN|CSL")) %>%
+  select(-one_of(outliers_mpa3)) %>%
+  select(-one_of(poor_samples_mpa3)) %>%
+  select(-matches("EXB|LIB|CSN|CSL|CSD|CSS")) %>%
   adorn_totals(where = "col", name = "Sum_species.decontam") %>%
   mutate(Percent = Sum_species.decontam/sum(Sum_species.decontam)*100) %>%
   filter(Percent > 0.001) %>%
@@ -507,9 +507,9 @@ plot_box_whisker(evenness.species_filtered, "Pileou_evenness", "Time_period", "T
 # Filtered species tables alpha-diversity stats
 # get the number of observed species
 presabs_table_f <- mpa3_sub10M_species_decontam %>%
-  select(-one_of(outliers)) %>%
-  select(-one_of(poor_samples)) %>%
-  select(-matches("EXB|LIB|CSN|CSL")) %>%
+  select(-one_of(outliers_mpa3)) %>%
+  select(-one_of(poor_samples_mpa3)) %>%
+  select(-matches("EXB|LIB|CSN|CSL|CSD|CSS")) %>%
   adorn_totals(where = "col", name = "Sum_species.decontam") %>%
   mutate(Percent = Sum_species.decontam/sum(Sum_species.decontam)*100) %>%
   filter(Percent > 0.001) %>%
@@ -530,9 +530,9 @@ mpa3_sub10M_species_decontam_filtered.alpha <- presabs_table_f %>%
 
 # get the Shannon index
 mpa3_sub10M_species_decontam_filtered.matrix <- as.matrix(mpa3_sub10M_species_decontam %>%
-  select(-one_of(outliers)) %>%
-  select(-one_of(poor_samples)) %>%
-  select(-matches("EXB|LIB|CSN|CSL")) %>%
+  select(-one_of(outliers_mpa3)) %>%
+  select(-one_of(poor_samples_mpa3)) %>%
+  select(-matches("EXB|LIB|CSN|CSL|CSD|CSS")) %>%
   adorn_totals(where = "col", name = "Sum_species.decontam") %>%
   mutate(Percent = Sum_species.decontam/sum(Sum_species.decontam)*100) %>%
   filter(Percent > 0.001) %>%
@@ -879,10 +879,10 @@ sub10M_alpha_figure <- sub10M_tp_raincloud + sub10M_tp_sh_raincloud +sub10M_sc_r
 
 sub10M_alpha_figure
 
-ggsave("./06-publication/supplemental_figures/SXX12/sub10M_alpha_figure.pdf", plot = sub10M_alpha_figure, device = "pdf",
+ggsave("./06-publication/supplemental_figures/S7/sub10M_alpha_figure.pdf", plot = sub10M_alpha_figure, device = "pdf",
        scale = 1, width = 10, height = 7, units = c("in"), dpi = 300)
 
-ggsave("./06-publication/supplemental_figures/SXX12/sub10M_alpha_figure.png", plot = sub10M_alpha_figure, device = "png",
+ggsave("./06-publication/supplemental_figures/S7/sub10M_alpha_figure.png", plot = sub10M_alpha_figure, device = "png",
        scale = 1, width = 10, height = 7, units = c("in"), dpi = 300)
 
 ```
