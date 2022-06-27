@@ -114,7 +114,7 @@ mpa3_sub75bp_species_decontam <- mpa3_sub75bp_sp %>%
 List the outliers from the plot in `MID_CMB_Rad_Kil_Iber_decontam.Rmd`. 
 ```{r outliers}
 outliers_mpa3 <- c("EXB059.A2101","EXB059.A2501","EXB015.A3301","EXB034.A2701","EXB059.A2201","EXB059.A2301","EXB059.A2401","LIB058.A0103","LIB058.A0106","LIB058.A0104")
-poor_samples_mpa3 <- fread("./05-results.backup/cuperdec_mpa3_sub75bp_poor_samples.tsv") %>%
+poor_samples_mpa3 <- fread("./05-results.backup/cuperdec_mpa3_poor_samples.tsv") %>%
   pull(Sample)
 
 outliersF <- str_c(outliers_mpa3, collapse = "|")
