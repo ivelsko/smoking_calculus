@@ -197,6 +197,23 @@ full_metadata <- full_metadata %>%
 
 ```
 
+```{r}
+
+full_metadata %>%
+  filter(Site_code == "MID") %>%
+  select(Site_code, Library_ID, Age, Sex) %>%
+  group_by(Sex,Age) %>%
+  count()
+
+full_metadata %>%
+  filter(Site_code == "MID") %>%
+  select(Site_code, Library_ID, Age, Sex) %>%
+  filter(is.na(Sex))
+
+```
+
+
+
 
 ```{r colors}
 # lacroix_palette("PeachPear", n = 8, type = "continuous")

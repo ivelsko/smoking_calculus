@@ -1,5 +1,5 @@
 ---
-title: "MID/CMB, Radcliffe, Kilteasheen, Iberian medieval calculus MALT beta diversity"
+title: "Updating Strep clades for species w/unknown groups"
 author: "Irina Velsko"
 date: "`r format(Sys.time(), '%b %d, %Y')`"
 output:

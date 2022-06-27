@@ -1,44 +1,44 @@
-pathway	Direction
-PWY-5971: palmitate biosynthesis (type II fatty acid synthase)	PC1+
-PWY-6285: superpathway of fatty acids biosynthesis (E. coli)	PC1+
-PWY0-1479: tRNA processing	PC1+
-PWY-6284: superpathway of unsaturated fatty acids biosynthesis (E. coli)	PC1+
-PWY-5173	PC1+
-NAGLIPASYN-PWY: lipid IVA biosynthesis (E. coli)	PC1+
-GLYCOLYSIS-TCA-GLYOX-BYPASS: superpathway of glycolysis, pyruvate dehydrogenase, TCA, and glyoxylate bypass	PC1+
-PWY-5345: superpathway of L-methionine biosynthesis (by sulfhydrylation)	PC1+
-SULFATE-CYS-PWY: superpathway of sulfate assimilation and cysteine biosynthesis	PC1+
-PWY-5855: ubiquinol-7 biosynthesis (early decarboxylation)	PC1+
-PWY-5856: ubiquinol-9 biosynthesis (early decarboxylation)	PC1+
-PWY-5857: ubiquinol-10 biosynthesis (early decarboxylation)	PC1+
-PWY-6708: ubiquinol-8 biosynthesis (early decarboxylation)	PC1+
-PWY-5757: fosfomycin biosynthesis	PC1-
-PWY-7374: 1,4-dihydroxy-6-naphthoate biosynthesis I	PC1-
-PWY-6876: isopropanol biosynthesis (engineered)	PC1-
-PWY-6350: archaetidylinositol biosynthesis	PC1-
-PWY-6349: CDP-archaeol biosynthesis	PC1-
-PWY-6749: CMP-legionaminate biosynthesis I	PC1-
-PWY-6167: flavin biosynthesis II (archaea)	PC1-
-PWY-7200: superpathway of pyrimidine deoxyribonucleoside salvage	PC1-
-PWY-7316: dTDP-N-acetylviosamine biosynthesis	PC1-
-PWY-5101: L-isoleucine biosynthesis II	PC1-
-PWY-5897: superpathway of menaquinol-11 biosynthesis	PC2+
-PWY-5898: superpathway of menaquinol-12 biosynthesis	PC2+
-PWY-5899: superpathway of menaquinol-13 biosynthesis	PC2+
-PWY-5840: superpathway of menaquinol-7 biosynthesis	PC2+
-PWY66-389: phytol degradation	PC2+
-PWY-5838: superpathway of menaquinol-8 biosynthesis I	PC2+
-FUCCAT-PWY: fucose degradation	PC2+
-PWY-5837: 2-carboxy-1,4-naphthoquinol biosynthesis	PC2+
-PWY-5861: superpathway of demethylmenaquinol-8 biosynthesis I	PC2+
-PWY-6313: serotonin degradation	PC2+
-PWY-6350: archaetidylinositol biosynthesis	PC2-
-PWY-6349: CDP-archaeol biosynthesis	PC2-
-PWY-7332: superpathway of UDP-N-acetylglucosamine-derived O-antigen building blocks biosynthesis	PC2-
-KETOGLUCONMET-PWY: ketogluconate metabolism	PC2-
-RUMP-PWY: formaldehyde oxidation I	PC2-
-PWY-6749: CMP-legionaminate biosynthesis I	PC2-
-PWY-7316: dTDP-N-acetylviosamine biosynthesis	PC2-
-PWY-5101: L-isoleucine biosynthesis II	PC2-
-PWY-6167: flavin biosynthesis II (archaea)	PC2-
-PWY-6174: mevalonate pathway II (haloarchaea)	PC2-
+pathway	PC1	PC2	Direction
+PWY-5971: palmitate biosynthesis (type II fatty acid synthase)	0.160540523995319	-0.0324054230333472	PC1+
+PWY-6285: superpathway of fatty acids biosynthesis (E. coli)	0.143528183863761	-0.0174188100245135	PC1+
+PWY0-1479: tRNA processing	0.137513472473274	-0.0200628853249213	PC1+
+PWY-6284: superpathway of unsaturated fatty acids biosynthesis (E. coli)	0.126974851583448	-0.021276743235881	PC1+
+PWY-5173	0.123865049457739	-0.0415170770511288	PC1+
+NAGLIPASYN-PWY: lipid IVA biosynthesis (E. coli)	0.123482409394946	-0.0143388096618017	PC1+
+GLYCOLYSIS-TCA-GLYOX-BYPASS: superpathway of glycolysis, pyruvate dehydrogenase, TCA, and glyoxylate bypass	0.122753699790526	-0.0173077098719557	PC1+
+PWY-5345: superpathway of L-methionine biosynthesis (by sulfhydrylation)	0.11960586800692	-0.0813992992937359	PC1+
+SULFATE-CYS-PWY: superpathway of sulfate assimilation and cysteine biosynthesis	0.118078734599786	-0.0790414947674123	PC1+
+PWY-5855: ubiquinol-7 biosynthesis (early decarboxylation)	0.111523849650333	0.0235391314650115	PC1+
+PWY-5856: ubiquinol-9 biosynthesis (early decarboxylation)	0.111523849650333	0.0235391314650115	PC1+
+PWY-5857: ubiquinol-10 biosynthesis (early decarboxylation)	0.111523849650333	0.0235391314650115	PC1+
+PWY-6708: ubiquinol-8 biosynthesis (early decarboxylation)	0.111523849650333	0.0235391314650115	PC1+
+PWY-5757: fosfomycin biosynthesis	-0.108283812255075	-0.0481145862765493	PC1-
+PWY-7374: 1,4-dihydroxy-6-naphthoate biosynthesis I	-0.109708681929071	-0.00505188068135525	PC1-
+PWY-6876: isopropanol biosynthesis (engineered)	-0.112618041697749	-0.164545297149618	PC1-
+PWY-6350: archaetidylinositol biosynthesis	-0.126055104918232	-0.185158997306106	PC1-
+PWY-6349: CDP-archaeol biosynthesis	-0.126101143530539	-0.187618329982724	PC1-
+PWY-6749: CMP-legionaminate biosynthesis I	-0.129821158386112	-0.20632322632649	PC1-
+PWY-6167: flavin biosynthesis II (archaea)	-0.131230541768455	-0.21373641613305	PC1-
+PWY-7200: superpathway of pyrimidine deoxyribonucleoside salvage	-0.131956334135627	-0.0678003469325003	PC1-
+PWY-7316: dTDP-N-acetylviosamine biosynthesis	-0.132447156342324	-0.207307495280652	PC1-
+PWY-5101: L-isoleucine biosynthesis II	-0.136672721595424	-0.211104977449922	PC1-
+PWY-5897: superpathway of menaquinol-11 biosynthesis	0.0282320872202114	0.102688884423833	PC2+
+PWY-5898: superpathway of menaquinol-12 biosynthesis	0.0282320872202114	0.102688884423833	PC2+
+PWY-5899: superpathway of menaquinol-13 biosynthesis	0.0282320872202114	0.102688884423833	PC2+
+PWY-5840: superpathway of menaquinol-7 biosynthesis	0.0247124266980619	0.0995411333746119	PC2+
+PWY66-389: phytol degradation	0.0657989675466546	0.095566653846798	PC2+
+PWY-5838: superpathway of menaquinol-8 biosynthesis I	0.00563761429429881	0.0896091447715491	PC2+
+FUCCAT-PWY: fucose degradation	0.020102193151557	0.0862668429694237	PC2+
+PWY-5837: 2-carboxy-1,4-naphthoquinol biosynthesis	0.0110586751944368	0.0844378785322703	PC2+
+PWY-5861: superpathway of demethylmenaquinol-8 biosynthesis I	0.000932163579703123	0.0831274336802541	PC2+
+PWY-6313: serotonin degradation	0.0366691564519878	0.0750141876257907	PC2+
+PWY-6350: archaetidylinositol biosynthesis	-0.126055104918232	-0.185158997306106	PC2-
+PWY-6349: CDP-archaeol biosynthesis	-0.126101143530539	-0.187618329982724	PC2-
+PWY-7332: superpathway of UDP-N-acetylglucosamine-derived O-antigen building blocks biosynthesis	-0.0993081720093275	-0.198194345295759	PC2-
+KETOGLUCONMET-PWY: ketogluconate metabolism	-0.0085150414510123	-0.198980735252648	PC2-
+RUMP-PWY: formaldehyde oxidation I	-0.0826108887692724	-0.199120364692543	PC2-
+PWY-6749: CMP-legionaminate biosynthesis I	-0.129821158386112	-0.20632322632649	PC2-
+PWY-7316: dTDP-N-acetylviosamine biosynthesis	-0.132447156342324	-0.207307495280652	PC2-
+PWY-5101: L-isoleucine biosynthesis II	-0.136672721595424	-0.211104977449922	PC2-
+PWY-6167: flavin biosynthesis II (archaea)	-0.131230541768455	-0.21373641613305	PC2-
+PWY-6174: mevalonate pathway II (haloarchaea)	-0.00894616803883648	-0.234132000170314	PC2-

@@ -160,16 +160,6 @@ plot_box_whisker_mid <- function(df, stat_info, metadata_group, fill_group) {
 
 ```
 
-List the outliers 
-```{r outliers}
-outliers <- c("EXB059.A2501","LIB058.A0103","LIB058.A0106","CSS","CSD")
-poor_samples <- fread("./05-results.backup/cuperdec_poor_samples.tsv") %>%
-  pull(Sample)
-
-outliersF <- str_c(outliers, collapse = "|")
-
-```
-
 
 # Alpha-diversity of all samples
 First we want to know if there are differences in the total diveristy of
@@ -342,9 +332,9 @@ mpa3_species_decontam %>%
 ```{r shannon_diversity}
 # Shannon diversity with the package vegan
 mpa3_species_decontam.matrix <- as.matrix(mpa3_species_decontam %>%
-  select(-one_of(outliers)) %>%
-  select(-one_of(poor_samples)) %>%
-  select(-matches("EXB|LIB|CSN|CSL")) %>%
+  select(-one_of(outliers_mpa3)) %>%
+  select(-one_of(poor_samples_mpa3)) %>%
+  select(-matches("EXB|LIB|CSN|CSL|CSD|CSS")) %>%
   gather("Library_ID","Counts",2:ncol(.)) %>%
   spread(Species,Counts) %>% 
   column_to_rownames("Library_ID"))
@@ -377,9 +367,9 @@ shannon_sp_plot
 
 # now with the filtered data
 mpa3_species_decontam_filtered.matrix <- as.matrix(mpa3_species_decontam %>%
-  select(-one_of(outliers)) %>%
-  select(-one_of(poor_samples)) %>%
-  select(-matches("EXB|LIB|CSN|CSL")) %>%
+  select(-one_of(outliers_mpa3)) %>%
+  select(-one_of(poor_samples_mpa3)) %>%
+  select(-matches("EXB|LIB|CSN|CSL|CSD|CSS")) %>%
   adorn_totals(where = "col", name = "Sum_species.decontam") %>%
   mutate(Percent = Sum_species.decontam/sum(Sum_species.decontam)*100) %>%
   filter(Percent > 0.001) %>%
@@ -499,9 +489,9 @@ plot_box_whisker(evenness.species_filtered, "Pileou_evenness", "Time_period", "T
 # Filtered species tables alpha-diversity stats
 # get the number of observed species
 presabs_table_f <- mpa3_species_decontam %>%
-  select(-one_of(outliers)) %>%
-  select(-one_of(poor_samples)) %>%
-  select(-matches("EXB|LIB|CSN|CSL")) %>%
+  select(-one_of(outliers_mpa3)) %>%
+  select(-one_of(poor_samples_mpa3)) %>%
+  select(-matches("EXB|LIB|CSN|CSL|CSD|CSS")) %>%
   adorn_totals(where = "col", name = "Sum_species.decontam") %>%
   mutate(Percent = Sum_species.decontam/sum(Sum_species.decontam)*100) %>%
   filter(Percent > 0.001) %>%
@@ -522,9 +512,9 @@ mpa3_species_decontam_filtered.alpha <- presabs_table_f %>%
 
 # get the Shannon index
 mpa3_species_decontam_filtered.matrix <- as.matrix(mpa3_species_decontam %>%
-  select(-one_of(outliers)) %>%
-  select(-one_of(poor_samples)) %>%
-  select(-matches("EXB|LIB|CSN|CSL")) %>%
+  select(-one_of(outliers_mpa3)) %>%
+  select(-one_of(poor_samples_mpa3)) %>%
+  select(-matches("EXB|LIB|CSN|CSL|CSD|CSS")) %>%
   adorn_totals(where = "col", name = "Sum_species.decontam") %>%
   mutate(Percent = Sum_species.decontam/sum(Sum_species.decontam)*100) %>%
   filter(Percent > 0.001) %>%
@@ -847,8 +837,8 @@ diversity between the various metadata groups?
 # Filtered species tables alpha-diversity stats
 # get the number of observed species
 presabs_table_f <- mpa3_species_decontam %>%
-  select(-one_of(outliers)) %>%
-  select(-one_of(poor_samples)) %>%
+  select(-one_of(outliers_mpa3)) %>%
+  select(-one_of(poor_samples_mpa3)) %>%
   select(matches("Species|MID")) %>%
   adorn_totals(where = "col", name = "Sum_species.decontam") %>%
   mutate(Percent = Sum_species.decontam/sum(Sum_species.decontam)*100) %>%
@@ -870,8 +860,8 @@ mpa3_species_decontam_filtered.alpha <- presabs_table_f %>%
 
 # get the Shannon index
 mpa3_species_decontam_filtered.matrix <- as.matrix(mpa3_species_decontam %>%
-  select(-one_of(outliers)) %>%
-  select(-one_of(poor_samples)) %>%
+  select(-one_of(outliers_mpa3)) %>%
+  select(-one_of(poor_samples_mpa3)) %>%
   select(matches("Species|MID")) %>%
   adorn_totals(where = "col", name = "Sum_species.decontam") %>%
   mutate(Percent = Sum_species.decontam/sum(Sum_species.decontam)*100) %>%
@@ -1045,8 +1035,8 @@ IC_species_cmc_p_es
 # Filtered species tables alpha-diversity stats
 # get the number of observed species
 presabs_table_f <- mpa3_species_decontam %>%
-  select(-one_of(outliers)) %>%
-  select(-one_of(poor_samples)) %>%
+  select(-one_of(outliers_mpa3)) %>%
+  select(-one_of(poor_samples_mpa3)) %>%
   select(matches("Species|CS")) %>%
   select(-matches("CSS|CSD|CSN|CSL")) %>%
   adorn_totals(where = "col", name = "Sum_species.decontam") %>%
@@ -1069,8 +1059,8 @@ mpa3_species_decontam_filtered.alpha <- presabs_table_f %>%
 
 # get the Shannon index
 mpa3_species_decontam_filtered.matrix <- as.matrix(mpa3_species_decontam %>%
-  select(-one_of(outliers)) %>%
-  select(-one_of(poor_samples)) %>%
+  select(-one_of(outliers_mpa3)) %>%
+  select(-one_of(poor_samples_mpa3)) %>%
   select(matches("Species|CS")) %>%
   select(-matches("CSS|CSD|CSN|CSL")) %>%
   adorn_totals(where = "col", name = "Sum_species.decontam") %>%
@@ -1272,8 +1262,8 @@ Now make heatmaps of the top 50 most abundant species and genera (as an arbitrar
 ```{r heatmaps_species_all}
 # select the top 50 most abundant species for all samples
 mpa3_species_decontam_top50_all <- mpa3_species_decontam %>%
-  select(-one_of(outliers)) %>%
-  select(-one_of(poor_samples)) %>%
+  select(-one_of(outliers_mpa3)) %>%
+  select(-one_of(poor_samples_mpa3)) %>%
   select(-matches("CSN|CSL|CSD|CSS|EXB|LIB")) %>%
   adorn_totals(where = "col", name = "Sum_species.decontam") %>%
   mutate(Percent = Sum_species.decontam/sum(Sum_species.decontam)*100) %>%
@@ -1352,7 +1342,7 @@ mpa3_species_decontam_top50_mpa3_clr_smp_order <- mpa3_species_decontam_top50_mp
   rownames_to_column("Library_ID") %>%
   gather("Species","CLR",2:ncol(.)) %>%
   spread(Species,CLR) %>%
-  mutate(SmpOrder = as.character(seq(1,181))) %>%  
+  mutate(SmpOrder = as.character(seq(1,186))) %>%  
   select(Library_ID, SmpOrder, everything()) %>%
   mutate(SmpOrder = fct_relevel(SmpOrder, smp_mpa3_order)) %>%
   arrange(SmpOrder) %>%
@@ -1438,8 +1428,8 @@ heatmap_base
 
 # select the top 50 most abundant species for CMC samples
 mpa3_species_decontam_top50_mid <- mpa3_species_decontam %>%
-  select(-one_of(outliers)) %>%
-  select(-one_of(poor_samples)) %>%
+  select(-one_of(outliers_mpa3)) %>%
+  select(-one_of(poor_samples_mpa3)) %>%
   select(matches("Species|MID")) %>%
   adorn_totals(where = "col", name = "Sum_species.decontam") %>%
   mutate(Percent = Sum_species.decontam/sum(Sum_species.decontam)*100) %>%
@@ -1452,8 +1442,8 @@ mpa3_species_decontam_top50_mid <- mpa3_species_decontam %>%
 
 # also save the species as a vector
 mpa3_species_decontam_top50_midV <- mpa3_species_decontam %>%
-  select(-one_of(outliers)) %>%
-  select(-one_of(poor_samples)) %>%
+  select(-one_of(outliers_mpa3)) %>%
+  select(-one_of(poor_samples_mpa3)) %>%
   select(matches("Species|MID")) %>%
   adorn_totals(where = "col", name = "Sum_species.decontam") %>%
   mutate(Percent = Sum_species.decontam/sum(Sum_species.decontam)*100) %>%
@@ -1533,7 +1523,7 @@ mpa3_species_decontam_top50_mid_clr_smp_order <- mpa3_species_decontam_top50_mid
   rownames_to_column("Library_ID") %>%
   gather("Species","CLR",2:ncol(.)) %>%
   spread(Species,CLR) %>%
-  mutate(SmpOrder = as.character(seq(1,63))) %>%  
+  mutate(SmpOrder = as.character(seq(1,65))) %>%  
   select(Library_ID, SmpOrder, everything()) %>%
   mutate(SmpOrder = fct_relevel(SmpOrder, smp_mid_order)) %>%
   arrange(SmpOrder) %>%
@@ -1623,8 +1613,8 @@ heatmap_base
 # the section above for CMC samples has to be run before this one. this section uses output from that one
 # select the top 50 most abundant species for HMP samples
 mpa3_species_decontam_top50_radV <- mpa3_species_decontam %>%
-  select(-one_of(outliers)) %>%
-  select(-one_of(poor_samples)) %>%
+  select(-one_of(outliers_mpa3)) %>%
+  select(-one_of(poor_samples_mpa3)) %>%
   select(matches("Species|CS")) %>%
   select(-matches("CSS|CSD|CSN|CSL")) %>%
   adorn_totals(where = "col", name = "Sum_species.decontam") %>%
@@ -1638,8 +1628,8 @@ mpa3_species_decontam_top50_radV <- mpa3_species_decontam %>%
 
 # select the top 50 most abundant species for JAE samples
 mpa3_species_decontam_top50_kilV <- mpa3_species_decontam %>%
-  select(-one_of(outliers)) %>%
-  select(-one_of(poor_samples)) %>%
+  select(-one_of(outliers_mpa3)) %>%
+  select(-one_of(poor_samples_mpa3)) %>%
   select(matches("Species|calc")) %>%
   adorn_totals(where = "col", name = "Sum_species.decontam") %>%
   mutate(Percent = Sum_species.decontam/sum(Sum_species.decontam)*100) %>%
@@ -1651,8 +1641,8 @@ mpa3_species_decontam_top50_kilV <- mpa3_species_decontam %>%
   mutate(Kilteasheen = 1)
 
 mpa3_species_decontam_top50_iberV <- mpa3_species_decontam %>%
-  select(-one_of(outliers)) %>%
-  select(-one_of(poor_samples)) %>%
+  select(-one_of(outliers_mpa3)) %>%
+  select(-one_of(poor_samples_mpa3)) %>%
   select(matches("Species|ELR|IVE")) %>%
   adorn_totals(where = "col", name = "Sum_species.decontam") %>%
   mutate(Percent = Sum_species.decontam/sum(Sum_species.decontam)*100) %>%
@@ -1674,8 +1664,8 @@ mpa3_species_decontam_top50_each_list <- mpa3_species_decontam_top50_midV %>%
   pull()
 
 mpa3_species_decontam_top50_each <- mpa3_species_decontam %>%
-  select(-one_of(outliers)) %>%
-  select(-one_of(poor_samples)) %>%
+  select(-one_of(outliers_mpa3)) %>%
+  select(-one_of(poor_samples_mpa3)) %>%
   select(-matches("CSS|CSD|CSN|CSL|EXB|LIB")) %>%
   filter(Species %in% mpa3_species_decontam_top50_each_list) %>%
   gather("Library_ID","Counts",2:ncol(.)) %>%
@@ -1690,7 +1680,7 @@ all3 <- mpa3_species_decontam_top50_midV %>%
   full_join(., mpa3_species_decontam_top50_kilV) %>%
   replace(is.na(.), 0) %>%
   adorn_totals(where = "col") %>%
-  arrange(desc(Total, Middenbeemster, Radcliffe, Iberia))
+  arrange(desc(Total), desc(Middenbeemster), desc(Radcliffe), desc(Iberia))
 
 
 # CLR-transform the matrix for plotting the heatmap
@@ -1761,7 +1751,7 @@ mpa3_species_decontam_top50_each_clr_smp_order <- mpa3_species_decontam_top50_ea
   rownames_to_column("Library_ID") %>%
   gather("Species","CLR",2:ncol(.)) %>%
   spread(Species,CLR) %>%
-  mutate(SmpOrder = as.character(seq(1,181))) %>%  
+  mutate(SmpOrder = as.character(seq(1,186))) %>%  
   select(Library_ID, SmpOrder, everything()) %>%
   mutate(SmpOrder = fct_relevel(SmpOrder, smp_each_order)) %>%
   arrange(SmpOrder) %>%

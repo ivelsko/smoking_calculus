@@ -1011,9 +1011,9 @@ pandoc.table(pca_EG_biplot_pc1$plot_env$neg_10 %>% select(-Function) %>% arrange
              caption = "PC1 negative loadings")
 
 # make a table of the pathways to save, to use again later in another R notebook
-humann3_pathway_biplot_list <- pca_EG_biplot_pc1$plot_env$pws_10 %>% select(-Function) %>% arrange(desc(PC1)) %>% select(pathway) %>% mutate(Direction = "PC1+")
+humann3_pathway_biplot_list <- pca_EG_biplot_pc1$plot_env$pws_10 %>% select(-Function) %>% arrange(desc(PC1)) %>% select(pathway, PC1, PC2) %>% mutate(Direction = "PC1+")
 humann3_pathway_biplot_list <- humann3_pathway_biplot_list %>%
-  bind_rows(pca_EG_biplot_pc1$plot_env$neg_10 %>% select(-Function) %>% arrange(desc(PC1)) %>% select(pathway)%>% mutate(Direction = "PC1-"))
+  bind_rows(pca_EG_biplot_pc1$plot_env$neg_10 %>% select(-Function) %>% arrange(desc(PC1)) %>% select(pathway, PC1, PC2)%>% mutate(Direction = "PC1-"))
 
 # which paths distinguish sample types when HMP and JAE are included?
 pca_EG_biplot_pc2 <- plot_pca_bi(humann3_path.pca, "PC1", "PC2", "Pipenotch", PC2, pathways = T)
@@ -1035,9 +1035,9 @@ pandoc.table(pca_EG_biplot_pc2$plot_env$neg_10 %>% select(-Function) %>% arrange
              caption = "PC2 negative loadings")
 
 humann3_pathway_biplot_list <- humann3_pathway_biplot_list %>%
-  bind_rows(pca_EG_biplot_pc2$plot_env$pws_10 %>% select(-Function) %>% arrange(desc(PC2)) %>% select(pathway) %>% mutate(Direction = "PC2+"))
+  bind_rows(pca_EG_biplot_pc2$plot_env$pws_10 %>% select(-Function) %>% arrange(desc(PC2)) %>% select(pathway, PC1, PC2) %>% mutate(Direction = "PC2+"))
 humann3_pathway_biplot_list <- humann3_pathway_biplot_list %>%
-  bind_rows(pca_EG_biplot_pc2$plot_env$neg_10 %>% select(-Function) %>% arrange(desc(PC2)) %>% select(pathway) %>% mutate(Direction = "PC2-"))
+  bind_rows(pca_EG_biplot_pc2$plot_env$neg_10 %>% select(-Function) %>% arrange(desc(PC2)) %>% select(pathway, PC1, PC2) %>% mutate(Direction = "PC2-"))
 
 
 fwrite(humann3_pathway_biplot_list, file = "./05-results.backup/humann3_pathway_biplot_list.tsv", quote = F, sep = "\t")

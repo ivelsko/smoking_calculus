@@ -899,7 +899,8 @@ strep_groups <- fread("./00-documentation.backup/dRep_strep_groups.tsv") %>%
   # remove the extrac column with the old dRep
   select(-Clade_Consensus) %>%
   # make a factor for plotting
-  mutate(dRep = fct_relevel(dRep, "Sanguinis","Mitis","Salivarius","Anginosus","Bovis","Pyogenic","Mutans","Other_oral","Other","Unknown"))
+  mutate(dRep = str_replace_all(dRep, "downei", "Downei"),
+         dRep = fct_relevel(dRep, "Sanguinis","Mitis","Salivarius","Anginosus","Bovis","Pyogenic","Mutans","Other_oral","Other","Unknown"))
 
 strep_rs <- malt_rs %>%
   filter(str_detect(Species, "Streptococcus")) %>%
@@ -1166,6 +1167,105 @@ residuals_pc2_plot_bi
 
 ```
 
+Run a PERMANOVA with adonis2 on the abundance-filtered clr-transformed species matrix.
+```{r adonis_noblanks_species}
+metadata_all <- full_metadata %>%
+  filter(!str_detect(Library_ID, outliers_mpa3 %>% str_c(collapse = "|"))) %>%
+  filter(!str_detect(Library_ID, poor_samples_mpa3 %>% str_c(collapse = "|"))) %>%
+  filter(!str_detect(Library_ID, "EXB|LIB|CSN|CSD|ARS|CSS|CSL")) %>%
+  filter(!str_detect(Library_ID,"MID025|MID033|MID052|MID056|MID065|MID068.A|MID076|MID078")) %>%
+  left_join(., strep_rs, by = "Library_ID")
+
+mpa3_species_decontam_unfilt <- mpa3_species_decontam %>%
+  select(-one_of(outliers_mpa3)) %>%
+  select(-one_of(poor_samples_mpa3)) %>%
+  select(-matches("EXB|LIB|CSN|CSD|ARS|CSS|CSL")) %>%
+  gather("Library_ID","Counts",2:ncol(.)) %>%
+  mutate(Counts = Counts +1) %>%
+  spread(Species,Counts) %>%
+  column_to_rownames("Library_ID")
+
+mpa3_species_decontam_unfilt.pca <- mixOmics::pca(mpa3_species_decontam_unfilt, ncomp = 3, logratio = 'CLR')
+
+
+# Euclidean distance, uses the clr-transformed matrix from the mixOmics PCA above
+mpa3_species_decontam_unfilt.euc <- vegdist(mpa3_species_decontam_unfilt.pca$X, method = "euclidean", na.rm = F)
+mpa3_species_decontam_unfilt.euc.pcoa <- ape::pcoa(mpa3_species_decontam_unfilt.euc)
+
+mpa3_species_decontam_unfilt.euc.pcoavectors <- as.data.frame(mpa3_species_decontam_unfilt.euc.pcoa$vectors)
+mpa3_species_decontam_unfilt.euc.pcoavectors <- mpa3_species_decontam_unfilt.euc.pcoavectors %>%
+  rownames_to_column("Library_ID")
+
+mpa3_species_decontam_unfilt.euc.vecmet <- left_join(mpa3_species_decontam_unfilt.euc.pcoavectors, full_metadata, by = "Library_ID")
+
+mpa3_species_decontam_unfilt.euc.vecmet %>%
+  ggplot(., aes(Axis.1, Axis.2, colour = Site_code, shape = Site_code)) +
+  geom_point(size = 3) +
+  scale_colour_manual(values = Site_code_colors) +
+  scale_shape_manual(values = Site_code_shapes) +
+  # stat_ellipse(aes(colour = Site_code, group = Site_code)) +
+  theme_minimal(base_size = 7) +
+  ggtitle("Site_code")
+
+# mpa3_species_decontam_unfilt %>%
+#   rownames_to_column("Library_ID") %>%
+#   select(Library_ID) %>%
+#   anti_join(., metadata %>% select(Library_ID, Anginosus), by  = "Library_ID")
+
+
+# special tables for Strep group analysis
+metadata_all_strep <- metadata_all %>%
+  filter(!str_detect(Library_ID, "MID046|MID075"))
+
+mpa3_species_decontam_unfilt_strep <- mpa3_species_decontam %>%
+  select(-one_of(outliers_mpa3)) %>%
+  select(-one_of(poor_samples_mpa3)) %>%
+  select(-matches("EXB|LIB|CSN|CSD|ARS|CSS|CSL|MID046|MID075")) %>%
+  gather("Library_ID","Counts",2:ncol(.)) %>%
+  mutate(Counts = Counts +1) %>%
+  spread(Species,Counts) %>%
+  column_to_rownames("Library_ID")
+
+mpa3_species_decontam_unfilt_strep.pca <- mixOmics::pca(mpa3_species_decontam_unfilt_strep, ncomp = 3, logratio = 'CLR')
+
+# Euclidean distance, uses the clr-transformed matrix from the mixOmics PCA above
+mpa3_species_decontam_unfilt_strep.euc <- vegdist(mpa3_species_decontam_unfilt_strep.pca$X, method = "euclidean", na.rm = F)
+
+# test for difference between different metadata categories 
+adonis2(mpa3_species_decontam_unfilt.euc ~ Site_code, metadata_all, permutations = 999, by = "margin")
+adonis2(mpa3_species_decontam_unfilt.euc ~ Time_period, metadata_all, permutations = 999, by = "margin")
+adonis2(mpa3_species_decontam_unfilt.euc ~ No_reads_total, metadata_all, permutations = 999, by = "margin")
+adonis2(mpa3_species_decontam_unfilt.euc ~ gc_avg, metadata_all, permutations = 999, by = "margin")
+adonis2(mpa3_species_decontam_unfilt.euc ~ seq_len_avg, metadata_all, permutations = 999, by = "margin")
+adonis2(mpa3_species_decontam_unfilt_strep.euc ~ Sanguinis, metadata_all_strep, permutations = 999, by = "margin")
+adonis2(mpa3_species_decontam_unfilt_strep.euc ~ Anginosus, metadata_all_strep, permutations = 999, by = "margin")
+
+
+
+
+all_permanova <- adonis2(mpa3_species_decontam_unfilt.euc ~ Site_code, metadata_all, permutations = 999, by = "margin") %>% rownames_to_column("Metadata")
+all_permanova  <- all_permanova %>% bind_rows(., adonis2(mpa3_species_decontam_unfilt.euc ~ Time_period, metadata_all, permutations = 999, by = "margin") %>% rownames_to_column("Metadata")) %>%
+  bind_rows(adonis2(mpa3_species_decontam_unfilt.euc ~ No_reads_total, metadata_all, permutations = 999, by = "margin") %>% rownames_to_column("Metadata")) %>%
+  bind_rows(adonis2(mpa3_species_decontam_unfilt.euc ~ gc_avg, metadata_all, permutations = 999, by = "margin") %>% rownames_to_column("Metadata")) %>%
+  bind_rows(adonis2(mpa3_species_decontam_unfilt.euc ~ seq_len_avg, metadata_all, permutations = 999, by = "margin") %>% rownames_to_column("Metadata")) %>%
+  bind_rows(adonis2(mpa3_species_decontam_unfilt_strep.euc ~ Sanguinis, metadata_all_strep, permutations = 999, by = "margin") %>% rownames_to_column("Metadata")) %>%
+  bind_rows(adonis2(mpa3_species_decontam_unfilt_strep.euc ~ Anginosus, metadata_all_strep, permutations = 999, by = "margin") %>% rownames_to_column("Metadata"))
+
+
+all_permanova %>%
+  as_tibble() %>%
+  drop_na(`F`) %>%
+  arrange(desc(`F`)) %>%
+  bind_cols(., as_tibble(c("**","***","**","*","ns","ns","ns"))) %>%
+  fwrite(., "./05-results.backup/all_permanova.tsv", sep = "\t", quote =  F)
+
+# controlled for tooth site
+# adonis2(mpa3_species_decontam_unfilt.euc ~ Pipenotch, metadata, permutations = 999, by = "margin", strata = metadata$Tooth_site)
+
+```
+
+
+
 ## Middenbeemster samples only
 ```{r pca_species_mid_pc12}
 mpa3_species_decontam_unfilt_mid <- mpa3_species_decontam %>%
@@ -1259,8 +1359,8 @@ mid_seqdepth_pc12
 # by sampled tooth site(s)
 mid_tooth_pc12 <- plot_pca_mid(mpa3_species_decontam_unfilt_mid, "PC1", "PC2", "Tooth_location", "Pipenotch", 3, "Tooth location")
 mid_tooth_pc12
-# ggsave("~/Desktop/MID_pca_mid_tooth_pc12.pdf", plot = mid_tooth_pc12, device = "pdf",
-#        scale = 1, width = 9, height = 5, units = c("in"), dpi = 300)
+# ggsave("06-publication/supplemental_figures/SXX14/MID_pca_mid_tooth_pc12.pdf", plot = mid_tooth_pc12, device = "pdf",
+#        scale = 1, width = 5, height = 5, units = c("in"), dpi = 300)
 
 # by sampled tooth site(s)
 plot_pca_mid(mpa3_species_decontam_unfilt_mid, "PC1", "PC2", "alt_tooth_location", "Pipenotch", 3, "Tooth location")
@@ -1360,8 +1460,11 @@ plot_pca_cont(mpa3_species_decontam_unfilt_mid, "PC3", "PC2", "No_reads_total", 
 plot_pca_mid(mpa3_species_decontam_unfilt_mid, "PC3", "PC2", "Tooth_location", "Pipenotch", 3, "Tooth location")
 
 # by sampled tooth site(s)
-plot_pca_mid(mpa3_species_decontam_unfilt_mid, "PC3", "PC2", "alt_tooth_location", "Pipenotch", 3, "Tooth location")
-
+mid_tooth_pc23 <- plot_pca_mid(mpa3_species_decontam_unfilt_mid, "PC3", "PC2", "Tooth_location", "Pipenotch", 3, "Tooth location")
+mid_tooth_pc23
+# ggsave("06-publication/supplemental_figures/SXX14/MID_pca_mid_tooth_pc23.pdf", plot = mid_tooth_pc23, device = "pdf",
+#        scale = 1, width = 5, height = 5, units = c("in"), dpi = 300)
+# 
 # by mg of extracted calculus
 plot_pca_cont(mpa3_species_decontam_unfilt_mid, "PC3", "PC2", "Calculus_extracted_mg", "Pipenotch", 3, "Weight of extracted calculus")
 
@@ -1460,7 +1563,7 @@ pandoc.table(mpa3_species_decontam_filtered_nocontrols_biplot_323$plot_env$neg_1
 
 ```
 
-```{r}
+```{r biplot_species_lists, eval = F}
 
 pc1 <- mpa3_species_decontam_filtered_nocontrols_biplot_121$plot_env$pws_10 %>% 
   arrange(desc(PC1)) %>%
@@ -1480,8 +1583,328 @@ fwrite(pc2, "./05-results.backup/mpa3_pc2_species_list.tsv", quote = F, sep = "\
 
 ```
 
+Run a permanova with function adonis to test if the clusters are significantly
+different. 
+```{r metadata_prep_permanova}
 
-```{r palaeofeces_gc}
+metadata_mid <- full_metadata %>%
+  as_tibble() %>%
+  filter(!Library_ID %in% outliers_mpa3) %>%
+  filter(!Library_ID %in% poor_samples_mpa3) %>%
+  filter(str_detect(Library_ID, "MID")) %>%
+  # remove the MID samples that have no metadata
+  filter(!str_detect(Library_ID, "MID025.A0101|MID033.A0101|MID056.A0101|MID065.A0101|MID068.A0101|MID076.A0101|MID078.A0101|MID052.A0101")) %>%
+  mutate(Periodontal_disease_present = fct_relevel(Periodontal_disease_present, "Yes","No","Unobservable"),
+         Caries_present = fct_relevel(Caries_present, "Yes","No","Unobservable"),
+         Sex = fct_relevel(Sex, "Female","Male","Indeterminate")) %>%
+  # select(Library_ID, Periodontal_disease_present, Caries_present, Sex, Tooth_location, Pipenotch) %>%
+  arrange(Library_ID) %>%
+  unique() %>%
+  left_join(., strep_rs)
+
+mpa3_species_decontam_unfilt_mid <- mpa3_species_decontam %>%
+  select(-one_of(outliers_mpa3)) %>%
+  select(-one_of(poor_samples_mpa3)) %>%
+  select(matches("Species|MID")) %>%
+  gather("Library_ID","Counts",2:ncol(.)) %>% 
+  mutate(Counts = Counts +1) %>%
+  spread(Species,Counts) %>%
+  column_to_rownames("Library_ID")
+
+mpa3_species_decontam_unfilt_mid.pca <- mixOmics::pca(mpa3_species_decontam_unfilt_mid, ncomp = 3, logratio = 'CLR')
+
+```
+
+```{r special_permanova_tables}
+# some special input/metadata tables to remove NAs from specific columns
+
+# extraction weight (mg)
+metadata_mid_exmg <- metadata_mid %>% drop_na(Calculus_extracted_mg)
+
+mpa3_species_decontam_unfilt_mid_exmg <- mpa3_species_decontam %>%
+  select(-one_of(outliers_mpa3)) %>%
+  select(-one_of(poor_samples_mpa3)) %>%
+  select(matches("Species|MID")) %>%
+  # no data for weight of extracted calculus
+  select(-matches("MID029|MID030|MID031")) %>%
+  gather("Library_ID","Counts",2:ncol(.)) %>% 
+  mutate(Counts = Counts +1) %>%
+  spread(Species,Counts) %>%
+  column_to_rownames("Library_ID")
+
+mpa3_species_decontam_unfilt_mid_exmg.pca <- mixOmics::pca(mpa3_species_decontam_unfilt_mid_exmg, ncomp = 3, logratio = 'CLR')
+mpa3_species_decontam_unfilt_mid_exmg.euc <- vegdist(mpa3_species_decontam_unfilt_mid_exmg.pca$X, method = "euclidean", na.rm = T)
+
+# % teeth with caries (also kworks for % positions perioapical)
+metadata_mid_pctc <- metadata_mid %>% drop_na(`%teeth_with_caries`)
+
+mpa3_species_decontam_unfilt_mid_pctc <- mpa3_species_decontam %>%
+  select(-one_of(outliers_mpa3)) %>%
+  select(-one_of(poor_samples_mpa3)) %>%
+  select(matches("Species|MID")) %>%
+  # no data for % teeth with caries
+  select(-matches("MID028|MID033|MID052|MID056|MID065|MID068.A|MID076|MID078")) %>%
+  gather("Library_ID","Counts",2:ncol(.)) %>% 
+  mutate(Counts = Counts +1) %>%
+  spread(Species,Counts) %>%
+  column_to_rownames("Library_ID")
+
+mpa3_species_decontam_unfilt_mid_pctc.pca <- mixOmics::pca(mpa3_species_decontam_unfilt_mid_pctc, ncomp = 3, logratio = 'CLR')
+mpa3_species_decontam_unfilt_mid_exmg_pctc.euc <- vegdist(mpa3_species_decontam_unfilt_mid_pctc.pca$X, method = "euclidean", na.rm = T)
+
+# % teeth with calculus
+metadata_mid_pctcal <- metadata_mid %>% drop_na(`%teeth_with_calc`)
+
+mpa3_species_decontam_unfilt_mid_pctcal <- mpa3_species_decontam %>%
+  select(-one_of(outliers_mpa3)) %>%
+  select(-one_of(poor_samples_mpa3)) %>%
+  select(matches("Species|MID")) %>%
+  # no data for % teeth with calculus
+  select(-matches("MID033|MID052|MID056|MID065|MID068.A|MID076|MID078|MID079|MID092")) %>%
+  gather("Library_ID","Counts",2:ncol(.)) %>% 
+  mutate(Counts = Counts +1) %>%
+  spread(Species,Counts) %>%
+  column_to_rownames("Library_ID")
+
+mpa3_species_decontam_unfilt_mid_pctcal.pca <- mixOmics::pca(mpa3_species_decontam_unfilt_mid_pctcal, ncomp = 3, logratio = 'CLR')
+mpa3_species_decontam_unfilt_mid_pctcal.euc <- vegdist(mpa3_species_decontam_unfilt_mid_pctcal.pca$X, method = "euclidean", na.rm = T)
+
+# periodontal affect score
+metadata_mid_pas <- metadata_mid %>% drop_na(Peridontal_affect_score)
+
+mpa3_species_decontam_unfilt_mid_pas <- mpa3_species_decontam %>%
+  select(-one_of(outliers_mpa3)) %>%
+  select(-one_of(poor_samples_mpa3)) %>%
+  select(matches("Species|MID")) %>%
+  # no data for periodontal affect score
+  select(-matches("MID025|MID033|MID052|MID056|MID065|MID068.A|MID076|MID078|MID081|MID094|MID097")) %>%
+  gather("Library_ID","Counts",2:ncol(.)) %>% 
+  mutate(Counts = Counts +1) %>%
+  spread(Species,Counts) %>%
+  column_to_rownames("Library_ID")
+
+mpa3_species_decontam_unfilt_mid_pas.pca <- mixOmics::pca(mpa3_species_decontam_unfilt_mid_pas, ncomp = 3, logratio = 'CLR')
+mpa3_species_decontam_unfilt_mid_pas.euc <- vegdist(mpa3_species_decontam_unfilt_mid_pas.pca$X, method = "euclidean", na.rm = T)
+
+# % positions with periodontal
+metadata_mid_perio <- metadata_mid %>% drop_na(`%_positions_with_Periodontal`)
+
+mpa3_species_decontam_unfilt_mid_perio <- mpa3_species_decontam %>%
+  select(-one_of(outliers_mpa3)) %>%
+  select(-one_of(poor_samples_mpa3)) %>%
+  select(matches("Species|MID")) %>%
+  # no data for periodontal affect score
+  select(-matches("MID033|MID052|MID056|MID065|MID068.A|MID076|MID078|MID081|MID094|MID097")) %>%
+  gather("Library_ID","Counts",2:ncol(.)) %>% 
+  mutate(Counts = Counts +1) %>%
+  spread(Species,Counts) %>%
+  column_to_rownames("Library_ID")
+
+mpa3_species_decontam_unfilt_mid_perio.pca <- mixOmics::pca(mpa3_species_decontam_unfilt_mid_perio, ncomp = 3, logratio = 'CLR')
+mpa3_species_decontam_unfilt_mid_perio.euc <- vegdist(mpa3_species_decontam_unfilt_mid_perio.pca$X, method = "euclidean", na.rm = T)
+
+# extract concentration ng/uL
+metadata_mid_exconc <- metadata_mid %>% drop_na(`extract_conc_ng/uL`)  # %>% filter(!str_detect(Library_ID, "MID024|MID063|MID092"))
+
+mpa3_species_decontam_unfilt_mid_exconc <- mpa3_species_decontam %>%
+  select(-one_of(outliers_mpa3)) %>%
+  select(-one_of(poor_samples_mpa3)) %>%
+  select(matches("Species|MID")) %>%
+  # no data for periodontal affect score
+  select(-matches("MID025|MID029|MID030|MID031|MID033|MID052|MID056|MID065|MID068.A|MID076|MID078")) %>%
+  gather("Library_ID","Counts",2:ncol(.)) %>% 
+  mutate(Counts = Counts +1) %>%
+  spread(Species,Counts) %>%
+  column_to_rownames("Library_ID")
+
+mpa3_species_decontam_unfilt_mid_exconc.pca <- mixOmics::pca(mpa3_species_decontam_unfilt_mid_exconc, ncomp = 3, logratio = 'CLR')
+mpa3_species_decontam_unfilt_mid_exconc.euc <- vegdist(mpa3_species_decontam_unfilt_mid_exconc.pca$X, method = "euclidean", na.rm = T)
+
+
+# Sanguinis and Anginosus group strep proportions
+metadata_mid_strep <- metadata_mid %>% drop_na(Sanguinis)  # %>% filter(!str_detect(Library_ID, "MID024|MID063|MID092"))
+
+mpa3_species_decontam_unfilt_mid_strep <- mpa3_species_decontam %>%
+  select(-one_of(outliers_mpa3)) %>%
+  select(-one_of(poor_samples_mpa3)) %>%
+  select(matches("Species|MID")) %>%
+  # no data for periodontal affect score
+  select(-matches("MID046|MID075")) %>%
+  gather("Library_ID","Counts",2:ncol(.)) %>% 
+  mutate(Counts = Counts +1) %>%
+  spread(Species,Counts) %>%
+  column_to_rownames("Library_ID")
+
+mpa3_species_decontam_unfilt_mid_strep.pca <- mixOmics::pca(mpa3_species_decontam_unfilt_mid_strep, ncomp = 3, logratio = 'CLR')
+mpa3_species_decontam_unfilt_mid_strep.euc <- vegdist(mpa3_species_decontam_unfilt_mid_strep.pca$X, method = "euclidean", na.rm = T)
+
+
+# mpa3_species_decontam_unfilt_mid %>%
+#   rownames_to_column("Library_ID") %>%
+#   select(Library_ID) %>%
+#   anti_join(., metadata_mid %>% select(Library_ID, Anginosus), by  = "Library_ID")
+
+```
+
+
+Run a PERMANOVA with adonis2 on the abundance-filtered clr-transformed species matrix.
+```{r adonis_mid_species}
+# Euclidean distance, uses the clr-transformed matrix from the mixOmics PCA above
+mpa3_species_decontam_unfilt_mid.euc <- vegdist(mpa3_species_decontam_unfilt_mid.pca$X, method = "euclidean", na.rm = T)
+mpa3_species_decontam_unfilt_mid.euc.pcoa <- ape::pcoa(mpa3_species_decontam_unfilt_mid.euc)
+
+mpa3_species_decontam_unfilt_mid.euc.pcoavectors <- as.data.frame(mpa3_species_decontam_unfilt_mid.euc.pcoa$vectors)
+mpa3_species_decontam_unfilt_mid.euc.pcoavectors <- mpa3_species_decontam_unfilt_mid.euc.pcoavectors %>%
+  rownames_to_column("Library_ID")
+
+mpa3_species_decontam_unfilt_mid.euc.vecmet <- inner_join(mpa3_species_decontam_unfilt_mid.euc.pcoavectors, metadata_mid, by = "Library_ID")
+
+mpa3_species_decontam_unfilt_mid.euc.vecmet %>%
+  ggplot(., aes(Axis.1, Axis.2, colour = Site_code, shape = Site_code)) +
+  geom_point(size = 3) +
+  scale_colour_manual(values = Site_code_colors) +
+  scale_shape_manual(values = Site_code_shapes) +
+  stat_ellipse(aes(colour = Site_code, group = Site_code)) +
+  theme_minimal(base_size = 7) +
+  ggtitle("Site_code")
+
+# mpa3_species_decontam_unfilt_mid %>%
+#   rownames_to_column("Library_ID") %>%
+#   select(Library_ID) %>%
+#   anti_join(., metadata_mid %>% select(Library_ID, Anginosus), by  = "Library_ID")
+
+
+# test for difference between different metadata categories 
+mid_permanova <- adonis2(mpa3_species_decontam_unfilt_mid.euc ~ gc_avg, metadata_mid, permutations = 999, by = "margin") %>% rownames_to_column("Metadata")
+mid_permanova  <- mid_permanova %>% bind_rows(., adonis2(mpa3_species_decontam_unfilt_mid.euc ~ Sex, metadata_mid, permutations = 999, by = "margin") %>% rownames_to_column("Metadata")) %>%
+  bind_rows(adonis2(mpa3_species_decontam_unfilt_mid.euc ~ Pipenotch, metadata_mid, permutations = 999, by = "margin") %>% rownames_to_column("Metadata")) %>%
+  bind_rows(adonis2(mpa3_species_decontam_unfilt_mid.euc ~ seq_len_avg, metadata_mid, permutations = 999, by = "margin") %>% rownames_to_column("Metadata")) %>%
+  bind_rows(adonis2(mpa3_species_decontam_unfilt_mid.euc ~ `DNA_molecules_per_library_x10^6`, metadata_mid, permutations = 999, by = "margin") %>% rownames_to_column("Metadata")) %>%
+  bind_rows(adonis2(mpa3_species_decontam_unfilt_mid.euc ~ calc_sup_SI_score, metadata_mid, permutations = 999, by = "margin") %>% rownames_to_column("Metadata")) %>%
+  bind_rows(adonis2(mpa3_species_decontam_unfilt_mid.euc ~ Age, metadata_mid, permutations = 999, by = "margin") %>% rownames_to_column("Metadata")) %>%
+  bind_rows(adonis2(mpa3_species_decontam_unfilt_mid.euc ~ `%AMTL`, metadata_mid, permutations = 999, by = "margin") %>% rownames_to_column("Metadata")) %>%
+  bind_rows(adonis2(mpa3_species_decontam_unfilt_mid.euc ~ Max_Perio_Score, metadata_mid, permutations = 999, by = "margin") %>% rownames_to_column("Metadata")) %>%
+  bind_rows(adonis2(mpa3_species_decontam_unfilt_mid.euc ~ Calc_sub_SI_score, metadata_mid, permutations = 999, by = "margin") %>% rownames_to_column("Metadata")) %>%
+  bind_rows(adonis2(mpa3_species_decontam_unfilt_mid.euc ~ `extract_conc_after_storage_ng/uL`, metadata_mid, permutations = 999, by = "margin") %>% rownames_to_column("Metadata")) %>%
+  bind_rows(adonis2(mpa3_species_decontam_unfilt_mid.euc ~ `extract_conc_ng/mg`, metadata_mid, permutations = 999, by = "margin") %>% rownames_to_column("Metadata")) %>%
+  bind_rows(adonis2(mpa3_species_decontam_unfilt_mid.euc ~ No_reads_total, metadata_mid, permutations = 999, by = "margin") %>% rownames_to_column("Metadata")) %>%
+  bind_rows(adonis2(mpa3_species_decontam_unfilt_mid.euc ~ Tooth_location, metadata_mid, permutations = 999, by = "margin") %>% rownames_to_column("Metadata")) %>%
+  bind_rows(adonis2(mpa3_species_decontam_unfilt_mid_exmg.euc ~ Calculus_extracted_mg, metadata_mid_exmg, permutations = 999, by = "margin") %>% rownames_to_column("Metadata")) %>%
+  bind_rows(adonis2(mpa3_species_decontam_unfilt_mid_exmg_pctc.euc ~ `%teeth_with_caries`, metadata_mid_pctc, permutations = 999, by = "margin") %>% rownames_to_column("Metadata")) %>%
+  bind_rows(adonis2(mpa3_species_decontam_unfilt_mid_exmg_pctc.euc ~ `%_positions_perioapical`, metadata_mid_pctc, permutations = 999, by = "margin") %>% rownames_to_column("Metadata")) %>%
+  bind_rows(adonis2(mpa3_species_decontam_unfilt_mid_pctcal.euc ~ `%teeth_with_calc`, metadata_mid_pctcal, permutations = 999, by = "margin") %>% rownames_to_column("Metadata")) %>%
+  bind_rows(adonis2(mpa3_species_decontam_unfilt_mid_pas.euc ~ Peridontal_affect_score, metadata_mid_pas, permutations = 999, by = "margin") %>% rownames_to_column("Metadata")) %>%
+  bind_rows(adonis2(mpa3_species_decontam_unfilt_mid_perio.euc ~ `%_positions_with_Periodontal`, metadata_mid_perio, permutations = 999, by = "margin") %>% rownames_to_column("Metadata")) %>%
+  bind_rows(adonis2(mpa3_species_decontam_unfilt_mid_exconc.euc ~ `extract_conc_ng/uL`, metadata_mid_exconc, permutations = 999, by = "margin") %>% rownames_to_column("Metadata")) %>%
+  bind_rows(adonis2(mpa3_species_decontam_unfilt_mid_strep.euc ~ Sanguinis, metadata_mid_strep, permutations = 999, by = "margin") %>% rownames_to_column("Metadata")) %>%
+  bind_rows(adonis2(mpa3_species_decontam_unfilt_mid_strep.euc ~ Anginosus, metadata_mid_strep, permutations = 999, by = "margin") %>% rownames_to_column("Metadata"))
+
+
+mid_permanova %>%
+  as_tibble() %>%
+  drop_na(`F`) %>%
+  arrange(desc(`F`)) %>%
+  bind_cols(., as_tibble(c("***","***","***","**","**","**","ns","*","ns","ns","ns","ns","ns","ns","ns","ns","ns","ns","ns","ns","ns","ns","ns"))) %>%
+  fwrite(., "./05-results.backup/mid_permanova.tsv", sep = "\t", quote =  F)
+
+# controlled for tooth site
+# adonis2(mpa3_species_decontam_unfilt_mid.euc ~ Pipenotch, metadata_mid, permutations = 999, by = "margin", strata = metadata_mid$Tooth_site)
+
+```
+
+Then run betadisper to see if the groups with significant differences in
+clustering have different dispersion ("tight" vs. "loose" clustering of groups)
+- is one group more variable than the other(s)?
+```{r betadisper_mid_species}
+# Test the 3 metadata categories that are significant (p < 0.05) based on adonis for significant differences in dispersion
+# Site, Region, Time period
+
+# Site
+groups_site <- metadata_mid %>%
+  select(Site) %>% 
+  pull()
+
+## Calculate multivariate dispersions
+site_betadisper_mid <- betadisper(mpa3_species_decontam_unfilt_mid.euc, groups_site, bias.adjust =TRUE)
+site_betadisper_mid
+
+## Perform test
+anova(site_betadisper_mid)
+
+## Permutation test for F
+permutest(site_betadisper_mid, pairwise = TRUE, permutations = 99)
+
+## Tukey's Honest Significant Differences
+site_betadisper_mid.HSD <- TukeyHSD(site_betadisper_mid)
+plot(site_betadisper_mid.HSD)
+
+## Plot the groups and distances to centroids on the
+## first two PCoA axes
+## with data ellipses instead of hulls
+plot(site_betadisper_mid, ellipse = TRUE, hull = FALSE) # 1 sd data ellipse
+
+## can also specify which axes to plot, ordering respected
+# plot(site_betadisper_mid, axes = c(3,1), seg.col = "forestgreen", seg.lty = "dashed")
+
+## Draw a boxplot of the distances to centroid for each group
+boxplot(site_betadisper_mid)
+
+
+# Region
+groups_region <- metadata_mid %>%
+  select(Region) %>% 
+  pull()
+
+## Calculate multivariate dispersions
+region_betadisper_mid <- betadisper(mpa3_species_decontam_unfilt_mid.euc, groups_region, bias.adjust =TRUE)
+region_betadisper_mid
+
+## Perform test
+anova(region_betadisper_mid)
+
+## Permutation test for F
+permutest(region_betadisper_mid, pairwise = TRUE, permutations = 99)
+
+## Tukey's Honest Significant Differences
+region_betadisper_mid.HSD <- TukeyHSD(region_betadisper_mid)
+plot(region_betadisper_mid.HSD)
+
+## Plot with data ellipses instead of hulls
+plot(region_betadisper_mid, ellipse = TRUE, hull = FALSE) # 1 sd data ellipse
+
+## Draw a boxplot of the distances to centroid for each group
+boxplot(region_betadisper_mid)
+
+
+# Time period
+groups_tp <- metadata_mid %>%
+  select(Time_period) %>% 
+  pull()
+
+## Calculate multivariate dispersions
+tp_betadisper_mid <- betadisper(mpa3_species_decontam_unfilt_mid.euc, groups_tp, bias.adjust =TRUE)
+tp_betadisper_mid
+
+## Perform test
+anova(tp_betadisper_mid)
+
+## Permutation test for F
+permutest(tp_betadisper_mid, pairwise = TRUE, permutations = 99)
+
+## Tukey's Honest Significant Differences
+tp_betadisper_mid.HSD <- TukeyHSD(tp_betadisper_mid)
+plot(tp_betadisper_mid.HSD)
+
+## Plot with data ellipses instead of hulls
+plot(tp_betadisper_mid, ellipse = TRUE, hull = FALSE) # 1 sd data ellipse
+
+## Draw a boxplot of the distances to centroid for each group
+boxplot(tp_betadisper_mid)
+
+```
+
+
+```{r palaeofeces_gc, eval = F}
 
 palaeofeces <- fread("~/archgen/microbiome_calculus/smoking_calculus/04-analysis/gut_gc/copevo_gc_table.tsv") %>%
   mutate(Sample_type = "palaeofeces") %>%
@@ -1502,7 +1925,7 @@ palaeofeces %>% group_by(Sample_type) %>% summarize(avg_GC = mean(Avg_GC), std_g
 
 ```
 
-```{r palaeofeces_plot}
+```{r palaeofeces_plot, eval =  F}
 
 ggplot(palaeofeces, aes(x = Sample_type, y = Avg_GC, fill = Sample_type)) + 
   ## add half-violin from {ggdist} package
