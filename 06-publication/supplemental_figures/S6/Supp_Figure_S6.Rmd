@@ -103,8 +103,8 @@ mpa3_species_decontam <- mpa3_species_decontam %>%
 
 List the outliers 
 ```{r outliers}
-outliers <- c("EXB059.A2501","LIB058.A0103","LIB058.A0106","CSS","CSD")
-poor_samples <- fread("./05-results.backup/cuperdec_poor_samples.tsv") %>%
+outliers <- c("EXB059.A2101","EXB059.A2501","EXB015.A3301","EXB034.A2701","EXB059.A2201","EXB059.A2301","EXB059.A2401","LIB058.A0103","LIB058.A0106","LIB058.A0104")
+poor_samples <- fread("./05-results.backup/cuperdec_mpa3_poor_samples.tsv") %>%
   pull(Sample)
 
 outliersF <- str_c(outliers, collapse = "|")
@@ -119,7 +119,7 @@ outliersF <- str_c(outliers, collapse = "|")
 presabs_table_f <- mpa3_species_decontam %>%
   select(-one_of(outliers)) %>%
   select(-one_of(poor_samples)) %>%
-  select(-matches("EXB|LIB|CSN|CSL")) %>%
+  select(-matches("EXB|LIB|CSN|CSL|CSD|CSS")) %>%
   adorn_totals(where = "col", name = "Sum_species.decontam") %>%
   mutate(Percent = Sum_species.decontam/sum(Sum_species.decontam)*100) %>%
   filter(Percent > 0.001) %>%
@@ -142,7 +142,7 @@ mpa3_species_decontam_filtered.alpha <- presabs_table_f %>%
 mpa3_species_decontam_filtered.matrix <- as.matrix(mpa3_species_decontam %>%
   select(-one_of(outliers)) %>%
   select(-one_of(poor_samples)) %>%
-  select(-matches("EXB|LIB|CSN|CSL")) %>%
+  select(-matches("EXB|LIB|CSN|CSL|CSD|CSS")) %>%
   adorn_totals(where = "col", name = "Sum_species.decontam") %>%
   mutate(Percent = Sum_species.decontam/sum(Sum_species.decontam)*100) %>%
   filter(Percent > 0.001) %>%
@@ -175,7 +175,8 @@ mpa3_species_decontam_filtered.alpha_meta <- mpa3_species_decontam_filtered.alph
                select(Library_ID, Site_code, Region, Time_period, Sample_or_Control, 
                       Periodontal_disease_present, Caries_present, Sex, Age), by = "Library_ID") %>%
   drop_na(Observed_species) %>%
-  filter(!str_detect(Library_ID, "ARS"))
+  filter(!str_detect(Library_ID, "ARS")) %>%
+  ungroup()
 
 ```
 
@@ -391,10 +392,10 @@ raincloud_alpha <- plot_grid(obssp, shannon,
           nrow=1, labels = c("A", "B"), rel_widths = c(1, 1), scale = 0.9)
 
 
-# ggsave("./06-publication/supplemental_figures/S6/raincloud_alpha_sites.pdf", plot = raincloud_alpha,
-#        device = "pdf", scale = 1, width = 12, height = 5, units = c("in"), dpi = 300)
-# ggsave("./06-publication/supplemental_figures/S6/raincloud_alpha_sites.png", plot = raincloud_alpha,
-#        device = "png", scale = 1, width = 12, height = 5, units = c("in"), dpi = 300)
+ggsave("./06-publication/supplemental_figures/S6/raincloud_alpha_sites.pdf", plot = raincloud_alpha,
+       device = "pdf", scale = 1, width = 12, height = 5, units = c("in"), dpi = 300)
+ggsave("./06-publication/supplemental_figures/S6/raincloud_alpha_sites.png", plot = raincloud_alpha,
+       device = "png", scale = 1, width = 12, height = 5, units = c("in"), dpi = 300)
 
 ```
 
