@@ -27,7 +27,7 @@ knitr::opts_knit$set(root.dir = normalizePath(".."))
 
 ```{r load_data}
 # read in the species table
-mpa3_raw <- fread("./05-results.backup/abundance_table_mpa3.tsv") %>%
+mpa3_raw <- fread("./05-results.backup/mpa3_abundance_table.tsv") %>%
   select(-NCBI_tax_id)
 
 # clean the file names

@@ -288,9 +288,9 @@ plot_pca_mid <- function(df, pc1, pc2, color_group, shape_group, ncomps, title_t
     }
 
     pca_plot <- ggplot(df_X, aes(pc1, pc2, colour = color_group, shape = shape_group)) +
-     geom_point(size = 2) +
-     scale_colour_manual(values = c("#5A167E","#E95562","#FED395","#252525","#311068","#C83E73","#FEA873")) + # 
-     scale_shape_manual(values = c(16, 17, 15, 18)) +
+     geom_point(size = 3) +
+     scale_colour_manual(values = c("#5A167E","#E95562","#FED395","#252525","#C83E73","#311068","#FEA873")) + # 
+     scale_shape_manual(values = c(17, 19, 15, 18)) +
      # stat_ellipse() +
      xlab(paste(xaxis, " - ", exp_var_pc1)) +
      ylab(paste(yaxis, " - ", exp_var_pc2)) +
@@ -813,6 +813,10 @@ mpa3_species_decontam_unfilt <- mpa3_species_decontam %>%
   select(-one_of(outliers_mpa3)) %>%
   select(-one_of(poor_samples_mpa3)) %>%
   select(-matches("EXB|LIB|CSN|CSD|ARS|CSS|CSL")) %>%
+  adorn_totals(where = "col", name = "Sum_species.decontam") %>%
+  mutate(Percent = Sum_species.decontam/sum(Sum_species.decontam)*100) %>%
+  filter(Percent > 0.001) %>%
+  select(-one_of(c("Sum_species.decontam","Percent"))) %>%
   gather("Library_ID","Counts",2:ncol(.)) %>%
   mutate(Counts = Counts +1) %>%
   spread(Species,Counts) %>%
@@ -1180,6 +1184,10 @@ mpa3_species_decontam_unfilt <- mpa3_species_decontam %>%
   select(-one_of(outliers_mpa3)) %>%
   select(-one_of(poor_samples_mpa3)) %>%
   select(-matches("EXB|LIB|CSN|CSD|ARS|CSS|CSL")) %>%
+  adorn_totals(where = "col", name = "Sum_species.decontam") %>%
+  mutate(Percent = Sum_species.decontam/sum(Sum_species.decontam)*100) %>%
+  filter(Percent > 0.001) %>%
+  select(-one_of(c("Sum_species.decontam","Percent"))) %>%
   gather("Library_ID","Counts",2:ncol(.)) %>%
   mutate(Counts = Counts +1) %>%
   spread(Species,Counts) %>%
@@ -1221,6 +1229,10 @@ mpa3_species_decontam_unfilt_strep <- mpa3_species_decontam %>%
   select(-one_of(outliers_mpa3)) %>%
   select(-one_of(poor_samples_mpa3)) %>%
   select(-matches("EXB|LIB|CSN|CSD|ARS|CSS|CSL|MID046|MID075")) %>%
+  adorn_totals(where = "col", name = "Sum_species.decontam") %>%
+  mutate(Percent = Sum_species.decontam/sum(Sum_species.decontam)*100) %>%
+  filter(Percent > 0.001) %>%
+  select(-one_of(c("Sum_species.decontam","Percent"))) %>%
   gather("Library_ID","Counts",2:ncol(.)) %>%
   mutate(Counts = Counts +1) %>%
   spread(Species,Counts) %>%
@@ -1257,7 +1269,8 @@ all_permanova %>%
   drop_na(`F`) %>%
   arrange(desc(`F`)) %>%
   bind_cols(., as_tibble(c("**","***","**","*","ns","ns","ns"))) %>%
-  fwrite(., "./05-results.backup/all_permanova.tsv", sep = "\t", quote =  F)
+  arrange(desc(R2))
+  # fwrite(., "./05-results.backup/all_permanova.tsv", sep = "\t", quote =  F)
 
 # controlled for tooth site
 # adonis2(mpa3_species_decontam_unfilt.euc ~ Pipenotch, metadata, permutations = 999, by = "margin", strata = metadata$Tooth_site)
@@ -1272,6 +1285,10 @@ mpa3_species_decontam_unfilt_mid <- mpa3_species_decontam %>%
   select(-one_of(outliers_mpa3)) %>%
   select(-one_of(poor_samples_mpa3)) %>%
   select(matches("Species|MID|CMB")) %>%
+  # adorn_totals(where = "col", name = "Sum_species.decontam") %>%
+  # mutate(Percent = Sum_species.decontam/sum(Sum_species.decontam)*100) %>%
+  # filter(Percent > 0.001) %>%
+  # select(-one_of(c("Sum_species.decontam","Percent"))) %>%
   gather("Library_ID","Counts",2:ncol(.)) %>% 
   mutate(Counts = Counts +1) %>%
   spread(Species,Counts) %>%
@@ -1503,7 +1520,7 @@ plot(mpa3_species_decontam_unfilt_mid.pca)
 
 # Define pipenotch colors for plotting
 Pipenotch_colors = c("#311068","#C83E73")
-Pipenotch_shapes = c(19,17)
+Pipenotch_shapes = c(17,19)
 
 mpa3_species_decontam_filtered_nocontrols_biplot_121 <- plot_pca_bi(mpa3_species_decontam_unfilt_mid.pca, "PC1", "PC2", "Pipenotch", PC1)
 mpa3_species_decontam_filtered_nocontrols_biplot_121
@@ -1606,6 +1623,10 @@ mpa3_species_decontam_unfilt_mid <- mpa3_species_decontam %>%
   select(-one_of(outliers_mpa3)) %>%
   select(-one_of(poor_samples_mpa3)) %>%
   select(matches("Species|MID")) %>%
+  adorn_totals(where = "col", name = "Sum_species.decontam") %>%
+  mutate(Percent = Sum_species.decontam/sum(Sum_species.decontam)*100) %>%
+  filter(Percent > 0.001) %>%
+  select(-one_of(c("Sum_species.decontam","Percent"))) %>%
   gather("Library_ID","Counts",2:ncol(.)) %>% 
   mutate(Counts = Counts +1) %>%
   spread(Species,Counts) %>%
@@ -1627,6 +1648,10 @@ mpa3_species_decontam_unfilt_mid_exmg <- mpa3_species_decontam %>%
   select(matches("Species|MID")) %>%
   # no data for weight of extracted calculus
   select(-matches("MID029|MID030|MID031")) %>%
+  adorn_totals(where = "col", name = "Sum_species.decontam") %>%
+  mutate(Percent = Sum_species.decontam/sum(Sum_species.decontam)*100) %>%
+  filter(Percent > 0.001) %>%
+  select(-one_of(c("Sum_species.decontam","Percent"))) %>%
   gather("Library_ID","Counts",2:ncol(.)) %>% 
   mutate(Counts = Counts +1) %>%
   spread(Species,Counts) %>%
@@ -1644,6 +1669,10 @@ mpa3_species_decontam_unfilt_mid_pctc <- mpa3_species_decontam %>%
   select(matches("Species|MID")) %>%
   # no data for % teeth with caries
   select(-matches("MID028|MID033|MID052|MID056|MID065|MID068.A|MID076|MID078")) %>%
+  adorn_totals(where = "col", name = "Sum_species.decontam") %>%
+  mutate(Percent = Sum_species.decontam/sum(Sum_species.decontam)*100) %>%
+  filter(Percent > 0.001) %>%
+  select(-one_of(c("Sum_species.decontam","Percent"))) %>%
   gather("Library_ID","Counts",2:ncol(.)) %>% 
   mutate(Counts = Counts +1) %>%
   spread(Species,Counts) %>%
@@ -1661,6 +1690,10 @@ mpa3_species_decontam_unfilt_mid_pctcal <- mpa3_species_decontam %>%
   select(matches("Species|MID")) %>%
   # no data for % teeth with calculus
   select(-matches("MID033|MID052|MID056|MID065|MID068.A|MID076|MID078|MID079|MID092")) %>%
+  adorn_totals(where = "col", name = "Sum_species.decontam") %>%
+  mutate(Percent = Sum_species.decontam/sum(Sum_species.decontam)*100) %>%
+  filter(Percent > 0.001) %>%
+  select(-one_of(c("Sum_species.decontam","Percent"))) %>%
   gather("Library_ID","Counts",2:ncol(.)) %>% 
   mutate(Counts = Counts +1) %>%
   spread(Species,Counts) %>%
@@ -1678,6 +1711,10 @@ mpa3_species_decontam_unfilt_mid_pas <- mpa3_species_decontam %>%
   select(matches("Species|MID")) %>%
   # no data for periodontal affect score
   select(-matches("MID025|MID033|MID052|MID056|MID065|MID068.A|MID076|MID078|MID081|MID094|MID097")) %>%
+  adorn_totals(where = "col", name = "Sum_species.decontam") %>%
+  mutate(Percent = Sum_species.decontam/sum(Sum_species.decontam)*100) %>%
+  filter(Percent > 0.001) %>%
+  select(-one_of(c("Sum_species.decontam","Percent"))) %>%
   gather("Library_ID","Counts",2:ncol(.)) %>% 
   mutate(Counts = Counts +1) %>%
   spread(Species,Counts) %>%
@@ -1695,6 +1732,10 @@ mpa3_species_decontam_unfilt_mid_perio <- mpa3_species_decontam %>%
   select(matches("Species|MID")) %>%
   # no data for periodontal affect score
   select(-matches("MID033|MID052|MID056|MID065|MID068.A|MID076|MID078|MID081|MID094|MID097")) %>%
+  adorn_totals(where = "col", name = "Sum_species.decontam") %>%
+  mutate(Percent = Sum_species.decontam/sum(Sum_species.decontam)*100) %>%
+  filter(Percent > 0.001) %>%
+  select(-one_of(c("Sum_species.decontam","Percent"))) %>%
   gather("Library_ID","Counts",2:ncol(.)) %>% 
   mutate(Counts = Counts +1) %>%
   spread(Species,Counts) %>%
@@ -1712,6 +1753,10 @@ mpa3_species_decontam_unfilt_mid_exconc <- mpa3_species_decontam %>%
   select(matches("Species|MID")) %>%
   # no data for periodontal affect score
   select(-matches("MID025|MID029|MID030|MID031|MID033|MID052|MID056|MID065|MID068.A|MID076|MID078")) %>%
+  adorn_totals(where = "col", name = "Sum_species.decontam") %>%
+  mutate(Percent = Sum_species.decontam/sum(Sum_species.decontam)*100) %>%
+  filter(Percent > 0.001) %>%
+  select(-one_of(c("Sum_species.decontam","Percent"))) %>%
   gather("Library_ID","Counts",2:ncol(.)) %>% 
   mutate(Counts = Counts +1) %>%
   spread(Species,Counts) %>%
@@ -1730,6 +1775,10 @@ mpa3_species_decontam_unfilt_mid_strep <- mpa3_species_decontam %>%
   select(matches("Species|MID")) %>%
   # no data for periodontal affect score
   select(-matches("MID046|MID075")) %>%
+  adorn_totals(where = "col", name = "Sum_species.decontam") %>%
+  mutate(Percent = Sum_species.decontam/sum(Sum_species.decontam)*100) %>%
+  filter(Percent > 0.001) %>%
+  select(-one_of(c("Sum_species.decontam","Percent"))) %>%
   gather("Library_ID","Counts",2:ncol(.)) %>% 
   mutate(Counts = Counts +1) %>%
   spread(Species,Counts) %>%
@@ -1805,101 +1854,226 @@ mid_permanova %>%
   drop_na(`F`) %>%
   arrange(desc(`F`)) %>%
   bind_cols(., as_tibble(c("***","***","***","**","**","**","ns","*","ns","ns","ns","ns","ns","ns","ns","ns","ns","ns","ns","ns","ns","ns","ns"))) %>%
-  fwrite(., "./05-results.backup/mid_permanova.tsv", sep = "\t", quote =  F)
+  arrange(desc(R2))
+  # fwrite(., "./05-results.backup/mid_permanova.tsv", sep = "\t", quote =  F)
 
 # controlled for tooth site
 # adonis2(mpa3_species_decontam_unfilt_mid.euc ~ Pipenotch, metadata_mid, permutations = 999, by = "margin", strata = metadata_mid$Tooth_site)
 
 ```
 
-Then run betadisper to see if the groups with significant differences in
-clustering have different dispersion ("tight" vs. "loose" clustering of groups)
-- is one group more variable than the other(s)?
-```{r betadisper_mid_species}
-# Test the 3 metadata categories that are significant (p < 0.05) based on adonis for significant differences in dispersion
-# Site, Region, Time period
+## Filtered PCAs
+```{r pca_plot_fxn}
+# plot PCA with colored dots and the title including the # of species or genera
+plot_pca <- function(df, pc1, pc2, color_group, shape_group, ncomps) {
+    metadata_group_colors <- get(paste(color_group, "_colors", sep = ""))
+    metadata_group_shapes <- get(paste(shape_group, "_shapes", sep = ""))
 
-# Site
-groups_site <- metadata_mid %>%
-  select(Site) %>% 
-  pull()
+    pca.list <- mixOmics::pca(df, ncomp = ncomps, logratio = 'CLR')
 
-## Calculate multivariate dispersions
-site_betadisper_mid <- betadisper(mpa3_species_decontam_unfilt_mid.euc, groups_site, bias.adjust =TRUE)
-site_betadisper_mid
+    exp_var <- paste0(round(pca.list$prop_expl_var$X * 100, 2), "%")
+    df_X <- pca.list$variates$X %>%
+              as.data.frame() %>%
+              rownames_to_column("Library_ID") %>%
+              inner_join(full_metadata, by = "Library_ID") %>%
+              inner_join(., strep_group_info)
+              
+    color_group = df_X[[color_group]]
+    shape_group = df_X[[shape_group]]
 
-## Perform test
-anova(site_betadisper_mid)
+    if (pc1 == 'PC1') {
+        pc1 <- df_X$PC1
+        exp_var_pc1 <- exp_var[1]
+        xaxis <- c("PC1")
+    }  else if (pc1 == 'PC2') {
+        pc1 <- df_X$PC2
+        exp_var_pc1 <- exp_var[2]
+        xaxis <- c("PC2")
+    } else if (pc1 == 'PC3') {
+        pc1 <- df_X$PC3
+        exp_var_pc1 <- exp_var[3]
+        xaxis <- c("PC3")
+    }
 
-## Permutation test for F
-permutest(site_betadisper_mid, pairwise = TRUE, permutations = 99)
+    if (pc2 == 'PC1') {
+        pc2 <- df_X$PC1
+        exp_var_pc2 <- exp_var[1]
+        yaxis <- c("PC1")
+    }  else if (pc2 == 'PC2') {
+        pc2 <- df_X$PC2
+        exp_var_pc2 <- exp_var[2]
+        yaxis <- c("PC2")
+    } else if (pc2 == 'PC3') {
+        pc2 <- df_X$PC3
+        exp_var_pc2 <- exp_var[3]
+        yaxis <- c("PC3")
+    }
 
-## Tukey's Honest Significant Differences
-site_betadisper_mid.HSD <- TukeyHSD(site_betadisper_mid)
-plot(site_betadisper_mid.HSD)
+    pca_plot <- ggplot(df_X, aes(pc1, pc2)) +
+     geom_point(aes(, fill = color_group, shape = shape_group), size = 3.5, stroke = 0.3) +
+     scale_fill_manual(values = metadata_group_colors) +
+     scale_shape_manual(values = metadata_group_shapes) +
+     # stat_ellipse() +
+     xlab(paste(xaxis, " - ", exp_var_pc1)) +
+     ylab(paste(yaxis, " - ", exp_var_pc2)) +
+     theme_minimal(base_size = 16) +
+     theme(text = element_text(size=16)) +
+     theme(legend.title = element_blank(),
+           legend.key.size = unit(2,"mm"),
+           legend.text = element_text(size = 6)) +
+     theme(legend.position = "top")
 
-## Plot the groups and distances to centroids on the
-## first two PCoA axes
-## with data ellipses instead of hulls
-plot(site_betadisper_mid, ellipse = TRUE, hull = FALSE) # 1 sd data ellipse
-
-## can also specify which axes to plot, ordering respected
-# plot(site_betadisper_mid, axes = c(3,1), seg.col = "forestgreen", seg.lty = "dashed")
-
-## Draw a boxplot of the distances to centroid for each group
-boxplot(site_betadisper_mid)
-
-
-# Region
-groups_region <- metadata_mid %>%
-  select(Region) %>% 
-  pull()
-
-## Calculate multivariate dispersions
-region_betadisper_mid <- betadisper(mpa3_species_decontam_unfilt_mid.euc, groups_region, bias.adjust =TRUE)
-region_betadisper_mid
-
-## Perform test
-anova(region_betadisper_mid)
-
-## Permutation test for F
-permutest(region_betadisper_mid, pairwise = TRUE, permutations = 99)
-
-## Tukey's Honest Significant Differences
-region_betadisper_mid.HSD <- TukeyHSD(region_betadisper_mid)
-plot(region_betadisper_mid.HSD)
-
-## Plot with data ellipses instead of hulls
-plot(region_betadisper_mid, ellipse = TRUE, hull = FALSE) # 1 sd data ellipse
-
-## Draw a boxplot of the distances to centroid for each group
-boxplot(region_betadisper_mid)
+    return(pca_plot)
+}
 
 
-# Time period
-groups_tp <- metadata_mid %>%
-  select(Time_period) %>% 
-  pull()
+```
 
-## Calculate multivariate dispersions
-tp_betadisper_mid <- betadisper(mpa3_species_decontam_unfilt_mid.euc, groups_tp, bias.adjust =TRUE)
-tp_betadisper_mid
+```{r pca_plot_mid_fxn}
+# plot PCA with colored dots 
+plot_pca_mid <- function(df, pc1, pc2, color_group, shape_group, ncomps, title_text) {
 
-## Perform test
-anova(tp_betadisper_mid)
+    pca.list <- mixOmics::pca(df, ncomp = ncomps, logratio = 'CLR')
 
-## Permutation test for F
-permutest(tp_betadisper_mid, pairwise = TRUE, permutations = 99)
+    exp_var <- paste0(round(pca.list$prop_expl_var$X * 100, 2), "%")
+    df_X <- pca.list$variates$X %>%
+              as.data.frame() %>%
+              rownames_to_column("Library_ID") %>%
+              inner_join(full_metadata, by = "Library_ID")
+    
+    color_group = df_X[[color_group]]
+    shape_group = df_X[[shape_group]]
 
-## Tukey's Honest Significant Differences
-tp_betadisper_mid.HSD <- TukeyHSD(tp_betadisper_mid)
-plot(tp_betadisper_mid.HSD)
+    if (pc1 == 'PC1') {
+        pc1 <- df_X$PC1
+        exp_var_pc1 <- exp_var[1]
+        xaxis <- c("PC1")
+    }  else if (pc1 == 'PC2') {
+        pc1 <- df_X$PC2
+        exp_var_pc1 <- exp_var[2]
+        xaxis <- c("PC2")
+    } else if (pc1 == 'PC3') {
+        pc1 <- df_X$PC3
+        exp_var_pc1 <- exp_var[3]
+        xaxis <- c("PC3")
+    }
 
-## Plot with data ellipses instead of hulls
-plot(tp_betadisper_mid, ellipse = TRUE, hull = FALSE) # 1 sd data ellipse
+    if (pc2 == 'PC1') {
+        pc2 <- df_X$PC1
+        exp_var_pc2 <- exp_var[1]
+        yaxis <- c("PC1")
+    }  else if (pc2 == 'PC2') {
+        pc2 <- df_X$PC2
+        exp_var_pc2 <- exp_var[2]
+        yaxis <- c("PC2")
+    } else if (pc2 == 'PC3') {
+        pc2 <- df_X$PC3
+        exp_var_pc2 <- exp_var[3]
+        yaxis <- c("PC3")
+    }
 
-## Draw a boxplot of the distances to centroid for each group
-boxplot(tp_betadisper_mid)
+    pca_plot <- ggplot(df_X, aes(pc1, pc2, fill = color_group, shape = shape_group)) +
+     geom_point(size = 3) +
+     scale_fill_manual(values = c("#5A167E","#C83E73","#E95562","#FED395","#252525","#311068","#FEA873")) + # 
+     scale_shape_manual(values = c(24, 21)) +
+     # stat_ellipse() +
+     xlab(paste(xaxis, " - ", exp_var_pc1)) +
+     ylab(paste(yaxis, " - ", exp_var_pc2)) +
+     theme_minimal(base_size = 16) +
+     theme(text = element_text(size=16)) +
+     theme(legend.title = element_blank(),
+           legend.key.size = unit(2,"mm"),
+           legend.text = element_text(size = 6)) + # 
+     theme(legend.position = "top") +
+     ggtitle(title_text) + theme(plot.title = element_text(size = 10))
+
+    return(pca_plot)
+}
+
+```
+
+```{r}
+mpa3_species_decontam_filt_mid <- mpa3_species_decontam %>%
+  select(-one_of(outliers_mpa3)) %>%
+  select(-one_of(poor_samples_mpa3)) %>%
+  select(matches("Species|MID|CMB")) %>%
+  adorn_totals(where = "col", name = "Sum_species.decontam") %>%
+  mutate(Percent = Sum_species.decontam/sum(Sum_species.decontam)*100) %>%
+  filter(Percent > 0.001) %>%
+  select(-one_of(c("Sum_species.decontam","Percent"))) %>%
+  gather("Library_ID","Counts",2:ncol(.)) %>% 
+  mutate(Counts = Counts +1) %>%
+  spread(Species,Counts) %>%
+  column_to_rownames("Library_ID")
+
+# prepare to run a PCA
+# check the number of components to retain by tuning the PCA
+mixOmics::tune.pca(mpa3_species_decontam_unfilt_mid, logratio = 'CLR')
+
+
+malt_otu.pca <- mixOmics::pca(mpa3_species_decontam_unfilt_mid, ncomp = 2, logratio = 'CLR')
+malt_pca_values <- malt_otu.pca$variates$X %>%
+  as.data.frame() %>%
+  rownames_to_column("Library_ID") %>%
+  inner_join(., full_metadata, by = "Library_ID")
+
+Pipenotch_colors = c("#311068","#C83E73")
+Pipenotch_shapes = c(19,17)
+
+# perform and plot a PCA to see how the data cluster
+# by pipe notch presence
+mid_pipe_pc12 <- plot_pca_mid(mpa3_species_decontam_unfilt_mid, "PC1", "PC2", "Pipenotch", "Pipenotch", 3, "Pipe notch")
+mid_pipe_pc12
+# ggsave("~/Desktop/MID_pca_mid_pipe_pc12.pdf", plot = mid_pipe_pc12, device = "pdf",
+#        scale = 1, width = 9, height = 5, units = c("in"), dpi = 300)
+
+mpa3_species_decontam_unfilt <- mpa3_species_decontam %>%
+  select(-one_of(outliers_mpa3)) %>%
+  select(-one_of(poor_samples_mpa3)) %>%
+  select(-matches("EXB|LIB|CSN|CSD|ARS|CSS|CSL")) %>%
+  adorn_totals(where = "col", name = "Sum_species.decontam") %>%
+  mutate(Percent = Sum_species.decontam/sum(Sum_species.decontam)*100) %>%
+  filter(Percent > 0.001) %>%
+  select(-one_of(c("Sum_species.decontam","Percent"))) %>%
+  gather("Library_ID","Counts",2:ncol(.)) %>%
+  mutate(Counts = Counts +1) %>%
+  spread(Species,Counts) %>%
+  column_to_rownames("Library_ID")
+
+# prepare to run a PCA
+# check the number of components to retain by tuning the PCA
+mixOmics::tune.pca(mpa3_species_decontam_unfilt, logratio = 'CLR')
+
+
+mpa3_all_otu.pca <- mixOmics::pca(mpa3_species_decontam_unfilt, ncomp = 2, logratio = 'CLR')
+mpa3_all_pca_values <- mpa3_all_otu.pca$variates$X %>%
+  as.data.frame() %>%
+  rownames_to_column("Library_ID") %>%
+  inner_join(., full_metadata, by = "Library_ID") %>%
+  left_join(., strep_group_info, by = "Library_ID")
+
+site_code_beta <- plot_pca(mpa3_species_decontam_unfilt, "PC1", "PC2","Site_code","Site_code", 3) 
+site_code_beta
+
+# ggsave("./06-publication/supplemental_figures/SXX8/site_code_beta.pdf", plot = site_code_beta, device = "pdf",
+#        scale = 1, width = 6, height = 5, units = c("in"), dpi = 300)
+
+
+```
+
+```{r}
+
+library(patchwork)
+
+filt_plot <-  site_code_beta + mid_pipe_pc12 +
+  plot_layout(widths = c(1, 1.1))
+
+
+filt_plot
+
+# ggsave("./06-publication/supplemental_figures/SXX16/filt_plot.pdf", plot = filt_plot, device = "pdf",
+#        scale = 1, width = 11, height = 5, units = c("in"), dpi = 300)
+
 
 ```
 

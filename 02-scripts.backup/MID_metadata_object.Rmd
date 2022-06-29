@@ -200,13 +200,15 @@ full_metadata <- full_metadata %>%
 ```{r}
 
 full_metadata %>%
-  filter(Site_code == "MID") %>%
+  filter(Site_code == "MID",
+         Library_ID != "MID068.A0101") %>%
   select(Site_code, Library_ID, Age, Sex) %>%
   group_by(Sex,Age) %>%
   count()
 
 full_metadata %>%
-  filter(Site_code == "MID") %>%
+  filter(Site_code == "MID",
+         Library_ID != "MID068.A0101") %>%
   select(Site_code, Library_ID, Age, Sex) %>%
   filter(is.na(Sex))
 

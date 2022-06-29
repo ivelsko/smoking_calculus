@@ -44,6 +44,13 @@ metadata_nofactors <- fread("./00-documentation.backup/radcliffe_pfuT_metadata.t
 
 ```
 
+```{r outliers}
+outliers_mpa3 <- c("EXB059.A2101","EXB059.A2501","EXB015.A3301","EXB034.A2701","EXB059.A2201","EXB059.A2301","EXB059.A2401","LIB058.A0103","LIB058.A0106","LIB058.A0104")
+poor_samples_mpa3 <- fread("./05-results.backup/cuperdec_mpa3_poor_samples.tsv") %>%
+  pull(Sample)
+
+```
+
 Set the sample order for plotting
 ```{r}
 sample_order <- full_metadata %>%
@@ -67,6 +74,13 @@ sub10M_adiv <- fread("./05-results.backup/mpa3_alpha_div_numbers_sub10M.tsv") %>
 sub75bp_adiv <- fread("./05-results.backup/mpa3_alpha_div_numbers_sub75bp.tsv") %>%
   mutate(Dataset = "Sub75bp")
 
+alphadiv_indiv_files <- fread("./05-results.backup/mpa3_alpha_div_numbers.tsv") %>%
+  mutate(Dataset = "Full") %>%
+  bind_rows(., fread("./05-results.backup/mpa3_alpha_div_numbers_sub10M.tsv") %>%
+  mutate(Dataset = "Sub10M")) %>%
+  bind_rows(., fread("./05-results.backup/mpa3_alpha_div_numbers_sub75bp.tsv") %>%
+  mutate(Dataset = "Sub75bp")) %>%
+  filter(!str_detect(Library_ID, "ARS"))
 
 ```
 
@@ -89,9 +103,38 @@ mpa3_sp <- mpa3_raw %>%
          Species = str_replace_all(Species, "_"," ")) %>%
   # these samples have no metadata
   select(-c("MID025.A0101","MID033.A0101","MID052.A0101","MID056.A0101","MID065.A0101","MID068.A0101","MID076.A0101","MID078.A0101")) %>%
+  # remove outliers and poorly-preserved samples
+  select(-one_of(outliers_mpa3)) %>%
+  select(-one_of(poor_samples_mpa3)) %>%
+  # remove blanks and bones
+  select(-matches("ARS|CSS|CSD|CSN|CSL|EXB|LIB")) %>%
   arrange(Species)
 
+# read in contaminant tables
+mpa3_contaminants_full <- fread("./05-results.backup/contaminant_species_mid_mpa3.tsv", sep = "\t") %>%
+  bind_rows(., fread("./05-results.backup/contaminant_species_kilteasheen_mpa3.tsv", sep = "\t")) %>%
+  bind_rows(., fread("./05-results.backup/contaminant_species_iberia_mpa3.tsv", sep = "\t")) %>%
+  unique()
+
+# remove contaminant species from the table
+mpa3_sp_decontam <- mpa3_sp %>%
+  anti_join(., mpa3_contaminants_full)
+
+# renorm the table after removing contaminants and poorly-preserved samples
+mpa3_sp_decontam <- mpa3_sp_decontam %>%
+  # convert all values to a proportion, totaling 1 by column (re-normalizes the proportion of each species in each sample after removing contaminant species)
+  adorn_percentages(denominator = "col") %>%
+  pivot_longer(!Species, names_to = "Library_ID", values_to = "Percent") %>%
+  # convert proportion to percent by multiplying by 100
+  mutate(Percent = Percent * 100) %>%
+  pivot_wider(names_from = "Library_ID", values_from = "Percent")
+# %>%
+#   # check sums to be sure each column now totals 100
+#   adorn_totals(where = "row") %>%
+#   filter(Species == "Total")
+
 ```
+
 
 ```{r sub10M_table}
 # read in the sub10M species table
@@ -111,7 +154,32 @@ mpa3_sub10M_sp <- mpa3_sub10M_raw %>%
          Species = str_replace_all(Species, "_"," ")) %>%
   # these samples have no metadata
   select(-c("MID025.A0101","MID033.A0101","MID052.A0101","MID056.A0101","MID065.A0101","MID068.A0101","MID076.A0101","MID078.A0101")) %>%
+  # remove outliers and poorly-preserved samples
+  select(-one_of(outliers_mpa3)) %>%
+  select(-one_of(poor_samples_mpa3)) %>%
+  # remove blanks and bones
+  select(-matches("ARS|CSS|CSD|CSN|CSL|EXB|LIB")) %>%
   arrange(Species)
+
+# read in contaminant tables
+mpa3_contaminants_sub10M <- fread("./05-results.backup/contaminant_species_radcliffe_mpa3_sub10M.tsv", sep = "\t") %>%
+  bind_rows(., fread("./05-results.backup/contaminant_species_kilteasheen_mpa3_sub10M.tsv", sep = "\t")) %>%
+  bind_rows(., fread("./05-results.backup/contaminant_species_iberia_mpa3_sub10M.tsv", sep = "\t")) %>%
+  unique()
+
+# remove contaminant species from the table
+mpa3_sub10M_species_decontam <- mpa3_sub10M_sp %>%
+  anti_join(., mpa3_contaminants_sub10M)
+
+# renorm the table after removing contaminants and poorly-preserved samples
+mpa3_sub10M_species_decontam <- mpa3_sub10M_species_decontam %>%
+  # convert all values to a proportion, totaling 1 by column (re-normalizes the proportion of each species in each sample after removing contaminant species)
+  adorn_percentages(denominator = "col") %>%
+  pivot_longer(!Species, names_to = "Library_ID", values_to = "Percent") %>%
+  # convert proportion to percent by multiplying by 100
+  mutate(Percent = Percent * 100) %>%
+  pivot_wider(names_from = "Library_ID", values_from = "Percent")
+
 
 ```
 
@@ -133,53 +201,47 @@ mpa3_sub75bp_sp <- mpa3_sub75bp_raw %>%
          Species = str_replace_all(Species, "_"," ")) %>%
   # these samples have no metadata
   select(-c("MID025.A0101","MID033.A0101","MID052.A0101","MID056.A0101","MID065.A0101","MID068.A0101","MID076.A0101","MID078.A0101")) %>%
+  # remove outliers and poorly-preserved samples
+  select(-one_of(outliers_mpa3)) %>%
+  select(-one_of(poor_samples_mpa3)) %>%
+  # remove blanks and bones
+  select(-matches("ARS|CSS|CSD|CSN|CSL|EXB|LIB")) %>%
   arrange(Species)
 
-```
-
-
-```{r}
-# read in all contaminant tables
-
-# Full
-mpa3_contaminants_full <- fread("./05-results.backup/contaminant_species_mid_mpa3.tsv", sep = "\t") %>%
-  bind_rows(., fread("./05-results.backup/contaminant_species_kilteasheen_mpa3.tsv", sep = "\t")) %>%
-  bind_rows(., fread("./05-results.backup/contaminant_species_iberia_mpa3.tsv", sep = "\t")) %>%
-  unique()
-
-# sub10M
-mpa3_contaminants_sub10M <- fread("./05-results.backup/contaminant_species_radcliffe_mpa3_sub10M.tsv", sep = "\t") %>%
-  bind_rows(., fread("./05-results.backup/contaminant_species_kilteasheen_mpa3_sub10M.tsv", sep = "\t")) %>%
-  bind_rows(., fread("./05-results.backup/contaminant_species_iberia_mpa3_sub10M.tsv", sep = "\t")) %>%
-  unique()
-
-# sub75bp
+# read in contaminant tables
 mpa3_contaminants_sub75bp <- fread("./05-results.backup/contaminant_species_radcliffe_mpa3_sub75bp.tsv", sep = "\t") %>%
   bind_rows(., fread("./05-results.backup/contaminant_species_kilteasheen_mpa3_sub75bp.tsv", sep = "\t")) %>%
   bind_rows(., fread("./05-results.backup/contaminant_species_iberia_mpa3_sub75bp.tsv", sep = "\t")) %>%
   unique()
 
+# remove contaminant species from the table
+mpa3_sub75bp_species_decontam <- mpa3_sub75bp_sp %>%
+  anti_join(., mpa3_contaminants_sub75bp)
+
+# renorm the table after removing contaminants and poorly-preserved samples
+mpa3_sub75bp_species_decontam <- mpa3_sub75bp_species_decontam %>%
+  # convert all values to a proportion, totaling 1 by column (re-normalizes the proportion of each species in each sample after removing contaminant species)
+  adorn_percentages(denominator = "col") %>%
+  pivot_longer(!Species, names_to = "Library_ID", values_to = "Percent") %>%
+  # convert proportion to percent by multiplying by 100
+  mutate(Percent = Percent * 100) %>%
+  pivot_wider(names_from = "Library_ID", values_from = "Percent")
+
+```
+
+
+```{r, eval = F}
+# merge all contaminant tables
 mpa3_contaminants <- mpa3_contaminants_full %>%
   bind_rows(., mpa3_contaminants_sub10M) %>%
   bind_rows(., mpa3_contaminants_sub75bp) %>%
   unique()
 
-# remove contaminant species from the table
-mpa3_sp_decontam <- mpa3_sp %>%
-  anti_join(., mpa3_contaminants)
-
-mpa3_sub10M_species_decontam <- mpa3_sub10M_sp %>%
-  anti_join(., mpa3_contaminants)
-
-mpa3_sub75bp_species_decontam <- mpa3_sub75bp_sp %>%
-  anti_join(., mpa3_contaminants)
-
 ```
 
 ```{r full_alpha}
 # get the number of observed species
-presabs_table_f <- mpa3_sp %>%
-  select(-matches("ARS|EXB|LIB|CSN|CSL|CSD|CSS")) %>%
+presabs_table_f <- mpa3_sp_decontam %>%
   gather("Library_ID","Counts",2:ncol(.)) %>%
   spread(Species,Counts) %>%
   gather("Species","Counts",2:ncol(.)) %>%
@@ -195,8 +257,7 @@ mpa3_sp_full.alpha <- presabs_table_f %>%
 
 
 # get the Shannon index
-mpa3_sp_full.matrix <- as.matrix(mpa3_sp %>%
-  select(-matches("ARS|EXB|LIB|CSN|CSL|CSD|CSS")) %>%
+mpa3_sp_full.matrix <- as.matrix(mpa3_sp_decontam %>%
   gather("Library_ID","Counts",2:ncol(.)) %>%
   spread(Species,Counts) %>% 
   column_to_rownames("Library_ID"))
@@ -230,8 +291,7 @@ mpa3_sp_full.alpha_meta <- mpa3_sp_full.alpha %>%
 
 ```{r sub10M_alpha}
 # get the number of observed species
-presabs_table_f <- mpa3_sub10M_sp %>%
-  select(-matches("ARS|EXB|LIB|CSN|CSL|CSD|CSS")) %>%
+presabs_table_f <- mpa3_sub10M_species_decontam %>%
   gather("Library_ID","Counts",2:ncol(.)) %>%
   spread(Species,Counts) %>%
   gather("Species","Counts",2:ncol(.)) %>%
@@ -247,8 +307,7 @@ mpa3_sp_10M.alpha <- presabs_table_f %>%
 
 
 # get the Shannon index
-mpa3_sp_10M.matrix <- as.matrix(mpa3_sub10M_sp %>%
-  select(-matches("ARS|EXB|LIB|CSN|CSL|CSD|CSS")) %>%
+mpa3_sp_10M.matrix <- as.matrix(mpa3_sub10M_species_decontam %>%
   gather("Library_ID","Counts",2:ncol(.)) %>%
   spread(Species,Counts) %>% 
   column_to_rownames("Library_ID"))
@@ -462,7 +521,7 @@ adiv_sub_figure <- no_sp_box_polot + shannon_box_plot +
 
 adiv_sub_figure
 
-# ggsave("./06-publication/supplemental_figures/SXX11/adiv_sub_figure.pdf", plot = adiv_sub_figure, device = "pdf",
+# ggsave("./06-publication/supplemental_figures/S10/adiv_sub_figure.pdf", plot = adiv_sub_figure, device = "pdf",
 #        scale = 1, width = 10, height = 10, units = c("in"), dpi = 300)
 
 ```
