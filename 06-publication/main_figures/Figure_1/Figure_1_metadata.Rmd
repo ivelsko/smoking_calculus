@@ -22,6 +22,50 @@ library(patchwork)
 knitr::opts_knit$set(root.dir = normalizePath("../../../"))
 ```
 
+## Country  map
+```{r}
+library("ggplot2")
+theme_set(theme_bw())
+library("sf")
+library("rnaturalearth")
+library("rnaturalearthdata")
+library("rgeos")
+library("maps")
+library("dplyr")
+```
+
+# Site map
+```{r}
+# pull country data
+world <- ne_countries(scale = "medium", returnclass = "sf")
+
+# add coordinates to a dataframe
+smoking_sites <- data.frame(longitude = c(4.9168030, -2.9804059,-1.257,-3.7892050,-0.3765000), latitude = c(52.5519900, 43.2805735,51.752,37.7769480,39.4695270), Site = c("MID","CMB","Radcliffe","JAE","VLC"), Data = c("New","New","Published","Published","Published"))
+
+non_smoking_sites <- data.frame(longitude = c(-8.2023080,-0.8088890,-2.8622220), latitude = c(54.0068400,38.2486110,38.6963890), Site = c("Kilteasheen","ELR","IVE"), Data = c("Published","New","New"))
+
+
+# plot the map
+sampling_sites_europe <- ggplot(data = world) +
+  geom_sf(colour = "#ffffff", fill = "#bbbbbb", linetype = "dotted") +
+  #for grey map with white lines
+  geom_sf(fill = "#f7fcf5") +
+  geom_point(data = non_smoking_sites, aes(x = longitude, y = latitude, color = Data), size = 4,
+        shape = 17) +
+  geom_point(data = smoking_sites, aes(x = longitude, y = latitude, color = Data), size = 4,
+        shape = 19) +
+  coord_sf(xlim = c(-12, 20), ylim = c(35, 60), expand = FALSE) +
+  theme_void() +
+  scale_color_manual(values = c("black","grey50"))
+sampling_sites_europe
+
+ggsave("./06-publication/main_figures/Figure_1/sample_site_map.pdf", plot = sampling_sites_europe, device = "pdf",
+       scale = 1, width = 5, height = 5, units = c("in"), dpi = 300)
+
+```
+
+
+## Osteological metadata
 ```{r load_metadata}
 
 load("./05-results.backup/Metadata_tables.RData")
@@ -94,8 +138,8 @@ smcs
 metaplot <- smpd + smcs
 metaplot
 
-ggsave("./06-publication/main_figures/Figure_1/metaplot.pdf", plot = metaplot,
-       device = "pdf", scale = 1, width = 21, height = 8, units = c("in"), dpi = 300)
+# ggsave("./06-publication/main_figures/Figure_1/metaplot.pdf", plot = metaplot,
+#        device = "pdf", scale = 1, width = 21, height = 8, units = c("in"), dpi = 300)
 
 ```
 

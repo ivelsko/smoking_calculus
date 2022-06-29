@@ -390,10 +390,10 @@ raincloud_alpha <- plot_grid(obssp, shannon,
           nrow=1, labels = c("A", "B"), rel_widths = c(1, 1), scale = 0.9)
 
 
-# ggsave("./06-publication/main_figures/Figure_3/raincloud_alpha.pdf", plot = raincloud_alpha,
-#        device = "pdf", scale = 1, width = 10, height = 5, units = c("in"), dpi = 300)
-# ggsave("./06-publication/main_figures/Figure_3/raincloud_alpha.png", plot = raincloud_alpha,
-#        device = "png", scale = 1, width = 10, height = 5, units = c("in"), dpi = 300)
+ggsave("./06-publication/main_figures/Figure_3/raincloud_alpha.pdf", plot = raincloud_alpha,
+       device = "pdf", scale = 1, width = 10, height = 5, units = c("in"), dpi = 300)
+ggsave("./06-publication/main_figures/Figure_3/raincloud_alpha.png", plot = raincloud_alpha,
+       device = "png", scale = 1, width = 10, height = 5, units = c("in"), dpi = 300)
 
 ```
 
