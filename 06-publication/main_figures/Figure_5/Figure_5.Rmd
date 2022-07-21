@@ -789,14 +789,14 @@ all_pca_values <- pca.list$variates$X %>%
 ```{r all_corrs}
 # rename variables to look nice in figures
 all_pca_values_select <- all_pca_values %>%
-  select(Library_ID,PC1, PC2, seq_len_avg, gc_avg, No_reads_total, Sanguinis, Anginosus, Time_period_n, Site_code_n) %>%
+  select(Library_ID,PC1, PC2, seq_len_avg, gc_avg, No_reads_total, Time_period_n, Site_code_n) %>%
   rename(`Seq length` = seq_len_avg,
          GC = gc_avg,
          `Total reads` = No_reads_total,
          `Time period` = Time_period_n,
          Site = Site_code_n)
 
-form <- ~ PC1 + PC2 + `Seq length` + GC + `Total reads` + Sanguinis + Anginosus + `Time period` + Site
+form <- ~ PC1 + PC2 + `Seq length` + GC + `Total reads` + `Time period` + Site
 C_all = canCorPairs(form, all_pca_values_select)
 plotCorrMatrix( C_all )
 
@@ -808,7 +808,7 @@ plotCorrMatrix( C_all )
 # test for significant differences in diversity between the metadata categories
 
 pearson_all <- all_pca_values %>%
-rstatix::cor_test(., PC1, PC2, PC3, seq_len_avg, gc_avg, No_reads_total, Sanguinis, Anginosus, Time_period_n, Site_code_n, method="pearson")
+rstatix::cor_test(., PC1, PC2, PC3, seq_len_avg, gc_avg, No_reads_total, Time_period_n, Site_code_n, method="pearson")
 
 pearson_all
 
