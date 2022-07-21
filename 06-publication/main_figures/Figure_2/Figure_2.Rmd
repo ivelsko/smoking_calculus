@@ -524,7 +524,7 @@ mid_pca_values <- malt_otu.pca$variates$X %>%
 
 # rename vriables to look nice in figures
 mid_pca_values_select <- mid_pca_values %>%
-  select(Library_ID, PC1, PC2, seq_len_avg, gc_avg, No_reads_total, Sanguinis, Anginosus, Age_n, Sex_n, Pipenotch_n, `%AMTL`, `%teeth_with_caries`, calc_sup_SI_score, Peridontal_affect_score, `%_positions_with_Periodontal`, Max_Perio_Score, Calculus_extracted_mg, `extract_conc_ng/mg`, `extract_conc_ng/uL`, `extract_conc_after_storage_ng/uL`, `DNA_molecules_per_library_x10^6`,Calc_sub_SI_score, `%teeth_with_calc`, `%_positions_perioapical`) %>%
+  select(Library_ID, PC1, PC2, seq_len_avg, gc_avg, No_reads_total, Age_n, Sex_n, Pipenotch_n, `%AMTL`, `%teeth_with_caries`, calc_sup_SI_score, Peridontal_affect_score, `%_positions_with_Periodontal`, Max_Perio_Score, Calculus_extracted_mg, `extract_conc_ng/mg`, `extract_conc_ng/uL`, `extract_conc_after_storage_ng/uL`, `DNA_molecules_per_library_x10^6`,Calc_sub_SI_score, `%teeth_with_calc`, `%_positions_perioapical`) %>%
   rename(`Seq length` = seq_len_avg,
          GC = gc_avg,
          `Total reads` = No_reads_total,
@@ -547,7 +547,7 @@ mid_pca_values_select <- mid_pca_values %>%
          `% Perioapical` = `%_positions_perioapical`)
 
 # select variables
-form <- ~ PC1 + PC2 + `Seq length` + GC + `Total reads` + Sanguinis + Anginosus + Age + Sex + Pipenotch + `% AMTL` + `% Caries` + `Supra calc score` + `Perio score` + `% Perio` + `Max perio score` + `Extracted weight (mg)` + `Pre-storage [extract] (ng/mg)` + `Pre-storage [extract] (ng/uL)` + `Post-storage [extract] (ng/uL)` + `[Library] (molecules)` + `Sub calc score` + `% Calculus` + `% Perioapical`
+form <- ~ PC1 + PC2 + `Seq length` + GC + `Total reads` + Age + Sex + Pipenotch + `% AMTL` + `% Caries` + `Supra calc score` + `Perio score` + `% Perio` + `Max perio score` + `Extracted weight (mg)` + `Pre-storage [extract] (ng/mg)` + `Pre-storage [extract] (ng/uL)` + `Post-storage [extract] (ng/uL)` + `[Library] (molecules)` + `Sub calc score` + `% Calculus` + `% Perioapical`
 
 # compute CCA
 C_mid = canCorPairs( form, mid_pca_values_select)
@@ -557,7 +557,7 @@ C_mid = canCorPairs( form, mid_pca_values_select)
 ```{r pearson_corr_mid}
 # test for significant differences in diversity between the metadata categories
 pearson_mid <- mid_pca_values %>%
-rstatix::cor_test(., PC1, PC2, seq_len_avg, gc_avg, No_reads_total, Sanguinis, Anginosus, Age_n, Sex_n, Pipenotch_n, `%AMTL`, `%teeth_with_caries`, calc_sup_SI_score, Peridontal_affect_score, `%_positions_with_Periodontal`, Max_Perio_Score, Calculus_extracted_mg, `extract_conc_ng/mg`, `extract_conc_ng/uL`, `extract_conc_after_storage_ng/uL`, `DNA_molecules_per_library_x10^6`,Calc_sub_SI_score, `%teeth_with_calc`, `%_positions_perioapical`, method="pearson")
+rstatix::cor_test(., PC1, PC2, seq_len_avg, gc_avg, No_reads_total, Age_n, Sex_n, Pipenotch_n, `%AMTL`, `%teeth_with_caries`, calc_sup_SI_score, Peridontal_affect_score, `%_positions_with_Periodontal`, Max_Perio_Score, Calculus_extracted_mg, `extract_conc_ng/mg`, `extract_conc_ng/uL`, `extract_conc_after_storage_ng/uL`, `DNA_molecules_per_library_x10^6`,Calc_sub_SI_score, `%teeth_with_calc`, `%_positions_perioapical`, method="pearson")
 
 pearson_mid %>%
   mutate(same = var1 == var2) %>%

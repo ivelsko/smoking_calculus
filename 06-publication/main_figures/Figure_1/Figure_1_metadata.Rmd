@@ -77,6 +77,7 @@ load("./05-results.backup/Metadata_tables.RData")
 smpd <- full_metadata %>%
   filter(str_detect(Library_ID, "MID")) %>%
   drop_na(Pipenotch) %>%
+  # filter(Age != "13-18") %>%
   ggplot(., aes(x = Pipenotch, y = Age, fill = Peridontal_affect_score, shape = Sex, size = `%AMTL`)) +
     ggpointgrid::geom_pointrect(scale_x = 0.10, scale_y = 0.22, color = "black", stroke = 0.5) +
     theme_minimal(base_size = 14) +
@@ -97,6 +98,7 @@ smpd
 ```{r smoking_caries}
 smc <- full_metadata %>%
   filter(str_detect(Library_ID, "MID")) %>%
+  # filter(Age != "13-18") %>%
   drop_na(Pipenotch) %>%
   ggplot(., aes(x = Pipenotch, y = Age, fill = `%teeth_with_caries`, shape = Sex, size = `%AMTL`)) +
     ggpointgrid::geom_pointrect(scale_x = 0.10, scale_y = 0.22, color = "black", stroke = 0.5) +
@@ -117,6 +119,7 @@ smc
 ```{r smoking_calc_score}
 smcs <- full_metadata %>%
   filter(str_detect(Library_ID, "MID")) %>%
+  # filter(Age != "13-18") %>%
   drop_na(Pipenotch) %>%
   ggplot(., aes(x = Pipenotch, y = Age, fill = Calc_sub_SI_score, shape = Sex, size = `%AMTL`)) +
     ggpointgrid::geom_pointrect(scale_x = 0.10, scale_y = 0.22, color = "black", stroke = 0.5) +
@@ -138,8 +141,8 @@ smcs
 metaplot <- smpd + smcs
 metaplot
 
-# ggsave("./06-publication/main_figures/Figure_1/metaplot.pdf", plot = metaplot,
-#        device = "pdf", scale = 1, width = 21, height = 8, units = c("in"), dpi = 300)
+ggsave("./06-publication/main_figures/Figure_1/metaplot.pdf", plot = metaplot,
+       device = "pdf", scale = 1, width = 21, height = 8, units = c("in"), dpi = 300)
 
 ```
 
