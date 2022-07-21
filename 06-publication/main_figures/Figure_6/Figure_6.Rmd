@@ -325,8 +325,8 @@ strep_groups <- plot_grid(strepgroups, streponly, aardvark_plot,
 
 strep_groups
 
-ggsave("./06-publication/main_figures/Figure_5/strep_groups.pdf", plot = strep_groups,
-       device = "pdf", scale = 1, width = 8, height = 7, units = c("in"), dpi = 300)
+# ggsave("./06-publication/main_figures/Figure_5/strep_groups.pdf", plot = strep_groups,
+#        device = "pdf", scale = 1, width = 8, height = 7, units = c("in"), dpi = 300)
 # ggsave("./06-publication/main_figures/Figure_5/strep_groups.png", plot = strep_groups,
 #        device = "png", scale = 1, width = 8, height = 7, units = c("in"), dpi = 300)
 
