@@ -4,7 +4,7 @@ This repository is for keeping somewhat organized the data processing and analys
 for investigating whether the microbiome in archaeological dental calculus differs 
 between individuals who have pipe notches (presumed smokers) and individuals who 
 don't (presumed non- or passive smokers). This includes sequencing statistics, 
-mapping, etc., analyses. These samples are ...
+mapping, etc., analyses.
 
 
 ## Overview about the repository
