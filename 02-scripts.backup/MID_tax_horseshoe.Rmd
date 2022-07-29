@@ -51,8 +51,8 @@ outliersF <- str_c(outliers, collapse = "|")
 
 ## Unfiltered data
 ```{r}
-malt_otu_pca_table <- all_species_decontam %>%
-  select(matches("Species|MID")) %>%
+malt_otu_pca_table <- all_species_decontam_prev %>%
+  select(matches("Species|MID|CMB")) %>%
   select(-one_of(outliers)) %>%
   select(-one_of(poor_samples)) %>%
   gather("Library_ID","Counts",2:ncol(.)) %>%
@@ -70,16 +70,18 @@ malt_pca_values <- malt_otu.pca$variates$X %>%
   inner_join(., full_metadata, by = "Library_ID")
 
 ```
-There is a point, point where bars jump from tall to much shorter, this number is used to determine numbers of components for pca (2 bars high, dropdown = leave at 2, only one bar = leave at 2), these contain most contaminations. Will leave 2 as number.
 
 Plot the PCA
 ```{r}
 # plot the PCA with Library_IDs
-ggplot(malt_pca_values, aes(PC1, PC2, color = Region, shape = Region)) +
+# Make sure there's no batch effect in the horseshoe by coloring by either extraction batch or library batch
+
+malt_pca_values %>%
+ggplot(., aes(PC1, PC2, color = Library_batch, shape = Region)) +
   geom_text(aes(label = Library_ID), size = 3) +
   theme_minimal()
 
-horseshoe <- ggplot(malt_pca_values, aes(PC1, PC2, color = Region, shape = Region)) +
+horseshoe <- ggplot(malt_pca_values, aes(PC1, PC2, color = Library_batch, shape = Region)) + # Extraction_batch
   geom_point(size = 2) +
   theme_minimal()
 
@@ -200,7 +202,7 @@ pc1_pws_species <- malt_otu.pca$loadings$X %>%
          slice_head(., n = 50) %>%
          pull(Species)
 
-all_species_decontam %>%
+all_species_decontam_prev %>%
   adorn_totals(where = "col") %>%
   select(Species, Total) %>%
   arrange(desc(Total)) %>%
@@ -215,7 +217,7 @@ pc1_neg_species <- malt_otu.pca$loadings$X %>%
          slice_tail(., n = 50) %>%
          pull(Species)
 
-all_species_decontam %>%
+all_species_decontam_prev %>%
   adorn_totals(where = "col") %>%
   select(Species, Total) %>%
   arrange(desc(Total)) %>%
@@ -227,8 +229,8 @@ all_species_decontam %>%
 
 ## Abundance-filtered data
 ```{r}
-malt_otu_filt_pca_table <- all_species_decontam %>%
-  select(matches("Species|MID")) %>%
+malt_otu_filt_pca_table <- all_species_decontam_prev %>%
+  select(matches("Species|MID|CMB")) %>%
   select(-one_of(outliers)) %>%
   select(-one_of(poor_samples)) %>%
   adorn_totals(where = "col", name = "Sum_species") %>%
@@ -364,7 +366,7 @@ pc1_pws_species_filt <- malt_otu_filt.pca$loadings$X %>%
          slice_head(., n = 50) %>%
          pull(Species)
 
-all_species_decontam %>%
+all_species_decontam_prev %>%
   adorn_totals(where = "col") %>%
   select(Species, Total) %>%
   arrange(desc(Total)) %>%
@@ -379,7 +381,7 @@ pc1_neg_species_filt <- malt_otu_filt.pca$loadings$X %>%
          slice_tail(., n = 50) %>%
          pull(Species)
 
-all_species_decontam %>%
+all_species_decontam_prev %>%
   adorn_totals(where = "col") %>%
   select(Species, Total) %>%
   arrange(desc(Total)) %>%
@@ -389,7 +391,7 @@ all_species_decontam %>%
 
 ```
 
-```{r}
+```{r, eval = F}
 
 malt_pca_species %>%
   mutate(topPC1 = PC1 > PC2 & PC1 > PC3,
